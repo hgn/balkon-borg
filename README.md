@@ -23,7 +23,8 @@ by `make render`):
 - **Start here:** [decision log](log/decisions.md) (why the build is the way it is) ·
   [design review](docs/design-review.md) (open issues, ranked) ·
   [cost estimate](docs/cost-estimate.md)
-- **Build & hardware:** [enclosure & SLS printing](docs/enclosure-sintering.md) ·
+- **Build & hardware:** [network](docs/network.md) (who is on when, MQTT path) ·
+  [enclosure & SLS printing](docs/enclosure-sintering.md) ·
   [build/integration notes](docs/build-notes.md) ·
   [power distribution](docs/power-distribution.md) ·
   [carrier board spec](pcb/docs/board-spec.md)
@@ -45,7 +46,7 @@ runs off a shared 5 V feed and an MQTT/WiFi bus. The goal is a build that looks
 
 - **One visible box, minimal cabling** — exactly one 230 V feed, everything else 5 V + radio.
 - **Value over gimmick** — automations and data actually used day to day (light at the table, weather, birds, aircraft).
-- **Cleanly integrated into the existing setup** — MQTT bus, Podman/Quadlets on the NAS-Pi, Netdata/Grafana.
+- **Cleanly integrated into the existing setup** — MQTT bus, Podman/Quadlets, Netdata/Grafana.
 - **Maintainable and extensible** — low-solder, pre-flashed components; enclosure as parametric code (CadQuery), not a throwaway click model.
 - **Robust continuous outdoor operation** (protected) — thermally and electrically designed for summer duty.
 
@@ -64,23 +65,24 @@ runs off a shared 5 V feed and an MQTT/WiFi bus. The goal is a build that looks
 
 ## 4 · System components (current state)
 
-- **Edge compute:** Raspberry Pi 5 (8 GB) + Active Cooler, microSD — recording (camera/audio/SDR) and local inference (Frigate, readsb).
+- **Edge compute (borg-pi5):** Raspberry Pi 5 (8 GB) + Active Cooler, microSD in the enclosure — recording (camera/audio/SDR) and local inference (Frigate, readsb/tar1090, BirdNET-Go). Powered on **only when needed**, not 24/7.
 - **Sensor/control front panel:** ESP32 (ESPHome) with LD2410B (UART), BME280 (I²C), 4 buttons + encoder (GPIO).
 - **Light:** Athom high-power WLED controller + SK6812 RGBW-WW compact panel (8 rows × 43 = 344 px) on a 3 mm aluminium plate, opal acrylic diffuser.
 - **Reception:** RTL-SDR V3 (ADS-B 1090 MHz, optional LoRa RX), USB microphone.
 - **Power:** Mean Well LRS-150F-5 (5 V/22 A) in its own V-0 enclosure, fused branches.
 - **Enclosure:** 3D print in SLS/PA12 (black), 2 parts (build-volume split with dowel pins); aluminium plate = front + heatsink.
-- **Backend (existing):** NAS-Pi 5 with Mosquitto (MQTT broker), tar1090, BirdNET-Go, dashboards/storage.
+- **Backend (existing, nas-Pi5):** a separate, **always-on** Raspberry Pi 5 wired to the Fritz!Box, running Mosquitto (MQTT broker), Grafana dashboards and storage; the permanent and remote access point (see [network](docs/network.md)).
 
 ## 5 · Architecture and data flow
 
-The **edge Pi 5** captures camera (CSI), audio (USB) and RF (USB SDR) and runs the
+The **borg-pi5** captures camera (CSI), audio (USB) and RF (USB SDR) and runs the
 object recognition locally — only events and metadata go on over MQTT, no continuous
 raw stream. The **ESP32** handles the human-facing, real-time-critical I/O (buttons,
 encoder, radar) and the slow environment sensors; it is deliberately the *cheap,
 replaceable front panel* that protects the expensive compute node from the long
-outdoor wiring and offloads it. The **NAS-Pi 5** is the broker, dashboard and storage
-layer. Coupling throughout over **WiFi/MQTT** (Ethernet optional).
+outdoor wiring and offloads it. The **nas-Pi5** is the always-on broker, dashboard and
+storage layer (and the remote-access point); the borg-pi5 only runs when needed. Path:
+borg-pi5 → WiFi repeater → cable → Fritz!Box → nas-Pi5 (see [network](docs/network.md)).
 
 ## 6 · Constraints
 
