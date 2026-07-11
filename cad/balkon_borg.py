@@ -289,12 +289,15 @@ def build_body() -> cq.Workplane:
         body = body.cut(_cyl(PWR_SCREW_D, WALL + 2 * EPS,
                              cq.Vector(px, -EPS, pz + s * PWR_SCREW_DZ / 2),
                              cq.Vector(0, 1, 0)))
-    # Intake: narrow slits in the rear wall in the clear zone between carrier and
-    # Pi (the old vents sat behind the boards). 2 mm slits keep insects out.
-    for z in (25, 40, 55, 70, 85):
-        body = body.cut(cq.Solid.makeBox(
-            30.0, WALL + 2 * EPS, VENT_SLIT,
-            cq.Vector(VENT_MID_X - 15, -EPS, z - VENT_SLIT / 2)))
+    # Diagonal ventilation louvres in the rear wall, in the clear zone between the
+    # carrier and the Pi. 2 mm slits keep insects out; the diagonal is a styling cue.
+    for z in (20, 34, 48, 62, 76):
+        louvre = cq.Solid.makeBox(
+            40.0, WALL + 2 * EPS, VENT_SLIT,
+            cq.Vector(VENT_MID_X - 20, -EPS, z - VENT_SLIT / 2))
+        louvre = louvre.rotate(cq.Vector(VENT_MID_X, 0, z),
+                               cq.Vector(VENT_MID_X, 1, z), 30)
+        body = body.cut(louvre)
     # Exhaust: slits high on both end walls (hot air rises; the top is ceiling).
     for sx in (1, -1):
         for z in (VENT_END_Z, VENT_END_Z + 4):
@@ -383,6 +386,9 @@ def build_body() -> cq.Workplane:
             .text(TEXT_RIGHT, TEXT_SIZE, TEXT_DEPTH, combine=True))
     body = (body.faces("<Z").workplane(centerOption="CenterOfBoundBox")
             .center(BOTTOM_X, 0).text(TEXT_BOTTOM, BOTTOM_SIZE, TEXT_DEPTH, combine=True))
+    # HagiOne also on the rear wall, in the clear upper band above the louvres.
+    body = (body.faces("<Y").workplane(centerOption="CenterOfBoundBox")
+            .center(0, 35).text(TEXT_RIGHT, TEXT_SIZE, TEXT_DEPTH, combine=True))
 
     # Trim any boolean sliver above the ceiling plane so the ear tops stay flat.
     body = body.cut(cq.Solid.makeBox(
