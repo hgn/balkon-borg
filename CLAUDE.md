@@ -17,15 +17,17 @@ deliberately deviates.
 
 A hardware-plus-software hobby project: a multifunction unit under the balcony. One
 enclosure bundles light (WLED panel), presence/environment sensing (ESP32), reception
-(RTL-SDR, microphone) and a camera, tied over WiFi/MQTT to a NAS-Pi. Details in
-`README.md`.
+(RTL-SDR, microphone) and a camera. The **borg-pi5 in the enclosure is the hub**; details
+in `README.md`.
 
 There are three compute nodes with a clear role split:
-- **Edge Pi 5** — recording (camera/audio/SDR) and local inference (Frigate, readsb,
-  BirdNET). Only events/metadata over MQTT, no continuous raw stream.
+- **borg-pi5** — the enclosure Pi and **the central unit the project is about**: recording
+  (camera/audio/SDR), local inference (Frigate, readsb/tar1090, BirdNET), and the **MQTT
+  broker (Mosquitto), dashboards and app**. Powered on only when needed, not 24/7.
 - **ESP32 (ESPHome)** — near-real-time I/O (buttons, encoder, LD2410B radar) and slow
   environment sensors (BME280). Deliberately the cheap, replaceable front panel.
-- **NAS-Pi 5** — MQTT broker (Mosquitto), dashboards, storage. Already in place.
+- **nas-Pi5** — a separate, always-on Pi on the Fritz!Box with a **minor** role: remote
+  access from outside and occasional image/data storage. Not the hub.
 
 ## Domains and where things belong
 

@@ -20,17 +20,21 @@ log what is already in the code/YAML.
 
 ## 2026-07-11 — MQTT topic scheme + network doc, light scenarios
 
-**Network (`docs/network.md`):** documented the two-Pi split and the path
-**borg-pi5 → WiFi repeater → cable → Fritz!Box → nas-Pi5**. borg-pi5 is on-demand;
-nas-Pi5 is always on (broker + dashboards + remote access). Everything rides the one home
-LAN. Added a Mermaid topology, an MQTT flow graph and a time **sequence diagram** (GitHub
-renders Mermaid live). README fixed: the edge services (Frigate, readsb/tar1090,
-BirdNET-Go) are on borg-pi5, not the nas-Pi5.
+**Roles (corrected):** the **borg-pi5 in the enclosure is the hub** the project is about —
+capture, inference, **MQTT broker (Mosquitto), dashboards and app**. On when needed. The
+**nas-Pi5** is a separate, always-on Pi on the Fritz!Box with a **minor** role only: remote
+access from outside and occasional image/data storage. (User chose the broker on the
+borg-pi5; consequence: light/MQTT automation works only while the borg-pi5 is on — WLED's
+own time presets still run on the always-powered WLED controller.)
+
+**Network (`docs/network.md`):** the path **borg-pi5 → WiFi repeater → cable → Fritz!Box →
+nas-Pi5**, everything on the one home LAN. Mermaid topology, MQTT flow graph and a time
+**sequence diagram** (GitHub renders Mermaid live).
 
 **MQTT topic scheme (target):** `balkon/env/{temperature,humidity,pressure}`,
 `balkon/presence`, `wled/balkon` + `wled/balkon/api` (commands) + `wled/balkon/v` (state),
-`balkon/cam/events`, `balkon/adsb/aircraft`, `balkon/birds/detections`. Broker on the
-nas-Pi5. The ESP32 currently also uses ESPHome MQTT discovery for its own sensor topics.
+`balkon/cam/events`, `balkon/adsb/aircraft`, `balkon/birds/detections`. **Broker on the
+borg-pi5.** The ESP32 currently also uses ESPHome MQTT discovery for its own sensor topics.
 
 **Light scenarios (`docs/light-scenarios.md`):** L1-L12 (table light, cozy, party, golden
 hour, welcome, bug-friendly amber, wind-down, reading, notification pulse, weather glance,

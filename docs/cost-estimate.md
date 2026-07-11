@@ -33,7 +33,7 @@ Pi/camera are bought new are the big swing items.
 ## Not included
 
 - **Camera Module 3** (~25 € if bought new) — listed as already on hand.
-- **NAS-Pi** (MQTT broker / storage) — a separate, pre-existing system.
+- **nas-Pi5** — a separate, pre-existing always-on Pi (remote access + occasional image storage).
 - Tools, shipping, and the external 230 V wiring to the socket.
 
 See [`enclosure-sintering.md`](enclosure-sintering.md) for print providers,

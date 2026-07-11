@@ -28,7 +28,7 @@ ESPHome.
 
 - **WLED** with MQTT enabled, device topic `wled/balkon` (else adjust
   `substitutions.wled_topic`). Create presets 1/2 in WLED.
-- **Mosquitto** on the NAS-Pi; credentials in `secrets.yaml`.
+- **Mosquitto** on the borg-pi5 (the hub); credentials in `secrets.yaml`.
 
 ## Build / flash
 

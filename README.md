@@ -66,24 +66,24 @@ runs off a shared 5 V feed and an MQTT/WiFi bus. The goal is a build that looks
 
 ## 4 · System components (current state)
 
-- **Edge compute (borg-pi5):** Raspberry Pi 5 (8 GB) + Active Cooler, microSD in the enclosure — recording (camera/audio/SDR) and local inference (Frigate, readsb/tar1090, BirdNET-Go). Powered on **only when needed**, not 24/7.
+- **Central compute (borg-pi5):** Raspberry Pi 5 (8 GB) + Active Cooler, microSD in the enclosure — **the hub the project is about**: recording (camera/audio/SDR), local inference (Frigate, readsb/tar1090, BirdNET-Go), and the **MQTT broker (Mosquitto), dashboards and app**. Powered on **only when needed**, not 24/7.
 - **Sensor/control front panel:** ESP32 (ESPHome) with LD2410B (UART), BME280 (I²C), 4 buttons + encoder (GPIO).
 - **Light:** Athom high-power WLED controller + SK6812 RGBW-WW compact panel (8 rows × 43 = 344 px) on a 3 mm aluminium plate, opal acrylic diffuser.
 - **Reception:** RTL-SDR V3 (ADS-B 1090 MHz, optional LoRa RX), USB microphone.
 - **Power:** Mean Well LRS-150F-5 (5 V/22 A) in its own V-0 enclosure, fused branches.
 - **Enclosure:** 3D print in SLS/PA12 (black), 2 parts (build-volume split with dowel pins); aluminium plate = front + heatsink.
-- **Backend (existing, nas-Pi5):** a separate, **always-on** Raspberry Pi 5 wired to the Fritz!Box, running Mosquitto (MQTT broker), Grafana dashboards and storage; the permanent and remote access point (see [network](docs/network.md)).
+- **nas-Pi5 (existing, minor role):** a separate, **always-on** Raspberry Pi 5 wired to the Fritz!Box. Only the **remote-access point** (reach the unit from outside) and occasional **image/data storage** — not the hub (see [network](docs/network.md)).
 
 ## 5 · Architecture and data flow
 
-The **borg-pi5** captures camera (CSI), audio (USB) and RF (USB SDR) and runs the
-object recognition locally — only events and metadata go on over MQTT, no continuous
-raw stream. The **ESP32** handles the human-facing, real-time-critical I/O (buttons,
-encoder, radar) and the slow environment sensors; it is deliberately the *cheap,
-replaceable front panel* that protects the expensive compute node from the long
-outdoor wiring and offloads it. The **nas-Pi5** is the always-on broker, dashboard and
-storage layer (and the remote-access point); the borg-pi5 only runs when needed. Path:
-borg-pi5 → WiFi repeater → cable → Fritz!Box → nas-Pi5 (see [network](docs/network.md)).
+The **borg-pi5** is the hub: it captures camera (CSI), audio (USB) and RF (USB SDR), runs
+the object recognition locally, and hosts the **MQTT broker, dashboards and app** — only
+events and metadata go on over MQTT, no continuous raw stream. The **ESP32** handles the
+human-facing, real-time-critical I/O (buttons, encoder, radar) and the slow environment
+sensors; it is deliberately the *cheap, replaceable front panel*. The **nas-Pi5** is only
+a minor, always-on helper (remote access + occasional image storage); the borg-pi5 runs
+when needed, so its light/MQTT automation is available while it is on. Path: borg-pi5 →
+WiFi repeater → cable → Fritz!Box → nas-Pi5 (see [network](docs/network.md)).
 
 ## 6 · Constraints
 

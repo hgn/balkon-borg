@@ -4,24 +4,25 @@ How the pieces talk, and which machine is on when.
 
 ## Roles
 
-- **borg-pi5** — the edge Pi *inside the balcony enclosure*. Capture (camera/audio/SDR) and
-  local inference (Frigate, readsb/tar1090, BirdNET-Go). **Powered on only when needed,
-  not 24/7.** Reaches the LAN over WiFi via a repeater.
+- **borg-pi5** — the Pi *inside the balcony enclosure* and **the hub the project is about**.
+  Capture (camera/audio/SDR), local inference (Frigate, readsb/tar1090, BirdNET-Go), and the
+  **MQTT broker (Mosquitto), dashboards and app**. **Powered on only when needed, not 24/7.**
+  Reaches the LAN over WiFi via a repeater.
 - **ESP32 + WLED** — the front panel (buttons, encoder, radar, environment) and the light
   controller. On WiFi; talk to the light and the broker over MQTT.
-- **nas-Pi5** — a **separate, always-on** Raspberry Pi 5, **not** the enclosure Pi. Wired
-  to the Fritz!Box. Runs the **MQTT broker (Mosquitto)**, dashboards and storage, and is the
-  **permanent and remote (from outside) access point** — everything is reached through it.
+- **nas-Pi5** — a **separate, always-on** Raspberry Pi 5, **not** the enclosure Pi. Wired to
+  the Fritz!Box. A **minor** helper only: the **remote-access point** (reach the unit from
+  outside) and occasional **image/data storage**. It does not run the broker.
 
 ## Physical path
 
 ```mermaid
 graph LR
-  borg["borg-pi5<br/>(edge · on-demand)"]
+  borg["borg-pi5<br/>(hub · broker · on-demand)"]
   esp["ESP32 + WLED<br/>(front panel)"]
   rep["WiFi repeater"]
   fb["FRITZ!Box"]
-  nas["nas-Pi5<br/>(always on)<br/>MQTT broker · dashboards · storage"]
+  nas["nas-Pi5<br/>(always on)<br/>remote access · image storage"]
   wan(["Internet / remote"])
 
   borg -->|WiFi| rep
@@ -35,14 +36,14 @@ So: **borg-pi5 → WiFi repeater → (cable) → Fritz!Box → nas-Pi5.**
 
 ## Communication
 
-- The **broker lives on the nas-Pi5**. Because it is always on, the bus is always up even
-  when the borg-pi5 is off.
-- **borg-pi5** publishes events/metadata (detections, aircraft, birds) to the broker while
-  it is running; it does not stream raw video/audio over the network.
+- The **broker lives on the borg-pi5** (the hub). It runs the broker, the dashboards and
+  the inference/app; it does not stream raw video/audio over the network.
 - **ESP32** publishes sensor readings and controls the **WLED light over MQTT** (via the
   broker); button/encoder/radar actions become MQTT messages.
-- **Remote access** (dashboards, status, control from outside the home) goes through the
-  **nas-Pi5** via the Fritz!Box — the borg-pi5 is never exposed directly.
+- Because the broker is on the borg-pi5, the **light/MQTT automation works while the
+  borg-pi5 is on**; when it is powered down, the automation is unavailable.
+- **Remote access** from outside the home goes through the always-on **nas-Pi5** via the
+  Fritz!Box, which also holds occasionally-stored images/data.
 
 ## Home network
 
@@ -69,22 +70,22 @@ Topic scheme (target):
 (The ESP32 currently uses ESPHome MQTT discovery for its own sensor topics, plus the
 explicit `wled/balkon` topics.)
 
-Everything passes through the broker on the nas-Pi5:
+Everything passes through the broker on the borg-pi5:
 
 ```mermaid
 graph LR
   esp["ESP32"]
-  borg["borg-pi5"]
-  broker[["Mosquitto broker<br/>(nas-Pi5)"]]
+  cap["capture + inference<br/>(borg-pi5)"]
+  broker[["Mosquitto broker + dashboards<br/>(borg-pi5)"]]
   wled["WLED"]
-  dash["dashboards / storage<br/>(nas-Pi5)"]
+  nas["nas-Pi5<br/>(image archive · remote)"]
 
   esp -->|"balkon/env/*, balkon/presence"| broker
   esp -->|"wled/balkon (+ /api)"| broker
-  borg -->|"balkon/cam, /adsb, /birds"| broker
   broker -->|"wled/balkon"| wled
   wled -->|"wled/balkon/v"| broker
-  broker -->|"subscribe all"| dash
+  cap -->|"balkon/cam, /adsb, /birds"| broker
+  broker -.->|"images / remote access"| nas
 ```
 
 A typical evening at the table, over time:
@@ -94,35 +95,33 @@ sequenceDiagram
   autonumber
   participant R as Radar
   participant ESP as ESP32
-  participant BP as borg-pi5
-  participant B as Broker nas-Pi5
+  participant BP as borg-pi5 broker+app
   participant W as WLED
-  participant D as Dashboards
+  participant NAS as nas-Pi5
 
   Note over R,W: presence auto-light
   R->>ESP: target detected
-  ESP->>B: wled/balkon "ON"
-  B->>W: "ON"
-  W-->>B: wled/balkon/v (on)
-  B-->>D: light + env state
+  ESP->>BP: wled/balkon "ON"
+  BP->>W: "ON"
+  W-->>BP: wled/balkon/v (on)
 
   Note over ESP,W: manual scene (button 3)
-  ESP->>B: wled/balkon/api {ps:2}
-  B->>W: preset 2 (party)
+  ESP->>BP: wled/balkon/api {ps:2}
+  BP->>W: preset 2 (party)
 
-  Note over BP,D: borg-pi5 (when on) publishes events
-  BP-)B: balkon/cam, /adsb, /birds
-  B-->>D: event
+  Note over BP,NAS: borg-pi5 archives a snapshot
+  BP-)NAS: store image
 
   Note over R,W: absence
   R->>ESP: no target for 2 min
-  ESP->>B: wled/balkon "OFF"
-  B->>W: "OFF"
+  ESP->>BP: wled/balkon "OFF"
+  BP->>W: "OFF"
 ```
 
 ## Consequences
 
-- Anything that must be reachable 24/7 (broker, dashboards, remote access) belongs on the
-  **nas-Pi5**, not the borg-pi5.
-- On-demand edge jobs (camera recognition, ADS-B, bird logging) run on the **borg-pi5** and
-  are simply unavailable while it is powered down — the rest of the system keeps working.
+- The **borg-pi5 is the hub**: broker, dashboards, inference and the light/MQTT automation
+  all live on it. While it is powered down, those are unavailable (a deliberate trade-off
+  for keeping everything on the central unit).
+- The **nas-Pi5** only stays reachable 24/7 for **remote access** and holds occasionally
+  **archived images/data** — it is not required for the unit to run.
