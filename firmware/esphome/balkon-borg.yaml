@@ -1,0 +1,233 @@
+# Balkon-Borg ESP32 front panel (ESPHome).
+#
+# Reads the 4 illuminated buttons, the rotary encoder, the LD2410B presence radar
+# and the BME280, and controls the WLED light directly over MQTT. Pin mapping
+# follows the carrier board (pcb/docs/board-spec.md / gen-netlist.py).
+#
+# Light control (all via WLED's MQTT API, no wire to WLED):
+#   Button 1 : toggle light on/off
+#   Button 2 : scene "cozy"  (WLED preset 1)
+#   Button 3 : scene "party" (WLED preset 2)
+#   Button 4 : toggle presence-automatic (radar auto-on)
+#   Encoder  : brightness up/down;  encoder push: light off
+#   Radar    : when automatic is on, presence turns the light on, absence off
+# Button LEDs: LED1 = presence, LED4 = automatic active.
+
+substitutions:
+  name: balkon-borg
+  wled_topic: "wled/balkon"          # WLED device MQTT topic (set in WLED config)
+
+esphome:
+  name: ${name}
+  friendly_name: Balkon-Borg
+  on_boot:
+    priority: -100
+    then:
+      - if:
+          condition:
+            lambda: "return id(auto_mode);"
+          then:
+            - output.turn_on: led4
+          else:
+            - output.turn_off: led4
+
+esp32:
+  board: esp32dev                    # ESP32-DevKitC (WROOM-32)
+  framework:
+    type: arduino
+
+logger:
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "${name} fallback"
+
+api:
+  encryption:
+    key: !secret api_key
+
+ota:
+  - platform: esphome
+
+mqtt:
+  broker: !secret mqtt_broker        # the NAS-Pi Mosquitto
+  username: !secret mqtt_user
+  password: !secret mqtt_password
+  discovery: true
+
+globals:
+  - id: brightness
+    type: int
+    restore_value: yes
+    initial_value: "128"
+  - id: auto_mode
+    type: bool
+    restore_value: yes
+    initial_value: "true"
+
+# ---- Buses --------------------------------------------------------------------
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+
+uart:
+  id: uart_radar
+  tx_pin: GPIO17                      # -> radar RX
+  rx_pin: GPIO16                      # <- radar TX
+  baud_rate: 256000
+  parity: NONE
+  stop_bits: 1
+
+ld2410:
+  uart_id: uart_radar
+
+# ---- Helpers ------------------------------------------------------------------
+script:
+  - id: send_brightness
+    then:
+      - mqtt.publish_json:
+          topic: "${wled_topic}/api"
+          payload: |-
+            root["bri"] = id(brightness);
+
+# ---- Environment sensors ------------------------------------------------------
+sensor:
+  - platform: bme280_i2c
+    address: 0x76
+    temperature:
+      name: "Balkon Temperatur"
+    humidity:
+      name: "Balkon Luftfeuchte"
+    pressure:
+      name: "Balkon Luftdruck"
+    update_interval: 30s
+
+  - platform: ld2410
+    moving_distance:
+      name: "Radar Bewegungsdistanz"
+    still_distance:
+      name: "Radar Ruhedistanz"
+
+  # Rotary encoder -> brightness.
+  - platform: rotary_encoder
+    id: enc
+    pin_a: GPIO32
+    pin_b: GPIO33
+    on_clockwise:
+      - lambda: "id(brightness) = min(255, id(brightness) + 16);"
+      - script.execute: send_brightness
+    on_anticlockwise:
+      - lambda: "id(brightness) = max(0, id(brightness) - 16);"
+      - script.execute: send_brightness
+
+# ---- Button LEDs (via NPN, GPIO high = on) ------------------------------------
+output:
+  - platform: gpio
+    pin: GPIO4
+    id: led1
+  - platform: gpio
+    pin: GPIO23
+    id: led2
+  - platform: gpio
+    pin: GPIO18
+    id: led3
+  - platform: gpio
+    pin: GPIO19
+    id: led4
+
+# ---- Inputs -------------------------------------------------------------------
+binary_sensor:
+  # Presence radar.
+  - platform: ld2410
+    has_target:
+      id: presence
+      name: "Präsenz"
+      filters:
+        - delayed_off: 120s          # keep "present" 2 min after last detection
+      on_press:
+        - output.turn_on: led1
+        - if:
+            condition:
+              lambda: "return id(auto_mode);"
+            then:
+              - mqtt.publish:
+                  topic: "${wled_topic}"
+                  payload: "ON"
+      on_release:
+        - output.turn_off: led1
+        - if:
+            condition:
+              lambda: "return id(auto_mode);"
+            then:
+              - mqtt.publish:
+                  topic: "${wled_topic}"
+                  payload: "OFF"
+
+  # Button 1: toggle light.
+  - platform: gpio
+    name: "Taster 1"
+    pin:
+      number: GPIO13
+      mode: INPUT_PULLUP
+      inverted: true
+    on_press:
+      - mqtt.publish:
+          topic: "${wled_topic}"
+          payload: "T"
+
+  # Button 2: scene cozy (preset 1).
+  - platform: gpio
+    name: "Taster 2"
+    pin:
+      number: GPIO14
+      mode: INPUT_PULLUP
+      inverted: true
+    on_press:
+      - mqtt.publish_json:
+          topic: "${wled_topic}/api"
+          payload: |-
+            root["ps"] = 1;
+
+  # Button 3: scene party (preset 2).
+  - platform: gpio
+    name: "Taster 3"
+    pin:
+      number: GPIO27
+      mode: INPUT_PULLUP
+      inverted: true
+    on_press:
+      - mqtt.publish_json:
+          topic: "${wled_topic}/api"
+          payload: |-
+            root["ps"] = 2;
+
+  # Button 4: toggle presence-automatic.
+  - platform: gpio
+    name: "Taster 4 (Automatik)"
+    pin:
+      number: GPIO26
+      mode: INPUT_PULLUP
+      inverted: true
+    on_press:
+      - lambda: "id(auto_mode) = !id(auto_mode);"
+      - if:
+          condition:
+            lambda: "return id(auto_mode);"
+          then:
+            - output.turn_on: led4
+          else:
+            - output.turn_off: led4
+
+  # Encoder push: light off.
+  - platform: gpio
+    name: "Encoder-Taster"
+    pin:
+      number: GPIO25
+      mode: INPUT_PULLUP
+      inverted: true
+    on_press:
+      - mqtt.publish:
+          topic: "${wled_topic}"
+          payload: "OFF"
