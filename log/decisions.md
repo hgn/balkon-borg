@@ -18,6 +18,28 @@ log what is already in the code/YAML.
 
 ---
 
+## 2026-07-11 — Rear hex honeycomb grille (replaces the diagonal louvres)
+
+**Context:** the diagonal rear louvres were too small and too boring. Wanted a really
+cool vent, feasible in the material, at ~1/6-1/7 of the rear-wall area.
+
+**Decision:** a **hex honeycomb grille** on the rear wall (`_hex_grille` in
+`cad/balkon_borg.py`), a field of pointy-top hexagons in the clear zone between the
+boards. Field 108×72 mm = **15.4 % of the rear face (~1/6.5)**; `HEX_PITCH=12`,
+`HEX_WALL=2.2` → 9.8 mm openings, **~67 % open area**, webs 2.2 mm (> the 1 mm SLS
+minimum). Cells that would poke past the field are dropped, giving a clean rectangular
+field with a naturally stepped honeycomb border. HagiOne stays in the band above it.
+
+**Rationale:** honeycomb is the classic "cool enclosure vent", reads technical/premium
+and pairs with the cast SLS look; SLS prints it with no supports. Voronoi was the
+alternative (more organic) but nondeterministic and busier; honeycomb is deterministic
+and cleaner. Generous open area also improves airflow over the old 2 mm slits.
+
+**Consequence:** the straight/diagonal rear intake slits are gone; the end-wall exhaust
+slits stay. Grid is fully parametric (centre/size/pitch/web).
+
+---
+
 ## 2026-07-11 — Hollowing fix, open front, diagonal louvres, docs to English
 
 **Context:** the STL came out as a near-solid block with a closed front. Cause found:

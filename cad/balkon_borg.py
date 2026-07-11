@@ -33,6 +33,7 @@ slogans once placement is agreed on the new geometry.
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 import cadquery as cq
@@ -167,6 +168,16 @@ VENT_SLIT = 2.0        # slit width (was 4 mm)
 VENT_MID_X = 20.0      # rear vents in the clear zone between carrier and Pi
 VENT_END_Z = 100.0     # exhaust slits high on the end walls
 
+# Rear hex honeycomb grille (the eye-catcher vent). A field of pointy-top hexagons,
+# sized to ~1/6.5 of the rear-wall area, in the clear zone between the boards. SLS
+# handles this trivially (no supports); the walls stay well above the 1 mm minimum.
+GRILLE_CX = 16.0       # grille field centre X on the rear wall
+GRILLE_CZ = 44.0       # grille field centre Z (below the HagiOne band)
+GRILLE_W = 108.0       # field width   (108 x 72 = 7776 mm2 ~ 1/6.5 of 460x110)
+GRILLE_H = 72.0        # field height
+HEX_PITCH = 12.0       # hexagon centre-to-centre (across flats)
+HEX_WALL = 2.2         # solid web between openings (SLS-safe, > 1 mm)
+
 # WLED controller cradle on the top inner wall. Athom publishes NO mechanical
 # dimensions and the High-Power board has no documented mount holes, so this is a
 # generous friction/zip-tie pocket. ESTIMATE (verify against the real board):
@@ -204,6 +215,36 @@ def _pattern(center: tuple[float, float], dx: float, dz: float
 
 def _cyl(d: float, h: float, pnt: cq.Vector, direction: cq.Vector) -> cq.Solid:
     return cq.Solid.makeCylinder(d / 2, h, pnt, direction)
+
+
+def _hex_grille(cx: float, cz: float, w: float, h: float, pitch: float,
+                web: float, ylo: float, yhi: float) -> cq.Compound:
+    """A field of pointy-top hexagonal through-holes for a rear vent grille.
+
+    Returns one compound of hex prisms (spanning y = ylo..yhi) to cut in a single
+    boolean op. Openings are `pitch - web` across the flats, leaving a uniform `web`
+    between neighbours. Cells whose opening would poke past the field are dropped,
+    giving a clean rectangular field with a naturally stepped honeycomb border.
+    """
+    af = pitch - web                      # opening across-flats
+    r = af / math.sqrt(3.0)               # circumradius (also vertical half-extent)
+    half_w, half_h = af / 2.0, r
+    x0, x1 = cx - w / 2.0, cx + w / 2.0
+    z0, z1 = cz - h / 2.0, cz + h / 2.0
+    dy = pitch * math.sqrt(3.0) / 2.0     # row spacing
+    prisms: list[cq.Solid] = []
+    z, row = z0 + half_h, 0
+    while z <= z1 - half_h + EPS:
+        x = x0 + half_w + (pitch / 2.0 if row % 2 else 0.0)
+        while x <= x1 - half_w + EPS:
+            pts = [cq.Vector(x + r * math.sin(math.radians(60 * i)), ylo,
+                             z + r * math.cos(math.radians(60 * i))) for i in range(6)]
+            face = cq.Face.makeFromWires(cq.Wire.makePolygon(pts + [pts[0]]))
+            prisms.append(cq.Solid.extrudeLinear(face, cq.Vector(0, yhi - ylo, 0)))
+            x += pitch
+        z += dy
+        row += 1
+    return cq.Compound.makeCompound(prisms)
 
 
 def build_body() -> cq.Workplane:
@@ -289,15 +330,10 @@ def build_body() -> cq.Workplane:
         body = body.cut(_cyl(PWR_SCREW_D, WALL + 2 * EPS,
                              cq.Vector(px, -EPS, pz + s * PWR_SCREW_DZ / 2),
                              cq.Vector(0, 1, 0)))
-    # Diagonal ventilation louvres in the rear wall, in the clear zone between the
-    # carrier and the Pi. 2 mm slits keep insects out; the diagonal is a styling cue.
-    for z in (20, 34, 48, 62, 76):
-        louvre = cq.Solid.makeBox(
-            40.0, WALL + 2 * EPS, VENT_SLIT,
-            cq.Vector(VENT_MID_X - 20, -EPS, z - VENT_SLIT / 2))
-        louvre = louvre.rotate(cq.Vector(VENT_MID_X, 0, z),
-                               cq.Vector(VENT_MID_X, 1, z), 30)
-        body = body.cut(louvre)
+    # Hex honeycomb grille in the rear wall (the eye-catcher vent), in the clear zone
+    # between the carrier and the Pi. Generous open area, insect-safe webs, cast look.
+    body = body.cut(_hex_grille(GRILLE_CX, GRILLE_CZ, GRILLE_W, GRILLE_H,
+                                HEX_PITCH, HEX_WALL, -EPS, WALL + EPS))
     # Exhaust: slits high on both end walls (hot air rises; the top is ceiling).
     for sx in (1, -1):
         for z in (VENT_END_Z, VENT_END_Z + 4):
@@ -386,7 +422,7 @@ def build_body() -> cq.Workplane:
             .text(TEXT_RIGHT, TEXT_SIZE, TEXT_DEPTH, combine=True))
     body = (body.faces("<Z").workplane(centerOption="CenterOfBoundBox")
             .center(BOTTOM_X, 0).text(TEXT_BOTTOM, BOTTOM_SIZE, TEXT_DEPTH, combine=True))
-    # HagiOne also on the rear wall, in the clear upper band above the louvres.
+    # HagiOne also on the rear wall, in the clear upper band above the grille.
     body = (body.faces("<Y").workplane(centerOption="CenterOfBoundBox")
             .center(0, 35).text(TEXT_RIGHT, TEXT_SIZE, TEXT_DEPTH, combine=True))
 
