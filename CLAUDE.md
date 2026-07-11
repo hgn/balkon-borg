@@ -54,9 +54,9 @@ Verzeichnisse erst anlegen, wenn der erste echte Inhalt entsteht, nicht auf Vorr
 
 ## Konventionen für dieses Projekt
 
-- **All text in English** — docs, prose, comments, commit messages, chat replies.
-  Code/identifiers English too. Existing German docs are not retro-translated;
-  write English from here on.
+- **Chat in German, everything written in English** — code, identifiers, comments,
+  documentation and commit messages are English; chat replies to the user are German.
+  Existing German docs are not retro-translated.
 - **CAD ist Code, kein Klickmodell**: `cad/balkon_borg.py` bleibt parametrisch.
   Reale Maße (Board-Vermessung, Insert-/Diffusor-Passung) als benannte Parameter
   oben im File, nicht als Magic Numbers im Body.
