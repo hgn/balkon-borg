@@ -77,7 +77,17 @@ Complements `power-distribution.md`, `enclosure-sintering.md` and the log.
   glue from inside, wire all to +5 V/GND (always on). Do not buy generic 12 V pre-wired
   LEDs (too dim on 5 V).
 - **SDR antenna**: a cheap **telescopic SMA whip** (extends to ~30 cm+, wideband when
-  length-tuned) is the best budget "covers a lot" antenna. Mount via an **SMA-male-to-
-  SMA-female bulkhead pigtail** in the 6.5 mm end-wall hole (`ANT_POS`): pigtail SMA male
-  into the RTL-SDR (SMA female), bulkhead in the wall, antenna screws on outside. For one
-  specific band (e.g. ADS-B 1090 MHz) a tuned antenna beats a whip.
+  length-tuned) is the best budget "covers a lot" antenna. For one specific band (e.g.
+  ADS-B 1090 MHz) a tuned antenna beats a whip.
+  - **Connector chain:** RTL-SDR is **SMA female** → pigtail end **SMA male** to the SDR,
+    **SMA female bulkhead** in the 6.5 mm end-wall hole (`ANT_POS`), pushed through from
+    inside and locked outside with the nut + star washer; the antenna (SMA male) screws
+    onto the bulkhead outside. Buy a pigtail with **RG316** cable (PTFE, more durable,
+    slightly lower loss than RG174; ~5-8 €) — on a short pigtail the loss gain is tiny but
+    the quality is worth it.
+  - **Ground plane (for a whip/monopole):** the plastic wall gives the antenna no
+    counterpoise, which hurts reception. Stick a piece of **copper tape** (better than
+    aluminium foil: alu oxidises and won't contact reliably) on the inside wall and make
+    sure the SMA nut/star washer bites onto it, so the foil is grounded to the connector
+    shell. Size it ~quarter-wave: ~7 cm helps a lot at ADS-B/UHF; low VHF would need an
+    impractically large sheet. A **dipole** antenna needs none of this (it is balanced).
