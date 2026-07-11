@@ -146,6 +146,8 @@ HG_POS = (25.0, 60.0)          # small HagiOne below it
 EPS = 0.1
 TOL = 0.4               # SLS/PA12 clearance for fits (holes, pocket, dowels)
 CORNER_R = 6.0         # rounded vertical corners (SLS lets us; premium look)
+MIRROR = True          # full left/right (X) mirror: swaps the busy +X side (Pi/SDR,
+                       # camera/radar/mic) with the quiet -X side (buttons, LED tower)
 
 # Ear gussets (triangular ribs under the ceiling ears for strength).
 GUSSET_L = 14.0        # how far the rib reaches along the ear
@@ -496,15 +498,21 @@ def build_body() -> cq.Workplane:
                                  cq.Vector(wall + outer / 2, yc, OUT_Z - EAR_T - EPS),
                                  cq.Vector(0, 0, 1)))
 
-    # Bottom (-Z) brand plate: big Balkon Borg with small HagiOne below it. Placed via
-    # ProjectedOrigin for exact centring (the +X end now carries a grille, no text).
+    # Optional full left/right mirror, applied to the finished geometry so every
+    # feature, board boss, sensor and vent flips at once. The raised text is added
+    # AFTERWARDS (at mirrored X) so it stays readable instead of coming out backwards.
+    if MIRROR:
+        body = cq.Workplane(obj=body.val().mirror("YZ"))
+    sx = -1.0 if MIRROR else 1.0
+
+    # Bottom (-Z) brand plate: big Balkon Borg with small HagiOne below it.
     bbx, bby = BB_POS
-    body = _bottom_text(body, TEXT_BOTTOM, bbx, bby, BOTTOM_SIZE, TEXT_DEPTH)
+    body = _bottom_text(body, TEXT_BOTTOM, sx * bbx, bby, BOTTOM_SIZE, TEXT_DEPTH)
     hgx, hgy = HG_POS
-    body = _bottom_text(body, "HagiOne", hgx, hgy, BOTTOM_HG_SIZE, TEXT_DEPTH)
+    body = _bottom_text(body, "HagiOne", sx * hgx, hgy, BOTTOM_HG_SIZE, TEXT_DEPTH)
     # Rear wordmarks, each centred in its half (see REAR_TEXTS), clear of the seam.
     for s, cx, cz, size in REAR_TEXTS:
-        body = _rear_text(body, s, cx, cz, size, TEXT_DEPTH)
+        body = _rear_text(body, s, sx * cx, cz, size, TEXT_DEPTH)
 
     # Trim any boolean sliver above the ceiling plane so the ear tops stay flat.
     body = body.cut(cq.Solid.makeBox(

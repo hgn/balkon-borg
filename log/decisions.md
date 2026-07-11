@@ -18,6 +18,27 @@ log what is already in the code/YAML.
 
 ---
 
+## 2026-07-11 — Full left/right mirror of the enclosure
+
+**Context:** the user asked to swap the left and right sides. A partial swap does not
+work: the +X side is committed to the Pi + RTL-SDR (the SDR sticks ~60 mm toward +X) and
+the bottom-right holds camera/radar/mic, so the buttons and the LED tower could not move
+there. The clean way is a full mirror.
+
+**Decision:** a `MIRROR` flag (default **True**). `build_body` builds all geometry, then
+mirrors the finished solid across the YZ plane (`body.val().mirror("YZ")`) so every
+feature, board boss, sensor and vent flips at once. The raised text is added **after** the
+mirror at mirrored X (`sx = -1`) so it stays readable instead of coming out backwards.
+Result: buttons → +X, grille → -X, LED tower → bottom right, Pi → -X / carrier → +X,
+sensors and status LEDs/XT60 flipped, rear HagiOne ↔ Balkon Borg swapped.
+
+**Note:** parameters still describe the **pre-mirror** layout; the mirror is a final flip.
+The PCB (`place-board.py`) is unchanged — the carrier's 4-hole pattern is symmetric so the
+board fits the mirrored bosses. Its connectors now face mirrored directions; reconcile
+cable exits at wiring time (or mirror the board layout later if wanted).
+
+---
+
 ## 2026-07-11 — Downward LED indicator tower on the bottom
 
 **Context:** the user wants a permanently-lit power indicator: a square boss hanging
