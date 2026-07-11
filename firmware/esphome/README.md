@@ -1,40 +1,42 @@
-# firmware/esphome — ESP32-Frontplatte
+# firmware/esphome — ESP32 front panel
 
-ESPHome-Config für den ESP32-DevKitC auf der Trägerplatine. Liest Taster, Encoder,
-LD2410B-Radar und BME280 und steuert das **WLED-Licht direkt über MQTT**.
+ESPHome config for the ESP32-DevKitC on the carrier board. Reads the buttons,
+encoder, LD2410B radar and BME280, and controls the **WLED light directly over
+MQTT**.
 
-## Pinbelegung
+## Pin mapping
 
-Folgt `../../pcb/docs/board-spec.md`: Taster GPIO13/14/27/26, Taster-LEDs
-GPIO4/23/18/19, Encoder A/B/SW GPIO32/33/25, Radar-UART GPIO16(RX)/17(TX),
-I²C GPIO21(SDA)/22(SCL). Die Serienwiderstände auf der Platine sind für ESPHome
-transparent.
+Follows `../../pcb/docs/board-spec.md`: buttons GPIO13/14/27/26, button LEDs
+GPIO4/23/18/19, encoder A/B/SW GPIO32/33/25, radar UART GPIO16(RX)/17(TX),
+I²C GPIO21(SDA)/22(SCL). The series resistors on the board are transparent to
+ESPHome.
 
-## Bedienung
+## Controls
 
-| Element | Funktion |
+| Element | Function |
 |---|---|
-| Taster 1 | Licht an/aus (WLED `T`) |
-| Taster 2 | Szene „cozy" (WLED-Preset 1) |
-| Taster 3 | Szene „party" (WLED-Preset 2) |
-| Taster 4 | Präsenz-Automatik an/aus (LED4 zeigt Zustand) |
-| Encoder drehen | Helligkeit +/- |
-| Encoder drücken | Licht aus |
-| Radar | bei aktiver Automatik: Präsenz schaltet Licht an, Abwesenheit (nach 2 min) aus |
-| LED1 | Präsenz erkannt |
+| Button 1 | light on/off (WLED `T`) |
+| Button 2 | scene "cozy" (WLED preset 1) |
+| Button 3 | scene "party" (WLED preset 2) |
+| Button 4 | presence automatic on/off (LED4 shows state) |
+| Encoder turn | brightness +/- |
+| Encoder push | light off |
+| Radar | with automatic on: presence turns the light on, absence (after 2 min) off |
+| LED1 | presence detected |
 
-## Voraussetzungen
+## Prerequisites
 
-- **WLED** muss MQTT aktiviert haben, Device-Topic = `wled/balkon` (sonst
-  `substitutions.wled_topic` anpassen). Presets 1/2 in WLED anlegen.
-- **Mosquitto** auf dem NAS-Pi, Zugangsdaten in `secrets.yaml`.
+- **WLED** with MQTT enabled, device topic `wled/balkon` (else adjust
+  `substitutions.wled_topic`). Create presets 1/2 in WLED.
+- **Mosquitto** on the NAS-Pi; credentials in `secrets.yaml`.
 
-## Flashen
+## Build / flash
 
 ```
-cp secrets.yaml.example secrets.yaml   # und ausfüllen
-esphome run balkon-borg.yaml            # erstes Mal per USB, danach OTA
+make check                             # YAML sanity check (via make)
+cp secrets.yaml.example secrets.yaml   # and fill in
+esphome run balkon-borg.yaml           # first time over USB, then OTA
 ```
 
-**Wichtig:** den DevKit **vor dem Einbau** flashen (oder aus dem Sockel ziehen),
-im Gehäuse ist der USB-Port schlecht erreichbar.
+**Important:** flash the DevKit **before** installing it (or pull it from the
+socket); the USB port is hard to reach once the enclosure is assembled.

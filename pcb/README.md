@@ -1,40 +1,39 @@
-# pcb — Trägerplatine (Sensor-Carrier)
+# pcb — Sensor carrier board (KiCad)
 
-ESP32-Frontplatine, THT, 2-Lagen, gefertigt bei Aisler. Verbindliche Vorlage:
-[`docs/board-spec.md`](docs/board-spec.md). Entscheidungen im Projekt-Log
+The ESP32 front panel: THT, 2 layers, made at Aisler. Binding source of truth:
+[`docs/board-spec.md`](docs/board-spec.md). Decisions are in the project log
 (`../log/decisions.md`).
 
-## Ablauf (Netzliste per Code, Layout im KiCad)
+## Flow (netlist from code, layout scripted)
 
-Die Schaltung inklusive der korrekten ESP32-DevKitC-V4-Pinzuordnung wird als Code
-beschrieben und daraus eine KiCad-Netzliste erzeugt. Du machst nur das Layout.
+The schematic — including the correct ESP32-DevKitC-V4 pin mapping — is described in
+code and turned into a KiCad netlist; placement and routing are scripted so the
+board is reproducible.
 
-1. **Netzliste erzeugen** (schon geschehen, bei Änderungen neu):
+1. **Netlist** from `gen-netlist.py` (SKiDL) → `balkon-borg-carrier.net`:
    ```
-   KICAD9_SYMBOL_DIR=/usr/share/kicad/symbols \
-   KICAD9_FOOTPRINT_DIR=/usr/share/kicad/footprints \
-   ../.venv/bin/python gen-netlist.py      # -> balkon-borg-carrier.net
+   make -C pcb netlist
    ```
-2. **In KiCad importieren:** KiCad → **PCB-Editor** (Pcbnew) öffnen →
-   *Datei → Importieren → Netzliste…* → `balkon-borg-carrier.net` wählen →
-   *Aktuelles PCB aktualisieren*. Alle 33 Bauteile erscheinen mit Footprints.
-3. **Layout:** Bauteile auseinanderziehen, Außenkontur auf `Edge.Cuts` zeichnen
-   (kommt später aus der Carrier-Bucht des Gehäuses), Stecker an die Ränder,
-   Leiterbahnen ziehen (2 Lagen, großzügig). Ergonomie: viel Abstand.
-4. **DRC** sauber, dann Fertigungsdaten:
+2. **Import** into an empty `balkon-borg-carrier.kicad_pcb` (KiCad: *File → Import →
+   Netlist*), or start from the committed board.
+3. **Place + route** (one-time, headless): `place-board.py` lays out the footprints,
+   draws the outline, adds the mounting holes and the "HagiOne" silkscreen, exports a
+   Specctra DSN; Freerouting autoroutes it; `apply-ses.py` imports the session back.
+   (Freerouting is an external tool, not vendored.)
+4. **Fabrication outputs**:
    ```
-   ../.venv/bin/python scripts/gen-outputs.py balkon-borg-carrier.kicad_pcb
+   make -C pcb outputs        # gerbers/drill/pos + Aisler zip into output/
    ```
-5. Gerber-Zip zu **Aisler** hochladen (oder KiCad-Push).
+5. Upload the gerber zip to **Aisler**.
 
-## Dateien
+## Files
 
-- `gen-netlist.py` — SKiDL-Skript, erzeugt die Netzliste aus `docs/board-spec.md`.
-- `balkon-borg-carrier.net` — generierte KiCad-Netzliste (Import-Quelle).
-- `scripts/gen-outputs.py` — Fertigungsoutput via `kicad-cli`.
+- `gen-netlist.py` — SKiDL script, builds the netlist from `docs/board-spec.md`.
+- `place-board.py` / `apply-ses.py` — headless placement and Specctra-session import
+  (run with the system python, which has the KiCad `pcbnew` module).
+- `scripts/gen-outputs.py` — fabrication output via `kicad-cli`.
 
-## Konventionen
+## Conventions
 
-Doku deutsch, Netznamen/Bezeichner englisch. THT-only, JST-XH 2,5 mm, großzügige
-Abstände. Änderungen an der Schaltung immer in `gen-netlist.py`, dann Netzliste neu
-erzeugen und in KiCad *Netzliste importieren* wiederholen (aktualisiert das PCB).
+Comments/net names in English. THT only, JST-XH 2.5 mm, generous spacing. Change the
+schematic only in `gen-netlist.py`, then regenerate the netlist and re-import.

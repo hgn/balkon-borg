@@ -1,53 +1,54 @@
-# 5-V-Verteilung mit Abzweigsicherungen
+# 5 V distribution with branch fuses
 
-Ein Einspeisepunkt (XT60), dann eine abgesicherte Sternverteilung zu den Abnehmern.
-Das 230-V-Netzteil bleibt **extern** in eigenem V-0-/Metallgehäuse; hierher kommt
-nur 5 V DC.
+One feed-in point (XT60), then a fused star distribution to the loads. The 230 V
+power supply stays **external** in its own V-0/metal enclosure; only 5 V DC comes
+in here.
 
-## Schema
+## Diagram
 
 ```
- externes Netzteil (Mean Well LRS-150-5, auf 5,15 V getrimmt)
-        │ 5 V / GND, kurzes dickes Kabel (2,5 mm2)
+ external PSU (Mean Well LRS-150-5, trimmed to 5.15 V)
+        │ 5 V / GND, short thick cable (2.5 mm2)
         ▼
-   [ XT60E-M ]  Panel-Stecker in der Rückwand
+   [ XT60E-M ]  panel connector in the rear wall
         │
         ▼
-   5V+ Sammelpunkt (Wago 221, 5-Leiter)          GND Sammelpunkt (Wago 221)
-        ├──[ Sicherung 10 A ]── LED-Panel / WLED-Controller   ── GND ─┤
-        ├──[ Sicherung  5 A ]── Raspberry Pi 5                 ── GND ─┤
-        └──[ Sicherung  2 A ]── Trägerplatine (J_PWR)          ── GND ─┤
-                 (die 2 A macht die Platine selbst per F1/Polyfuse)
+   5V+ junction (Wago 221, 5-way)                GND junction (Wago 221)
+        ├──[ fuse 10 A ]── LED panel / WLED controller       ── GND ─┤
+        ├──[ fuse  5 A ]── borg-pi5                           ── GND ─┤
+        └──[ fuse  2 A ]── carrier board (J_PWR)              ── GND ─┤
+                 (the 2 A is the board's own F1 / polyfuse)
 ```
 
-## Abzweige, Sicherung, Leiterquerschnitt
+## Branches, fuse, wire gauge
 
-| Abzweig | Dauerstrom | Sicherung | Litze (5 V) |
+| Branch | Continuous current | Fuse | Wire (5 V) |
 |---|---|---|---|
-| LED-Panel / WLED | ~8 A (WLED-ABL auf 8 A) | **10 A** Kfz-Flachsicherung (Mini) | 2,5 mm² |
-| Raspberry Pi 5 | ~3-5 A | **5 A** Kfz-Flachsicherung (Mini) | 1,5 mm² |
-| Trägerplatine | ~1 A | on-board **F1 (2 A Polyfuse)** | 0,5 mm² (JST-XH) |
-| Summe | ~12-14 A | — | XT60 (60 A) trägt das locker |
+| LED panel / WLED | ~8 A (WLED ABL at 8 A) | **10 A** blade fuse (mini) | 2.5 mm² |
+| borg-pi5 | ~3-5 A | **5 A** blade fuse (mini) | 1.5 mm² |
+| carrier board | ~1 A | on-board **F1 (2 A polyfuse)** | 0.5 mm² (JST-XH) |
+| total | ~12-14 A | — | XT60 (60 A) carries it easily |
 
-Sicherungen als **Inline-Flachsicherungshalter** (Kfz-Mini) direkt am Sammelpunkt,
-+5-V-seitig. GND gemeinsam, ungesichert.
+Fuses as **inline blade-fuse holders** (automotive mini) at the junction, on the
++5 V side. GND common, unfused.
 
-## Wichtige Punkte
+## Key points
 
-- **5 V kurz halten.** Netzteil-Gehäuse direkt neben dem Hub, langes Kabel nur auf
-  der 230-V-Seite (siehe Log 2026-07-10). 5 V über lange Strecke = Spannungsabfall.
-- **Pi 5 will 5,1-5,15 V** und zieht Einschaltspitzen; die 5-A-Sicherung ist träge
-  genug wählen (Kfz-Flachsicherungen sind das von Natur aus). Siehe
-  `build-notes.md` zum USB-Strom/PD-Thema.
-- **LED-Einspeisung**: bei 344 RGBW-LEDs das 5 V möglichst nah am Panel einspeisen
-  (kurze dicke Leitung), sonst Helligkeits-/Farbabfall am Strangende. WLED-ABL auf
-  8 A hält Strom und Wärme im Rahmen.
-- **Gemeinsames GND** für alle (WLED-Datenleitung braucht GND-Bezug zum Panel).
+- **Keep 5 V short.** PSU enclosure right next to the hub, the long run only on the
+  230 V side (see log 2026-07-10). 5 V over a long run drops too much.
+- **borg-pi5 wants 5.1-5.15 V** and draws inrush spikes; pick the 5 A fuse slow
+  enough (automotive blade fuses are, by nature). See `build-notes.md` for the
+  USB current / PD topic.
+- **LED feed:** with 344 RGBW LEDs, inject 5 V as close to the panel as possible
+  (short thick wire), else brightness/colour drops at the strip end. WLED ABL at
+  8 A keeps current and heat in check.
+- **Common GND** for everything (the WLED data line needs a GND reference to the
+  panel).
 
-## Stückliste Verteilung
+## Distribution parts list
 
-- 1× XT60E-M (Rückwand) + XT60-Buchse am Netzteilkabel
-- 2× Wago 221 (5-Leiter) für 5V+ und GND
-- 1× Inline-Flachsicherungshalter + 10-A-Mini-Sicherung (LED)
-- 1× Inline-Flachsicherungshalter + 5-A-Mini-Sicherung (Pi)
-- Litze 2,5 / 1,5 / 0,5 mm², Aderendhülsen
+- 1× XT60E-M (rear wall) + XT60 socket on the PSU cable
+- 2× Wago 221 (5-way) for 5V+ and GND
+- 1× inline blade-fuse holder + 10 A mini fuse (LED)
+- 1× inline blade-fuse holder + 5 A mini fuse (borg-pi5)
+- wire 2.5 / 1.5 / 0.5 mm², ferrules

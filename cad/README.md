@@ -1,29 +1,34 @@
-# cad — Gehäuse (CadQuery)
+# cad — Enclosure (CadQuery)
 
-Parametrisches, deckenmontiertes Gehäuse. Panel zeigt nach unten, Bedienung an der
-Seite, Deckenbefestigung über seitliche Nasen. Grundsatzentscheidungen im
-Projekt-Log (`../log/decisions.md`).
+Parametric, ceiling-mounted enclosure. The LED panel faces forward to the terrace,
+controls sit on the side wall, ceiling mounting via side-wall ears. Manufactured by
+SLS in PA12 (see `../docs/enclosure-sintering.md`). Design rationale is in the
+project log (`../log/decisions.md`).
 
-## Werkzeug
+## Tooling
 
-CadQuery in einem projektlokalen venv (`../.venv`, nicht eingecheckt). Einmalig:
+CadQuery in a project-local venv (`../.venv`, not committed). One-time setup:
 
 ```
 python3 -m venv ../.venv && ../.venv/bin/pip install cadquery matplotlib
 ```
 
-## Bauen und ansehen
+## Build and view
 
 ```
-../.venv/bin/python balkon_borg.py                       # STEP/STL nach build/
-../.venv/bin/python preview.py build/balkon-borg-body.stl # PNG-Vorschau
+make all                 # from the repo root: cleans, then builds cad/build/
+make -C cad all          # just the enclosure
+../.venv/bin/python balkon_borg.py            # or run it directly
+../.venv/bin/python preview.py build/balkon-borg-body.stl   # quick matplotlib preview
 ```
 
-`balkon_borg.py` exportiert `balkon-borg-body`, `-left`, `-right` (Druckbett-Split
-bei X=0) als STEP (für den Druckdienst) und STL. Alle Maße stehen als Parameter
-oben im Skript; der LED-Panel-Pitch ist eine Annahme und skaliert das Ganze.
+`balkon_borg.py` exports `balkon-borg-body`, `-left`, `-right` (the print-bed split
+at X=0) as STEP (for the print service) and STL. All dimensions are parameters at
+the top of the script; the LED panel pitch is an assumption and scales the whole
+enclosure.
 
-## Offene Modell-Punkte
+## Open model items
 
-Front-Rebate für die Alu-Platte, Kamera-/Radar-/Mikro-Durchbrüche, Diffusor-Nut,
-Insektengitter, Ohr-Gussets. Die Alu-Frontplatte wird ein eigenes Teil.
+Front rebate details for the glued diffuser/panel, exact camera/radar/mic openings
+against the real parts, WLED cradle size, and soft radii at the ear roots and vent
+slits.

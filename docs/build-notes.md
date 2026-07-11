@@ -1,77 +1,74 @@
-# Bau- und Integrationsnotizen
+# Build and integration notes
 
-Sammlung der Punkte, die leicht vergessen werden, aus dem Komponenten- und
-Gehäuse-Review. Ergänzt `power-distribution.md` und das Log.
+The things that are easy to forget, from the component and enclosure reviews.
+Complements `power-distribution.md`, `enclosure-sintering.md` and the log.
 
-## Raspberry Pi 5 – Stromversorgung
+## borg-pi5 — power
 
-- Pi 5 mit **5,1-5,15 V** versorgen (Netzteil-Trimmer), sonst Unterspannungswarnungen.
-- Speist man 5 V über die **GPIO-Pins statt USB-C-PD**, erkennt der Pi kein
-  PD-Netzteil und **drosselt die USB-Ports auf ~600 mA gesamt**. Für RTL-SDR + Mikro
-  am USB in `/boot/firmware/config.txt` setzen:
+- Feed borg-pi5 with **5.1-5.15 V** (PSU trimmer), otherwise undervoltage warnings.
+- If you feed 5 V over the **GPIO pins instead of USB-C PD**, the Pi does not detect
+  a PD supply and **throttles the USB ports to ~600 mA total**. For the RTL-SDR +
+  mic on USB, set in `/boot/firmware/config.txt`:
   ```
   usb_max_current_enable=1
   ```
-- **Active Cooler ist Pflicht** (Frigate/CPU-Objekterkennung, Sommer).
+- **Active Cooler is mandatory** (Frigate / CPU inference, summer heat).
 
-## RTL-SDR am Pi-USB
+## RTL-SDR on the borg-pi5 USB
 
-- Der SDR steckt im Pi-USB und ragt ~60 mm heraus → Pi-Sperrbereich im Gehäuse ist
-  deutlich größer. Im CAD ist der SDR nach +X (zur Stirnseite) eingeplant, dort
-  frei zwischen Pi-Kante (x≈124) und Strom-/Status-Bereich.
-- **ADS-B wird nicht genutzt** (Nutzerentscheidung) → keine Himmelsantenne nötig.
+- The SDR plugs into a Pi USB port and sticks out ~60 mm → the Pi keep-out in the
+  enclosure is much larger. In the CAD it points towards +X (to the end wall),
+  clear between the Pi edge (x≈124) and the power/status area.
+- **ADS-B is not used** (user decision) → no sky antenna needed.
 
-## ESP32 flashen
+## Flashing the ESP32
 
-- **Vor dem Einbau** per USB flashen (`esphome run`), danach OTA. Im eingebauten
-  Zustand ist der DevKit-USB schlecht erreichbar; der DevKit ist gesteckt, also
-  notfalls aus dem Sockel ziehen.
+- Flash it **before installing** (`esphome run`), then OTA. The DevKit USB is hard
+  to reach once installed; the DevKit is socketed, so pull it if you must re-flash.
 
-## WLAN-Antennen
+## WiFi antennas
 
-- ESP32-DevKit und WLED-Controller haben PCB-Antennen. **Nicht hinter Metall**
-  legen (Alu-Rückseite des LED-Panels!). ASA ist HF-durchlässig; die Module mit
-  ihrer Antennenseite Richtung Kunststoffwand, nicht Richtung Panel-Alu.
+- The ESP32-DevKit and the WLED controller have PCB antennas. **Do not place them
+  behind metal** (the LED panel's aluminium back!). PA12/plastic is RF-transparent;
+  point the antenna side towards a plastic wall, not the panel aluminium.
 
-## WLED-Controller (Athom High Power)
+## WLED controller (Athom High Power)
 
-- **Athom veröffentlicht keine Mechanik-Maße** (Produktseite/Reseller/Forum geprüft),
-  und die High-Power-Platine hat keine dokumentierten Montagelöcher. Daher im CAD
-  eine **Cradle** (Aufnahme-Tasche mit Kabelöffnung) an der Oberwand, Board per
-  **Kabelbinder** fixiert. Taschenmaß `WLED_BOARD_W/L` ist ein Schätzwert
-  (66×44 mm) → am realen Board messen und anpassen.
+- **Athom publishes no mechanical dimensions** (product page/reseller/forum checked),
+  and the High-Power board has no documented mounting holes. So the CAD has a
+  **cradle** (pocket with a cable opening) on the top wall, board held by a **zip
+  tie**. Pocket size `WLED_BOARD_W/L` is an estimate (66×44 mm) → measure the real
+  board and adjust.
 
 ## BME280
 
-- Sitzt an der **Bodenöffnung** (Loch + Gitter im CAD), misst so die Außenluft und
-  nicht die aufgewärmte Innenluft. Nicht luftdicht einbauen.
+- Sits at the **bottom opening** (hole + grid in the CAD), so it reads outside air,
+  not the warmed interior. Do not seal it in airtight.
 
-## Lüftung / Insektenschutz
+## Ventilation / insect protection
 
-- Einlass: 2-mm-Schlitze in der Rückwand in der freien Mittelzone (nicht mehr
-  hinter den Platinen). Auslass: hohe Schlitze an den Stirnseiten (Wärme steigt,
-  die Deckenseite ist zu). **2 mm hält die meisten Insekten**; für Mücken zusätzlich
-  ein Stück feines Gaze-Gitter innen aufkleben.
+- Intake: 2 mm slits in the rear wall, in the clear middle zone (no longer behind
+  the boards). Exhaust: high slits on the end walls (heat rises, the ceiling side is
+  closed). **2 mm keeps most insects out**; for mosquitoes glue a piece of fine mesh
+  on the inside.
 
-## 3D-Druck (ASA)
+## SLS printing (PA12)
 
-- Jede Gehäusehälfte auf die **Split-Fläche (X=0) legen** → Rückwand/Front stehen
-  senkrecht, saubere Schichten. Ohren ragen dann seitlich → **Stützen unter den
-  Ohren** nötig (die Gussets helfen). Erhabener Text auf Stirn-/Unterseite druckt so
-  ordentlich (senkrechte bzw. schräge Flächen, kein Boden-Overhang).
-- **ASA:** geschlossener/beheizter Drucker, Brim, gute Betthaftung. Große Hälften
-  (~230 mm) neigen zu Verzug.
-- Erst den **Passungstest** (eine Ecke mit Insert-Dom, Diffusor-Nut, Taster-Loch)
-  drucken, bevor die großen Hälften gedruckt werden.
-- Bezel separat flach drucken (Front nach oben, damit die Auflagefläche glatt wird).
+- See `enclosure-sintering.md` for the full manufacturing notes. In short: no
+  supports, clearance 0.4-0.5 mm, avoid blind cavities (powder escape), black-dyed
+  PA12 for the professional matte look.
+- Print the **fit test** first (one corner with an insert boss, diffuser rebate,
+  button hole) before the full halves.
 
-## Hardware-Checkliste (leicht vergessen)
+## Hardware checklist (easy to forget)
 
-- **Deckendübel** passend zum Deckenmaterial (4× M5 durch die Ohren, tragen alles).
-- **Heat-Inserts**: M2,5 (Pi, Carrier, WLED, Front-Bezel), M3 (Nahtklemmen).
-- **Schrauben**: M2,5 (Pi/Carrier/WLED/Bezel), M3 (Naht), M5 (Decke).
-- **Passstifte 4 mm** (Split-Ausrichtung).
-- **Panelmuttern** der 12-mm-Taster (Wanddicke 3 mm im Klemmbereich prüfen).
-- **Kfz-Flachsicherungen** 10 A + 5 A + Halter (siehe `power-distribution.md`).
-- **XT60E-M** + Gegenstecker, **Wago 221**, Litze 2,5/1,5/0,5 mm².
-- **Längeres CSI-Kabel** ist unnötig: 200-mm-Standard-Mini reicht.
+- **Ceiling anchors** to match the ceiling material (4× M5 through the ears, they
+  carry everything).
+- **Heat-set inserts**: M2.5 (Pi, carrier, WLED), M3 (seam clamps).
+- **Screws**: M2.5 (Pi/carrier/WLED), M3 (seam), M5 (ceiling).
+- **Dowel pins 4 mm** (split alignment).
+- **Panel nuts** for the 12 mm buttons (check the 3 mm wall is within their clamp
+  range).
+- **Blade fuses** 10 A + 5 A + holders (see `power-distribution.md`).
+- **XT60E-M** + mating plug, **Wago 221**, wire 2.5/1.5/0.5 mm².
+- **CSI cable:** the 200 mm standard-mini is enough; no longer cable needed.
