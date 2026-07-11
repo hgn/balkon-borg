@@ -209,8 +209,12 @@ def _cyl(d: float, h: float, pnt: cq.Vector, direction: cq.Vector) -> cq.Solid:
 def build_body() -> cq.Workplane:
     body = (cq.Workplane("XY")
             .box(OUT_W, OUT_Y, OUT_Z, centered=(True, False, False))
-            .edges("|Z or |Y").fillet(CORNER_R)  # round vertical corners + long edges
-            .faces(">Y").shell(-WALL))           # open front faces the terrace (+Y)
+            .edges("|Z or |Y").fillet(CORNER_R))  # round vertical corners + long edges
+    # Hollow it with an open front by cutting the inner cavity. (A shell AFTER
+    # filleting fails to hollow in OCC and returns a solid block, so cut instead.)
+    body = body.cut(cq.Solid.makeBox(
+        OUT_W - 2 * WALL, OUT_Y - WALL + EPS, OUT_Z - 2 * WALL,
+        cq.Vector(-(OUT_W / 2 - WALL), WALL, WALL)))
 
     # Front frame: light window, diffuser rebate, and a face to glue the panel.
     zw = (OUT_Z - WINDOW_H) / 2
@@ -380,12 +384,10 @@ def build_body() -> cq.Workplane:
     body = (body.faces("<Z").workplane(centerOption="CenterOfBoundBox")
             .center(BOTTOM_X, 0).text(TEXT_BOTTOM, BOTTOM_SIZE, TEXT_DEPTH, combine=True))
 
-    # Trim to the intended envelope (ceiling plane z=OUT_Z and the ear outer faces)
-    # so the ear tops stay flat and no boolean slivers stick out.
-    xw = OUT_W / 2 + EAR_L
-    body = body.intersect(cq.Solid.makeBox(
-        2 * xw, 3 * (OUT_Y + EAR_L), OUT_Z + 60,
-        cq.Vector(-xw, -1.5 * (OUT_Y + EAR_L), -60)))
+    # Trim any boolean sliver above the ceiling plane so the ear tops stay flat.
+    body = body.cut(cq.Solid.makeBox(
+        3 * OUT_W, 3 * (OUT_Y + EAR_L), 60,
+        cq.Vector(-1.5 * OUT_W, -1.5 * (OUT_Y + EAR_L), OUT_Z)))
     return body
 
 

@@ -23,8 +23,11 @@ render: cad                    ## render preview images into docs/img/
 	kicad-cli pcb render pcb/balkon-borg-carrier.kicad_pcb \
 	    -o docs/img/pcb-top.png --side top --background opaque --quality high
 
-preview: render                ## view all rendered PNGs fullscreen (feh)
-	feh -F $$(find . -name '*.png' -not -path './.git/*')
+preview: all render            ## build everything, then print how to view it
+	@echo
+	@echo 'View the rendered images:   feh -F **/*.png'
+	@echo 'View a part in 3D:          f3d --up=+Z cad/build/balkon-borg-body.stl'
+	@echo
 
 clean:                         ## remove all build artifacts
 	$(MAKE) -C cad clean
