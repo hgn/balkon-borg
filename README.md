@@ -23,7 +23,8 @@ by `make render`):
 - **Start here:** [decision log](log/decisions.md) (why the build is the way it is) ·
   [design review](docs/design-review.md) (open issues, ranked) ·
   [cost estimate](docs/cost-estimate.md)
-- **Build & hardware:** [network](docs/network.md) (who is on when, MQTT path) ·
+- **Build & hardware:** [network](docs/network.md) (who is on when, MQTT flow + sequence) ·
+  [light scenarios](docs/light-scenarios.md) ·
   [enclosure & SLS printing](docs/enclosure-sintering.md) ·
   [build/integration notes](docs/build-notes.md) ·
   [power distribution](docs/power-distribution.md) ·

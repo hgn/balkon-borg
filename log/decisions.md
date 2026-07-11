@@ -18,6 +18,27 @@ log what is already in the code/YAML.
 
 ---
 
+## 2026-07-11 — MQTT topic scheme + network doc, light scenarios
+
+**Network (`docs/network.md`):** documented the two-Pi split and the path
+**borg-pi5 → WiFi repeater → cable → Fritz!Box → nas-Pi5**. borg-pi5 is on-demand;
+nas-Pi5 is always on (broker + dashboards + remote access). Everything rides the one home
+LAN. Added a Mermaid topology, an MQTT flow graph and a time **sequence diagram** (GitHub
+renders Mermaid live). README fixed: the edge services (Frigate, readsb/tar1090,
+BirdNET-Go) are on borg-pi5, not the nas-Pi5.
+
+**MQTT topic scheme (target):** `balkon/env/{temperature,humidity,pressure}`,
+`balkon/presence`, `wled/balkon` + `wled/balkon/api` (commands) + `wled/balkon/v` (state),
+`balkon/cam/events`, `balkon/adsb/aircraft`, `balkon/birds/detections`. Broker on the
+nas-Pi5. The ESP32 currently also uses ESPHome MQTT discovery for its own sensor topics.
+
+**Light scenarios (`docs/light-scenarios.md`):** L1-L12 (table light, cozy, party, golden
+hour, welcome, bug-friendly amber, wind-down, reading, notification pulse, weather glance,
+scrolling text, all-off) seeding the WLED presets + button mapping. Schedule/MQTT scenes
+live on the always-on nas-Pi5 so they work when the borg-pi5 is off.
+
+---
+
 ## 2026-07-11 — Full left/right mirror of the enclosure
 
 **Context:** the user asked to swap the left and right sides. A partial swap does not

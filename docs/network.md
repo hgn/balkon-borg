@@ -44,6 +44,82 @@ So: **borg-pi5 → WiFi repeater → (cable) → Fritz!Box → nas-Pi5.**
 - **Remote access** (dashboards, status, control from outside the home) goes through the
   **nas-Pi5** via the Fritz!Box — the borg-pi5 is never exposed directly.
 
+## Home network
+
+Everything rides on the one **home network** (the Fritz!Box WiFi/LAN). Every device joins
+it: the **borg-pi5**, the **ESP32** and the **WLED controller** over WiFi (via the
+repeater), the **nas-Pi5** by cable. MQTT is just traffic on that LAN — there is no
+separate device-to-device radio link.
+
+## MQTT data flow
+
+Topic scheme (target):
+
+| Topic | Publisher → subscriber | Payload |
+|---|---|---|
+| `balkon/env/temperature` · `/humidity` · `/pressure` | ESP32 → dashboards | BME280 readings |
+| `balkon/presence` | ESP32 → dashboards | radar target on/off |
+| `wled/balkon` | ESP32 → WLED | command (`ON`/`OFF`/`T`) |
+| `wled/balkon/api` | ESP32 → WLED | JSON (`bri`, `ps`) |
+| `wled/balkon/v` | WLED → dashboards | light state |
+| `balkon/cam/events` | borg-pi5 → dashboards | Frigate detections |
+| `balkon/adsb/aircraft` | borg-pi5 → dashboards | readsb aircraft |
+| `balkon/birds/detections` | borg-pi5 → dashboards | BirdNET species |
+
+(The ESP32 currently uses ESPHome MQTT discovery for its own sensor topics, plus the
+explicit `wled/balkon` topics.)
+
+Everything passes through the broker on the nas-Pi5:
+
+```mermaid
+graph LR
+  esp["ESP32"]
+  borg["borg-pi5"]
+  broker[["Mosquitto broker<br/>(nas-Pi5)"]]
+  wled["WLED"]
+  dash["dashboards / storage<br/>(nas-Pi5)"]
+
+  esp -->|"balkon/env/*, balkon/presence"| broker
+  esp -->|"wled/balkon (+ /api)"| broker
+  borg -->|"balkon/cam, /adsb, /birds"| broker
+  broker -->|"wled/balkon"| wled
+  wled -->|"wled/balkon/v"| broker
+  broker -->|"subscribe all"| dash
+```
+
+A typical evening at the table, over time:
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant R as Radar
+  participant ESP as ESP32
+  participant BP as borg-pi5
+  participant B as Broker nas-Pi5
+  participant W as WLED
+  participant D as Dashboards
+
+  Note over R,W: presence auto-light
+  R->>ESP: target detected
+  ESP->>B: wled/balkon "ON"
+  B->>W: "ON"
+  W-->>B: wled/balkon/v (on)
+  B-->>D: light + env state
+
+  Note over ESP,W: manual scene (button 3)
+  ESP->>B: wled/balkon/api {ps:2}
+  B->>W: preset 2 (party)
+
+  Note over BP,D: borg-pi5 (when on) publishes events
+  BP-)B: balkon/cam, /adsb, /birds
+  B-->>D: event
+
+  Note over R,W: absence
+  R->>ESP: no target for 2 min
+  ESP->>B: wled/balkon "OFF"
+  B->>W: "OFF"
+```
+
 ## Consequences
 
 - Anything that must be reachable 24/7 (broker, dashboards, remote access) belongs on the
