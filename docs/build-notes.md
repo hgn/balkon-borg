@@ -76,3 +76,8 @@ Complements `power-distribution.md`, `enclosure-sintering.md` and the log.
   5–15 V** (lights straight off 5 V), **four different cool colours**. Holes are 5.2 mm;
   glue from inside, wire all to +5 V/GND (always on). Do not buy generic 12 V pre-wired
   LEDs (too dim on 5 V).
+- **SDR antenna**: a cheap **telescopic SMA whip** (extends to ~30 cm+, wideband when
+  length-tuned) is the best budget "covers a lot" antenna. Mount via an **SMA-male-to-
+  SMA-female bulkhead pigtail** in the 6.5 mm end-wall hole (`ANT_POS`): pigtail SMA male
+  into the RTL-SDR (SMA female), bulkhead in the wall, antenna screws on outside. For one
+  specific band (e.g. ADS-B 1090 MHz) a tuned antenna beats a whip.

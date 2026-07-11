@@ -202,6 +202,11 @@ REAR_TEXTS = (
 # Honeycomb grille centred on the +X end wall (replaces the old floating HagiOne and
 # the side exhaust slits). In-plane (cy, cz, w=depth Y, h=height Z), below the ears.
 END_GRILLE = (74.0, 45.0, 92.0, 58.0)
+# SDR antenna: SMA bulkhead panel-mount hole in the SDR-side end wall (same wall as the
+# grille). 6.5 mm round; a short SMA pigtail inside runs to the SDR, antenna screws on
+# outside. Placed front of the grille, mid-height, clear of grille and front frame.
+ANT_HOLE_D = 6.5
+ANT_POS = (128.0, 45.0)   # (y, z) on the end wall
 
 # WLED controller cradle on the top inner wall. Athom publishes NO mechanical
 # dimensions and the High-Power board has no documented mount holes, so this is a
@@ -403,6 +408,10 @@ def build_body() -> cq.Workplane:
     ecy, ecz, ew, eh = END_GRILLE
     body = body.cut(_hex_grille(ecy, ecz, ew, eh, HEX_PITCH, HEX_WALL,
                                 OUT_W / 2 - WALL - EPS, OUT_W / 2 + EPS, axis="x"))
+    # SMA bulkhead hole for the SDR antenna, same end wall (SDR side).
+    body = body.cut(_cyl(ANT_HOLE_D, WALL + 2 * EPS,
+                         cq.Vector(OUT_W / 2 - WALL - EPS, ANT_POS[0], ANT_POS[1]),
+                         cq.Vector(1, 0, 0)))
 
     # Sensor openings in the bottom (-Z) face, looking down at the terrace.
     cx, cy = CAM_POS
