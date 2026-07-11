@@ -4,6 +4,17 @@
 
 ---
 
+## Preview
+
+Enclosure (SLS/PA12, rounded edges, ceiling-mount ears, slogans embossed) and the
+ESP32 sensor carrier board (fully placed and routed):
+
+![Enclosure](docs/img/enclosure.png)
+
+![Carrier board](docs/img/pcb-top.png)
+
+---
+
 ## 1 · Kurzbeschreibung
 
 Ein kompaktes Gehäuse, das unter dem Balkon (über der Terrasse, ~2 m vom Esstisch) verschraubt wird und mehrere Funktionen bündelt: stimmungsvolle bis partytaugliche Beleuchtung, Präsenz- und Umwelterkennung, Flugzeug-Empfang (ADS-B) und Vogelstimmen-Erkennung. Alles läuft über einen gemeinsamen 5-V-Strang und einen MQTT-/WLAN-Bus zusammen. Ziel ist ein Aufbau, der nach *Absicht* aussieht (ein Kasten, ein Lichtfeld, minimale Kabel) statt nach Bastelei.

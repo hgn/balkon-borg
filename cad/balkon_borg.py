@@ -212,8 +212,8 @@ def _cyl(d: float, h: float, pnt: cq.Vector, direction: cq.Vector) -> cq.Solid:
 def build_body() -> cq.Workplane:
     body = (cq.Workplane("XY")
             .box(OUT_W, OUT_Y, OUT_Z, centered=(True, False, False))
-            .edges("|Z").fillet(CORNER_R)       # rounded vertical corners (SLS)
-            .faces(">Y").shell(-WALL))          # open front faces the terrace (+Y)
+            .edges("|Z or |Y").fillet(CORNER_R)  # round vertical corners + long edges
+            .faces(">Y").shell(-WALL))           # open front faces the terrace (+Y)
 
     # Front frame: light window, diffuser rebate, and a face to glue the panel.
     zw = (OUT_Z - WINDOW_H) / 2
