@@ -1,83 +1,82 @@
-# Gehäuse & Fertigung (SLS-Sintern)
+# Enclosure and manufacturing (SLS sintering)
 
-Alles zum gedruckten Gehäuse und zur Herstellung per SLS. Modell:
-`cad/balkon_borg.py`. Ergänzt `build-notes.md`.
+Everything about the printed enclosure and its manufacture by SLS. Model:
+`cad/balkon_borg.py`. Complements `build-notes.md`.
 
-## Fertigungsentscheidung: SLS / PA12, schwarz
+## Manufacturing decision: SLS / PA12, black
 
-**Verfahren: SLS** (Selective Laser Sintering, Laser verschmilzt Nylon-Pulver).
-**Material: PA12-Nylon, schwarz eingefärbt.**
+**Process: SLS** (Selective Laser Sintering, a laser fuses nylon powder).
+**Material: PA12 nylon, dyed black.**
 
-Warum SLS statt FDM/ASA oder Metall:
+Why SLS over FDM/ASA or metal:
 
-- **Optik:** SLS liefert eine gleichmäßige, fein-matte Oberfläche **ohne Schicht-
-  linien, ohne Stütz-/Nahtstellen** → Serienprodukt-Look. FDM/ASA zeigt Schicht-
-  linien (gerade an Gussets/Nasen/Rundungen) und wirkt „gedruckt".
-- **Keine Stützen** nötig (Pulverbett stützt), komplexe Geometrie problemlos,
-  isotrop fest.
-- **Metall scheidet aus:** ein Metallgehäuse ist ein Faradaykäfig und blockiert
-  WLAN (ESP, WLED) und das LD2410B-Radar (das *durch* die Kunststoffmembran sieht).
-  Metalldruck wäre bei 4,5 l zudem tausende Euro und kilo-schwer. Falls Metall-
-  Optik gewünscht: nur die Front als Alu-Blende, Körper bleibt Kunststoff.
+- **Look:** SLS gives an even, finely matte surface **with no layer lines and no
+  support or seam marks** → a production-product look. FDM/ASA shows layer lines
+  (especially on gussets, ears, rounds) and reads as "printed".
+- **No supports** needed (the powder bed supports), complex geometry is no problem,
+  isotropically strong.
+- **Metal is ruled out:** a metal enclosure is a Faraday cage and blocks WiFi (ESP,
+  WLED) and the LD2410B radar (which sees *through* the plastic membrane). Metal
+  printing would also be thousands of euros and kilograms heavy at this volume. If a
+  metal look is wanted: only the front as an aluminium bezel, the body stays plastic.
 
-### Wetter-Einordnung (entscheidend für die Materialwahl)
+### Weather assessment (decisive for the material choice)
 
-Standort: unter dem Balkon, **vollständig wettergeschützt**.
-- **Keine direkte Sonne** → PA12-Schwäche „UV" ist praktisch **kein Thema**.
-- **Kein Regen/Wasser.**
-- **Nur Luftfeuchte:** PA12 nimmt ~0,5-1 % Feuchte auf, quillt minimal, wird eher
-  zäher. Für ein Gehäuse **irrelevant**. Keine Beschichtung nötig.
+Location: under the balcony, **fully weather-protected**.
+- **No direct sun** → PA12's UV weakness is practically **a non-issue**.
+- **No rain/water.**
+- **Humidity only:** PA12 takes up ~0.5-1 % moisture, swells minimally, gets a bit
+  tougher. **Irrelevant** for an enclosure. No coating needed.
 
-→ Unter diesen Bedingungen ist SLS/PA12 die richtige Wahl. (ASA/FDM wäre nur bei
-direkter Sonne/Bewitterung materialtechnisch überlegen.)
+→ Under these conditions SLS/PA12 is the right choice. (ASA/FDM would only be
+materially superior under direct sun/weathering.)
 
-## SLS-Designregeln (im Modell umgesetzt)
+## SLS design rules (applied in the model)
 
-| Regel | Anforderung | Status im Modell |
+| Rule | Requirement | Status in the model |
 |---|---|---|
-| Wandstärke | ≥ 1 mm (tragend 2,5-3) | 3 mm (`WALL`) ✓ |
-| Passungsspalt | 0,4-0,6 mm | `TOL = 0,4` ✓ |
-| Pulver-Auslass | Sacklöcher vermeiden, Auslass ≥ 3,5 mm | Front-Inserts durchgehend; Körper vorne offen ✓ |
-| Min. Loch | ≥ 1,5 mm | kleinste 2 mm ✓ |
-| Stützen | keine | entfällt (SLS) ✓ |
-| Split-Grund | Bauraum (nicht Verzug) | Split X=0, Hälften ~230 mm |
+| Wall thickness | ≥ 1 mm (structural 2.5-3) | 3 mm (`WALL`) ✓ |
+| Fit clearance | 0.4-0.6 mm | `TOL = 0.4` ✓ |
+| Powder escape | avoid blind cavities, escape ≥ 3.5 mm | body open at the front ✓ |
+| Min. hole | ≥ 1.5 mm | smallest 2 mm ✓ |
+| Supports | none | not applicable (SLS) ✓ |
+| Split reason | build volume (not warpage) | split at X=0, halves ~230 mm |
 
-Hinweise: Blinde Insert-Löcher (Dome) vor dem Insert **mit Druckluft ausblasen**.
-Heat-Inserts (M2,5/M3) wie gehabt setzen.
+Notes: blow out blind insert holes (bosses) **with compressed air** before pressing
+the insert. Set heat-set inserts (M2.5/M3) as usual.
 
-## Druckteile (aus `cad/build/`)
+## Printed parts (from `cad/build/`)
 
-| Teil | Größe (mm) | Anzahl |
+| Part | Size (mm) | Count |
 |---|---|---|
-| `balkon-borg-left` / `-right` | je ~230 × 122 × 110 | 2 (Gehäusehälften) |
-| `balkon-borg-bezel-left` / `-right` | je ~230 × 110 × 4 | 2 (Front-Rahmen) |
+| `balkon-borg-left` / `-right` | ~230 × 122 × 110 each | 2 (enclosure halves) |
 
-Alle als **STEP** an den Dienst (STL geht auch). Material **PA12 SLS**, Farbe
-**schwarz** (eingefärbt).
+Both as **STEP** to the service (STL works too). Material **PA12 SLS**, colour
+**black** (dyed). The front stays open; the diffuser and LED panel are glued in at
+the end, so there is no separate bezel part.
 
-## Anbieter (schnell, günstig, einfach, PayPal, gute Bewertung)
+## Providers (Germany first, then EU)
 
-| Anbieter | Preis | Versand | PayPal | Bewertung / Hinweis |
-|---|---|---|---|---|
-| **JLC3DP** | sehr günstig | China (~1-2 Wo., Express schneller) | **ja** | einfachster Upload, sehr beliebt, Top-Zufriedenheit |
-| **Craftcloud** | günstig (Aggregator, findet EU-Drucker) | oft **EU → schnell** | am Checkout prüfen | Trustpilot 4,5 (82 % 5★), dead-easy |
-| **Weerg** (IT) | mittel | EU, schnell, Sofortangebot | prüfen | in-house, gut für PA12 |
-| **ZELTA3D / PRINCORE** (DE) | mittel-höher | DE, 2-4 Tage | prüfen | lokal, am schnellsten geliefert |
+Preference: a **German** service for fast delivery and easy PayPal handling; go
+abroad only for a clearly bigger advantage.
 
-**Empfehlung:**
-- Willst du **PayPal + billigst** und nimmst ~1-2 Wochen Lieferzeit in Kauf →
-  **JLC3DP** (PayPal gesichert, einfachster Prozess, hohe Zufriedenheit).
-- Willst du **schnell in DE** und PayPal ist am Checkout ok → **Craftcloud**
-  (findet einen EU-Sinterer) oder direkt **ZELTA3D/PRINCORE** (lokal, 2-4 Tage).
+| Provider | Location | Delivery | Note |
+|---|---|---|---|
+| **PRINCORE** | AT/DE | 2-4 days | German-speaking, fast, PA12 SLS in-house |
+| **Reents3D** | DE | few days | small German shop, personal support |
+| **3D-Druckdienstleister.de** | DE | few days | German portal, PA12 SLS, PayPal |
+| **Craftcloud** | EU aggregator | often EU → fast | finds an EU sinterer, check PayPal at checkout |
+| **JLC3DP** | China | ~1-2 weeks | cheapest, PayPal, only if price beats the rest clearly |
 
-Für „schnell versandt" ist ein EU/DE-Dienst (Craftcloud EU-Partner, ZELTA3D,
-PRINCORE) klar im Vorteil; für „günstig + PayPal sicher" JLC3DP.
+**Recommendation:** order from a **German** service (PRINCORE / Reents3D /
+3D-Druckdienstleister.de) for fast shipping and easy PayPal. Only fall back to
+Craftcloud (EU) or JLC3DP (China) if the price advantage is clearly worth the wait.
 
-## Bestellablauf
+## Ordering
 
-1. `cad/build/*.step` der 4 Teile hochladen.
-2. Verfahren **SLS**, Material **PA12 / Nylon**, Farbe **schwarz**.
-3. Menge 1 Satz, Vorschau prüfen (Wandstärken-Warnungen? sollten keine kommen).
-4. Erst den **Passungstest** (eine Ecke) mitbestellen oder separat, bevor der volle
-   Satz geht (siehe `build-notes.md`).
-5. Bezahlen (PayPal), liefern lassen.
+1. Upload `cad/build/*.step` of the two halves.
+2. Process **SLS**, material **PA12 / nylon**, colour **black**.
+3. Quantity 1 set, check the preview (wall-thickness warnings? there should be none).
+4. Order the **fit test** first (one corner) or separately, before the full set goes
+   out (see `build-notes.md`).
+5. Pay (PayPal), have it shipped.

@@ -1,6 +1,7 @@
-# Balkon-Borg — Projektüberblick
+# Balkon-Borg — project overview
 
-*Smarte, teils selbstgebaute Multifunktionseinheit unter dem Balkon, angebunden ans Heimnetz und an den Raspberry-Pi-Homeserver.*
+*Smart, partly self-built multifunction unit under the balcony, tied into the home
+network and the Raspberry Pi home server.*
 
 ---
 
@@ -15,97 +16,107 @@ ESP32 sensor carrier board (fully placed and routed):
 
 ---
 
-## 1 · Kurzbeschreibung
+## 1 · Short description
 
-Ein kompaktes Gehäuse, das unter dem Balkon (über der Terrasse, ~2 m vom Esstisch) verschraubt wird und mehrere Funktionen bündelt: stimmungsvolle bis partytaugliche Beleuchtung, Präsenz- und Umwelterkennung, Flugzeug-Empfang (ADS-B) und Vogelstimmen-Erkennung. Alles läuft über einen gemeinsamen 5-V-Strang und einen MQTT-/WLAN-Bus zusammen. Ziel ist ein Aufbau, der nach *Absicht* aussieht (ein Kasten, ein Lichtfeld, minimale Kabel) statt nach Bastelei.
+A compact enclosure, screwed under the balcony (above the terrace, ~2 m from the
+dining table), bundling several functions: mood-to-party lighting, presence and
+environment sensing, aircraft reception (ADS-B) and bird-call recognition. Everything
+runs off a shared 5 V feed and an MQTT/WiFi bus. The goal is a build that looks
+*intentional* (one box, one light field, minimal cabling) rather than tinkered.
 
-## 2 · Ziele
+## 2 · Goals
 
-- **Ein sichtbarer Kasten, minimale Kabel** — genau eine 230-V-Zuleitung, alles Weitere 5 V + Funk.
-- **Mehrwert statt Spielerei** — Automatiken und Daten, die im Alltag tatsächlich genutzt werden (Licht am Tisch, Wetter, Vögel, Flieger).
-- **Sauber ins bestehende Setup integriert** — MQTT-Bus, Podman/Quadlets auf dem NAS-Pi, Netdata/Grafana.
-- **Wartbar und erweiterbar** — lötarme, vorgeflashte Komponenten; Gehäuse als parametrischer Code (CadQuery), nicht als Einweg-Klickmodell.
-- **Robuster Dauerbetrieb im Freien** (geschützt) — thermisch und elektrisch auf Sommerbetrieb ausgelegt.
+- **One visible box, minimal cabling** — exactly one 230 V feed, everything else 5 V + radio.
+- **Value over gimmick** — automations and data actually used day to day (light at the table, weather, birds, aircraft).
+- **Cleanly integrated into the existing setup** — MQTT bus, Podman/Quadlets on the NAS-Pi, Netdata/Grafana.
+- **Maintainable and extensible** — low-solder, pre-flashed components; enclosure as parametric code (CadQuery), not a throwaway click model.
+- **Robust continuous outdoor operation** (protected) — thermally and electrically designed for summer duty.
 
-## 3 · Use Cases
+## 3 · Use cases
 
-| # | Use Case | Realisierung |
+| # | Use case | Realisation |
 |---|---|---|
-| U1 | Licht am Esstisch, abends automatisch | SK6812-RGBW-Panel (WLED) + LD2410B-Radar → sanftes Anfahren bei Präsenz, Warmweiß-Kanal |
-| U2 | Manuelle Lichtsteuerung ohne Handy | 4× Edelstahltaster + Drehencoder (an/aus, Szenen, Dimmen, Automatik-Pause) |
-| U3 | Effekt-/Party-Licht | WLED-2D-Effekte, Strobe, Lauftext auf der 8×43-Matrix |
-| U4 | Umweltdaten | BME280 (Temperatur/Feuchte/Druck) → MQTT → Dashboard |
-| U5 | Flugzeug-Empfang | RTL-SDR V3 + readsb/tar1090 (Anflug MUC, optional Feed) |
-| U6 | Vogelstimmen-Log | USB-Mikrofon → BirdNET → Artenstatistik über die Saison |
-| U7 | Kamera + lokale Erkennung | Camera Module 3 → Frigate (Personen/Tiere) **auf Pi-5-CPU** |
-| U8 | Passiver Funk-Mithör (optional) | LoRa/Meshtastic **RX** über den SDR (kein aktiver Sendeknoten) |
+| U1 | Light at the dining table, automatic in the evening | SK6812 RGBW panel (WLED) + LD2410B radar → soft fade-in on presence, warm-white channel |
+| U2 | Manual light control without a phone | 4× stainless buttons + rotary encoder (on/off, scenes, dimming, automation pause) |
+| U3 | Effect / party light | WLED 2D effects, strobe, scrolling text on the 8×43 matrix |
+| U4 | Environment data | BME280 (temperature/humidity/pressure) → MQTT → dashboard |
+| U5 | Aircraft reception | RTL-SDR V3 + readsb/tar1090 (approach MUC, optional feed) |
+| U6 | Bird-call log | USB microphone → BirdNET → species statistics over the season |
+| U7 | Camera + local recognition | Camera Module 3 → Frigate (people/animals) **on the Pi 5 CPU** |
+| U8 | Passive radio listening (optional) | LoRa/Meshtastic **RX** over the SDR (no active transmit node) |
 
-## 4 · Systemkomponenten (Ist-Stand)
+## 4 · System components (current state)
 
-- **Edge-Compute:** Raspberry Pi 5 (8 GB) + Active Cooler, microSD — Aufnahme (Kamera/Audio/SDR) und lokale Inferenz (Frigate, readsb).
-- **Sensor-/Bedien-Frontplatte:** ESP32 (ESPHome) mit LD2410B (UART), BME280 (I²C), 4 Taster + Encoder (GPIO).
-- **Licht:** Athom High-Power-WLED-Controller + SK6812-RGBW-WW-Kompaktpanel (8 Reihen × 43 = 344 px) auf 3-mm-Alu-Platte, Opal-Acryl-Diffusor.
-- **Empfang:** RTL-SDR V3 (ADS-B 1090 MHz, optional LoRa-RX), USB-Mikrofon.
-- **Strom:** Mean Well LRS-150F-5 (5 V/22 A) im eigenen V-0-Gehäuse, abgesicherte Abgänge.
-- **Gehäuse:** 3D-Druck in ASA, 2-teilig (Druckbett-Split mit Passstiften); Alu-Platte = Front + Kühlkörper.
-- **Backend (vorhanden):** NAS-Pi 5 mit Mosquitto (MQTT-Broker), tar1090, BirdNET-Go, Dashboards/Storage.
+- **Edge compute:** Raspberry Pi 5 (8 GB) + Active Cooler, microSD — recording (camera/audio/SDR) and local inference (Frigate, readsb).
+- **Sensor/control front panel:** ESP32 (ESPHome) with LD2410B (UART), BME280 (I²C), 4 buttons + encoder (GPIO).
+- **Light:** Athom high-power WLED controller + SK6812 RGBW-WW compact panel (8 rows × 43 = 344 px) on a 3 mm aluminium plate, opal acrylic diffuser.
+- **Reception:** RTL-SDR V3 (ADS-B 1090 MHz, optional LoRa RX), USB microphone.
+- **Power:** Mean Well LRS-150F-5 (5 V/22 A) in its own V-0 enclosure, fused branches.
+- **Enclosure:** 3D print in SLS/PA12 (black), 2 parts (build-volume split with dowel pins); aluminium plate = front + heatsink.
+- **Backend (existing):** NAS-Pi 5 with Mosquitto (MQTT broker), tar1090, BirdNET-Go, dashboards/storage.
 
-## 5 · Architektur & Datenfluss
+## 5 · Architecture and data flow
 
-Der **Edge-Pi 5** erfasst Kamera (CSI), Audio (USB) und HF (USB-SDR) und rechnet die Objekterkennung lokal — nur Events und Metadaten gehen per MQTT weiter, kein Dauer-Rohstream. Der **ESP32** bedient die menschennahe, echtzeitkritische I/O (Taster, Encoder, Radar) und die trägen Umweltsensoren; er ist bewusst die *billige, austauschbare Frontplatte*, die den teuren Rechenknoten vor der langen Außenverkabelung schützt und ihn entlastet. Der **NAS-Pi 5** ist Broker, Dashboard- und Storage-Ebene. Kopplung durchgängig über **WLAN/MQTT** (Ethernet optional).
+The **edge Pi 5** captures camera (CSI), audio (USB) and RF (USB SDR) and runs the
+object recognition locally — only events and metadata go on over MQTT, no continuous
+raw stream. The **ESP32** handles the human-facing, real-time-critical I/O (buttons,
+encoder, radar) and the slow environment sensors; it is deliberately the *cheap,
+replaceable front panel* that protects the expensive compute node from the long
+outdoor wiring and offloads it. The **NAS-Pi 5** is the broker, dashboard and storage
+layer. Coupling throughout over **WiFi/MQTT** (Ethernet optional).
 
-## 6 · Randbedingungen
+## 6 · Constraints
 
-**Umgebung**
-- Montageort Balkonunterseite: **regengeschützt**, aber erhöhte Luftfeuchte möglich; Münchner **Sommerhitze** relevant.
-- Kein echtes IP65 nötig (geschützte Lage) → **belüftetes** Gehäuse mit Schlitzen nach unten + Insektenschutz.
+**Environment**
+- Mounting location on the balcony underside: **rain-protected**, but raised humidity possible; Munich **summer heat** is relevant.
+- No true IP65 needed (protected location) → **ventilated** enclosure with slits facing down + insect protection.
 
-**Elektrik**
-- Genau **eine 230-V-Zuleitung** (Terrassensteckdose, FI-geschützt); Zielbild „keine tausend Kabel".
-- Ein gemeinsames **5-V-Netzteil**, abgesicherte Abgänge (10 A LED / 5 A Pi / 2 A Kleinelektronik), gemeinsames GND, Trimmer auf **5,15 V**.
-- **Brandschutz:** 230-V-Netzteil **getrennt** vom FDM-Druckteil (eigenes V-0-/Metallgehäuse); Druckteil führt nur Niedervolt.
+**Electrical**
+- Exactly **one 230 V feed** (terrace socket, RCD-protected); target picture "no thousand cables".
+- One shared **5 V PSU**, fused branches (10 A LED / 5 A Pi / 2 A small electronics), common GND, trimmer to **5.15 V**.
+- **Fire safety:** the 230 V PSU **separated** from the printed part (its own V-0/metal enclosure); the printed part carries low voltage only.
 
-**Thermik**
-- **Alu-Platte = Kühlkörper** der LED-Ebene, thermischer Kontakt zum Gehäuse (Wärmeleitpad an den Auflagen).
-- Pi-5-Dauerlast (jetzt inkl. **CPU-Objekterkennung**) → Active Cooler + Belüftung sind kritisch, nicht optional.
-- WLED **Automatic Brightness Limiter** auf ~8 A → begrenzt Wärme und Strom des Panels.
+**Thermal**
+- **Aluminium plate = heatsink** of the LED layer, thermal contact to the enclosure (thermal pad at the supports).
+- Pi 5 continuous load (now incl. **CPU object recognition**) → Active Cooler + ventilation are critical, not optional.
+- WLED **Automatic Brightness Limiter** at ~8 A → caps the panel's heat and current.
 
-**Mechanik / Fertigung**
-- **3D-Druck in ASA** (UV-/wärmefest bis ~95 °C); PLA scheidet aus.
-- Teile > 256 mm Kantenlänge → **gesplittet** (X=0) mit 4-mm-Passstiften; STEP an den Druckdienst (JLC3DP/Craftcloud, alternativ FabLab München).
-- Radar sieht durch **2-mm-Membran**; Kamera/Mikro-Durchbrüche integriert.
+**Mechanical / manufacturing**
+- **3D print in SLS/PA12**, black-dyed (no supports, no layer lines, production look). See `docs/enclosure-sintering.md`.
+- Parts larger than the build volume → **split** (X=0) with 4 mm dowel pins; STEP to the print service (German first: PRINCORE / Reents3D / 3D-Druckdienstleister.de).
+- Radar sees through a **2 mm membrane**; camera/mic cut-outs integrated.
 
-**Netzwerk**
-- WLAN + MQTT als Bus; **Ethernet optional** (macht nur den Videostream bombenfester).
+**Network**
+- WiFi + MQTT as the bus; **Ethernet optional** (only makes the video stream more bulletproof).
 
-**Skill-Level / Präferenzen**
-- Löten und Programmieren vorhanden, **kein Vollbastler** → lötfreie/vorgeflashte Teile bevorzugt (Athom vorgeflasht, steckbare LED-Verbinder, Taster mit Kabelschwanz).
-- **Qualität vor Preis** — spiegelt sich in RGBW-WW (echtes Warmweiß), Edelstahltastern, ASA.
+**Skill level / preferences**
+- Soldering and programming available, **not a full tinkerer** → solder-free/pre-flashed parts preferred (Athom pre-flashed, pluggable LED connectors, buttons with a pigtail).
+- **Quality over price** — reflected in RGBW-WW (real warm white), stainless buttons, SLS.
 
 **Budget**
-- **~415 €** Neuteile + **~40 €** Kleinkram (Verbinder, Sicherungen, Wago, Litze, Schrauben, Inserts, Verschraubungen). Kamera und NAS-Pi bereits vorhanden.
+- **~415 €** new parts + **~40 €** odds and ends (connectors, fuses, Wago, wire, screws, inserts, glands). Camera and NAS-Pi already on hand.
 
-## 7 · Bewusst nicht im Scope (mit Konsequenz)
+## 7 · Deliberately out of scope (with consequence)
 
-| Gestrichen | Konsequenz |
+| Dropped | Consequence |
 |---|---|
-| **E-Ink-Statusdisplay** | Datenanzeige nur über bestehende Dashboards (Grafana/tar1090). |
-| **AI HAT / Hailo-NPU** | Objekterkennung läuft auf der **Pi-5-CPU** (ein Kamerastream ok, geringere FPS); jederzeit **nachrüstbar**, PCIe-Port bleibt frei (optional NVMe-SSD). |
-| **Heltec / aktiver Meshtastic-Knoten** | LoRa nur **empfangen** über den SDR, kein Senden ins Mesh. |
-| **AS3935-Blitzsensor** | Keine lokale Gewitterfrüherkennung. |
-| **Stairville Wild Wash + USB-DMX** | Kein separater Blinder; Effekt-/Strobe-Licht kommt aus dem WLED-Panel selbst. |
+| **E-ink status display** | Data shown only via the existing dashboards (Grafana/tar1090). |
+| **AI HAT / Hailo NPU** | Object recognition runs on the **Pi 5 CPU** (one camera stream ok, lower FPS); **retrofittable** any time, the PCIe port stays free (optional NVMe SSD). |
+| **Heltec / active Meshtastic node** | LoRa **receive** only over the SDR, no transmit into the mesh. |
+| **AS3935 lightning sensor** | No local thunderstorm early warning. |
+| **Stairville Wild Wash + USB-DMX** | No separate blinder; effect/strobe light comes from the WLED panel itself. |
 
-## 8 · Offene Punkte / nächste Schritte
+## 8 · Open points / next steps
 
-1. **Klemmenbelegung** — konkrete ESP32-GPIOs, I²C-Adressen (BME280), Wago-Plan der 5-V-Verteilung.
-2. **Podman-Quadlets** — Mosquitto, Frigate (CPU-Detektor), readsb/tar1090, BirdNET-Go.
-3. **Reale Board-Vermessung** → Montagedom-Positionen in `balkon_borg.py` (CadQuery) anpassen.
-4. **WLED-Konfig** — 2D 43×8 Serpentine, ABL auf 8 A, Presets/Szenen + Taster-Mapping.
-5. **Netzteil** — EEPROM `PSU_MAX_CURRENT=5000`, Ausgang auf 5,15 V trimmen.
-6. **Passungstest** — Ecke/Braue drucken (Insert- und Diffusor-Nut-Passung) vor den großen Hälften.
+1. **Terminal assignment** — concrete ESP32 GPIOs, I²C addresses (BME280), Wago plan of the 5 V distribution.
+2. **Podman quadlets** — Mosquitto, Frigate (CPU detector), readsb/tar1090, BirdNET-Go.
+3. **Real board measurement** → adjust the mounting-boss positions in `balkon_borg.py` (CadQuery).
+4. **WLED config** — 2D 43×8 serpentine, ABL at 8 A, presets/scenes + button mapping.
+5. **PSU** — EEPROM `PSU_MAX_CURRENT=5000`, trim the output to 5.15 V.
+6. **Fit test** — print a corner/brow (insert and diffuser-rebate fit) before the big halves.
 
-## 9 · Wesentliche Risiken
+## 9 · Key risks
 
-- **Thermik im Sommer** — CPU-Detection erhöht die Dauerlast; Belüftung und Active Cooler entscheiden über Stabilität.
-- **Erkennungsleistung** — ohne NPU FPS-/Stream-begrenzt; ggf. leichteres Modell oder späteres Hailo-Retrofit.
-- **Feuchte/Kondensat** — Belüftung nach unten und ggf. Druckausgleich beachten, damit sich nichts sammelt.
+- **Thermal in summer** — CPU detection raises the continuous load; ventilation and the Active Cooler decide stability.
+- **Recognition performance** — without an NPU, FPS/stream limited; possibly a lighter model or a later Hailo retrofit.
+- **Humidity/condensation** — mind the downward ventilation and possibly pressure equalisation so nothing collects.

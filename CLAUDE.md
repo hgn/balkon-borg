@@ -1,90 +1,87 @@
 # CLAUDE.md — Balkon-Borg
 
-Projektspezifischer Arbeitskontext. Ergänzt die globalen Konventionen aus
-`~/.claude/CLAUDE.md` (Sprache, Dateinamen mit `-`, Make-Standardziele, Python-
-und C-Stil, Git-Konventionen). Bei Konflikt gewinnen die globalen Regeln, sofern
-hier nicht bewusst abgewichen wird.
+Project-specific working context. Complements the global conventions in
+`~/.claude/CLAUDE.md` (language, filenames with `-`, Make standard targets, Python
+and C style, Git conventions). On conflict the global rules win, unless this file
+deliberately deviates.
 
-## Immer zuerst lesen
+## Always read first
 
-1. Dieses File.
-2. `log/decisions.md` — das Entscheidungslog. Enthält, *warum* der Aufbau so ist,
-   wie er ist. Bevor du eine Designfrage neu diskutierst, prüfe, ob sie dort
-   schon entschieden wurde.
-3. `README.md` bei Bedarf für den vollständigen Projektüberblick (Use Cases U1–U8,
-   Komponenten, Randbedingungen, Scope-Grenzen).
+1. This file.
+2. `log/decisions.md` — the decision log. Holds *why* the build is the way it is.
+   Before re-opening a design question, check whether it is already settled there.
+3. `README.md` when you need the full project overview (use cases U1-U8, components,
+   constraints, scope boundaries).
 
-## Was das hier ist
+## What this is
 
-Hardware-plus-Software-Bastelprojekt: eine Multifunktionseinheit unter dem
-Balkon. Ein Gehäuse bündelt Licht (WLED-Panel), Präsenz-/Umweltsensorik (ESP32),
-Empfang (RTL-SDR, Mikrofon) und Kamera, angebunden per WLAN/MQTT an einen
-NAS-Pi. Details in `README.md`.
+A hardware-plus-software hobby project: a multifunction unit under the balcony. One
+enclosure bundles light (WLED panel), presence/environment sensing (ESP32), reception
+(RTL-SDR, microphone) and a camera, tied over WiFi/MQTT to a NAS-Pi. Details in
+`README.md`.
 
-Es gibt drei Rechenknoten mit klarer Rollentrennung:
-- **Edge-Pi 5** — Aufnahme (Kamera/Audio/SDR) und lokale Inferenz (Frigate,
-  readsb, BirdNET). Nur Events/Metadaten per MQTT, kein Dauer-Rohstream.
-- **ESP32 (ESPHome)** — echtzeitnahe I/O (Taster, Encoder, LD2410B-Radar) und
-  träge Umweltsensoren (BME280). Bewusst die billige, austauschbare Frontplatte.
-- **NAS-Pi 5** — MQTT-Broker (Mosquitto), Dashboards, Storage. Bereits vorhanden.
+There are three compute nodes with a clear role split:
+- **Edge Pi 5** — recording (camera/audio/SDR) and local inference (Frigate, readsb,
+  BirdNET). Only events/metadata over MQTT, no continuous raw stream.
+- **ESP32 (ESPHome)** — near-real-time I/O (buttons, encoder, LD2410B radar) and slow
+  environment sensors (BME280). Deliberately the cheap, replaceable front panel.
+- **NAS-Pi 5** — MQTT broker (Mosquitto), dashboards, storage. Already in place.
 
-## Teilbereiche und wo ihr Zeug hingehört
+## Domains and where things belong
 
-Das Projekt hat mehrere Domänen. Beim Anlegen neuer Artefakte die Domäne treffen:
+The project has several domains. When creating new artefacts, hit the right domain:
 
-| Domäne | Werkzeug / Format | geplanter Ort |
+| Domain | Tool / format | Planned location |
 |---|---|---|
-| Gehäuse (CAD) | CadQuery (Python), parametrisch, Export STEP/STL | `cad/balkon_borg.py` |
-| Trägerplatine (Sensor-Carrier) | KiCad (GUI) → Aisler; Python nur für Output/DRC/BOM | `pcb/` |
-| ESP32-Firmware | ESPHome (YAML) | `firmware/esphome/` |
-| Licht | WLED-Konfig, Presets, Taster-Mapping | `wled/` |
-| Backend-Dienste | Podman-Quadlets (Mosquitto, Frigate, readsb/tar1090, BirdNET-Go) | `deploy/quadlets/` |
-| Verdrahtung | Klemmenbelegung, GPIO-/I²C-/Wago-Plan | `docs/wiring.md` |
+| Enclosure (CAD) | CadQuery (Python), parametric, export STEP/STL | `cad/balkon_borg.py` |
+| Carrier board (sensor carrier) | netlist from code (SKiDL) → Aisler; Python for output/DRC/BOM | `pcb/` |
+| ESP32 firmware | ESPHome (YAML) | `firmware/esphome/` |
+| Light | WLED config, presets, button mapping | `wled/` |
+| Backend services | Podman quadlets (Mosquitto, Frigate, readsb/tar1090, BirdNET-Go) | `deploy/quadlets/` |
+| Wiring | terminal assignment, GPIO/I²C/Wago plan | `docs/wiring.md` |
 
-Verzeichnisse erst anlegen, wenn der erste echte Inhalt entsteht, nicht auf Vorrat.
+Create directories only when the first real content appears, not on spec.
 
-## Wichtige Doku-Dateien
+## Important doc files
 
-- **[`docs/enclosure-sintering.md`](docs/enclosure-sintering.md)** — Gehäuse-Fertigung:
-  **SLS/PA12 schwarz**, SLS-Designregeln, Druckteile, Anbieter (JLC3DP/Craftcloud/…).
-- [`docs/build-notes.md`](docs/build-notes.md) — Integration/Bau (Pi5-Strom, ESP-Flash,
-  WLAN, Druck, Hardware-Checkliste).
-- [`docs/power-distribution.md`](docs/power-distribution.md) — 5-V-Stern + Abzweigsicherungen.
-- [`pcb/docs/board-spec.md`](pcb/docs/board-spec.md) — verbindliche Board-Vorlage.
+- **[`docs/enclosure-sintering.md`](docs/enclosure-sintering.md)** — enclosure manufacturing:
+  **SLS/PA12 black**, SLS design rules, printed parts, providers (Germany first).
+- [`docs/build-notes.md`](docs/build-notes.md) — integration/build (Pi5 power, ESP flash,
+  WiFi, print, hardware checklist).
+- [`docs/power-distribution.md`](docs/power-distribution.md) — 5 V star + branch fuses.
+- [`pcb/docs/board-spec.md`](pcb/docs/board-spec.md) — binding board template.
 
-## Konventionen für dieses Projekt
+## Conventions for this project
 
 - **Chat in German, everything written in English** — code, identifiers, comments,
   documentation and commit messages are English; chat replies to the user are German.
-  Existing German docs are not retro-translated.
-- **CAD ist Code, kein Klickmodell**: `cad/balkon_borg.py` bleibt parametrisch.
-  Reale Maße (Board-Vermessung, Insert-/Diffusor-Passung) als benannte Parameter
-  oben im File, nicht als Magic Numbers im Body.
-- **Maße metrisch**, mm als Default-Einheit im CAD. Toleranzen dokumentieren.
-- **Sicherheit ist nicht verhandelbar**: 230 V strikt getrennt vom gedruckten
-  Gehäuse (Netzteil extern). Druckteil führt nur Niedervolt. Bei jedem
-  Elektrik-/Thermik-Vorschlag Brandschutz und Absicherung mitdenken.
-- **MQTT** ist der Bus. Neue Datenquellen bekommen ein klares Topic-Schema;
-  Schema im Log festhalten, sobald es steht.
-- **Lötarm bevorzugt**: vorgeflashte/steckbare Teile vor Selbstbau, solange
-  Qualität stimmt (Präferenz: Qualität vor Preis).
-- **Großzügig dimensionieren (Ergonomie).** Der Nutzer hat große Finger und ist
-  eher ungeschickt: Board und Gehäuse dürfen ruhig größer sein. Bedienelemente,
-  Stecker und Schrauben weit auseinander, keine gedrängten Layouts oder fummelige
-  Mikroverbinder, keine dichte Handlöterei. Im Zweifel größer statt kompakter.
+- **CAD is code, not a click model**: `cad/balkon_borg.py` stays parametric. Real
+  dimensions (board measurement, insert/diffuser fit) as named parameters at the top
+  of the file, not magic numbers in the body.
+- **Metric dimensions**, mm as the default CAD unit. Document tolerances.
+- **Safety is non-negotiable**: 230 V strictly separated from the printed enclosure
+  (PSU external). The printed part carries low voltage only. With every
+  electrical/thermal proposal, think about fire safety and fusing.
+- **MQTT** is the bus. New data sources get a clear topic scheme; record the scheme in
+  the log once it is fixed.
+- **Low-solder preferred**: pre-flashed/pluggable parts over self-build, as long as the
+  quality holds (preference: quality over price).
+- **Size up generously (ergonomics).** The user has big fingers and is rather clumsy:
+  board and enclosure may be larger. Controls, connectors and screws well apart, no
+  cramped layouts or fiddly micro-connectors, no dense hand soldering. When in doubt,
+  bigger rather than more compact.
 
-## Entscheidungslog pflegen (wichtig)
+## Keep the decision log (important)
 
-Sobald eine nicht-triviale Entscheidung fällt (Bauteilwahl, GPIO-Belegung,
-Topic-Schema, Maß-/Toleranzfestlegung, Scope-Änderung, verworfene Alternative),
-**hängst du einen datierten Eintrag an `log/decisions.md` an**. Format und Beispiel
-stehen im Kopf dieses Files. Das Log ist die Gedächtnisschicht des Projekts: es
-verhindert, dass bereits geklärte Fragen erneut aufgerollt werden.
+As soon as a non-trivial decision is made (part choice, GPIO assignment, topic scheme,
+dimension/tolerance decision, scope change, rejected alternative), **append a dated
+entry to `log/decisions.md`**. Format and example are in the head of that file. The log
+is the project's memory layer: it stops already-settled questions from being reopened.
 
-Nicht loggen, was ohnehin im Code/YAML steht. Loggen, *warum* es so ist und
-welche Alternative aus welchem Grund verworfen wurde.
+Do not log what is already in the code/YAML. Log *why* it is that way and which
+alternative was rejected for which reason.
 
-## Nächste Schritte
+## Next steps
 
-Aktueller Stand und offene Punkte: siehe `README.md` §8 und die jüngsten
-Einträge in `log/decisions.md`.
+Current state and open points: see `README.md` §8 and the most recent entries in
+`log/decisions.md`.

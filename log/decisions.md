@@ -1,577 +1,594 @@
-# Entscheidungslog — Balkon-Borg
+# Decision log — Balkon-Borg
 
-Chronologisches Log der Designentscheidungen. Neueste Einträge oben anhängen.
-Zweck: festhalten, *warum* der Aufbau so ist, damit geklärte Fragen nicht erneut
-aufgerollt werden. Nicht loggen, was ohnehin im Code/YAML steht.
+Chronological log of design decisions. Append newest entries at the top. Purpose: to
+record *why* the build is the way it is, so settled questions are not reopened. Do not
+log what is already in the code/YAML.
 
-**Eintragsformat:**
+**Entry format:**
 
 ```
-## YYYY-MM-DD — Kurztitel
+## YYYY-MM-DD — short title
 
-**Kontext:** Worum ging es, was war die Ausgangslage.
-**Entscheidung:** Was wurde festgelegt.
-**Begründung:** Warum so, nicht anders.
-**Verworfen:** Welche Alternative(n) und aus welchem Grund. (optional)
-**Folgen:** Was das für den weiteren Aufbau bedeutet. (optional)
+**Context:** what it was about, the starting situation.
+**Decision:** what was fixed.
+**Rationale:** why this way, not another.
+**Rejected:** which alternative(s) and for what reason. (optional)
+**Consequences:** what this means for the rest of the build. (optional)
 ```
 
 ---
 
-## 2026-07-11 — Fertigung: SLS/PA12 schwarz (statt FDM/ASA)
+## 2026-07-11 — Hollowing fix, open front, diagonal louvres, docs to English
 
-**Entscheidung:** Gehäuse wird per **SLS** in **PA12-Nylon, schwarz** gefertigt,
-nicht mehr FDM/ASA. Grund: **professionellere Optik** (matte, gleichmäßige
-Oberfläche ohne Schichtlinien/Naht/Stützen), keine Stützen, isotrop fest.
+**Context:** the STL came out as a near-solid block with a closed front. Cause found:
+filleting the vertical edges (`.edges("|Z")`) *before* `.faces(">Y").shell(-WALL)`
+makes OCC's shell return the solid instead of hollowing it (verified: box+shell = 473
+cm³ hollow, with a `|Z` fillet before the shell = 4955 cm³ solid; a `|Y`-only fillet
+stays hollow). Filleting *after* the shell fails too (`StdFail_NotDone` on the inner
+edges).
 
-**Wetter-Klärung entkräftet die PA12-Nachteile:** Standort vollständig geschützt,
-**keine Sonne** (UV egal), **kein Regen** (Wasser egal), nur Luftfeuchte (PA12 nimmt
-~0,5-1 % auf → für ein Gehäuse irrelevant). Kein Coating nötig.
+**Decision:** round the outer edges on the solid box, then hollow with an **inner-box
+`cut`** (open front) instead of `shell`. Body back to ~645 cm³ hollow, front + cavity
+open, rounded corners kept. Rule for the future: **do not `shell` a filleted body**;
+fillet the solid and cut the cavity.
 
-**Metall verworfen:** Faradaykäfig blockiert WLAN + Radar; Metalldruck bei 4,5 l
-zudem tausende Euro/kilo-schwer. (Optional Front als Alu-Blende möglich, Körper
-Kunststoff.)
+**Bezel dropped (final):** the front is **open**; diffuser + LED panel are glued in at
+the end (no separate bezel part). Supersedes the bezel mentions in the earlier
+2026-07-11 review entry. The two printed parts are just `balkon-borg-left/right`.
 
-**Design auf SLS angepasst:** `TOL` 0,2 → **0,4 mm** (SLS-Passung), Front-Insert-
-Löcher durchgehend (Pulver-Auslass statt Sackloch), Split bleibt (Bauraum ~230 mm).
-ASA-spezifische Vorgabe (V-0-Trennung) in CLAUDE.md auf „gedrucktes Gehäuse"
-verallgemeinert; README §6 „ASA/PLA" ist damit überholt (Material jetzt PA12).
+**Diagonal rear louvres:** the straight rear intake slits become a group of **diagonal**
+louvres in the clear zone between the boards (styling cue, same insect-safe 2 mm gap).
 
-**Anbieter:** JLC3DP (PayPal, billigst, China-Versand) vs. Craftcloud/ZELTA3D/
-PRINCORE (EU/DE, schneller Versand). Details + Ablauf in
+**HagiOne on the rear wall:** raised HagiOne wordmark added to the rear wall above the
+louvres, in addition to the +X end.
+
+**`make preview`:** now builds everything and prints the `feh`/`f3d` view commands
+instead of launching a viewer (no GUI from make in this environment).
+
+**Docs to English:** per the project language rule, all repo docs translated to English
+(README, CLAUDE.md, this log, the cad/pcb/firmware READMEs, board-spec, build-notes,
+power-distribution, enclosure-sintering). Stale ASA references pulled to the current SLS
+state; provider recommendation flipped to Germany first.
+
+---
+
+## 2026-07-11 — Manufacturing: SLS/PA12 black (instead of FDM/ASA)
+
+**Decision:** the enclosure is made by **SLS** in **PA12 nylon, black**, no longer
+FDM/ASA. Reason: **more professional look** (matte, even surface without layer
+lines/seam/supports), no supports, isotropically strong.
+
+**Weather clarification defuses the PA12 downsides:** location fully protected, **no
+sun** (UV moot), **no rain** (water moot), only humidity (PA12 takes up ~0.5-1 % → for
+an enclosure irrelevant). No coating needed.
+
+**Metal rejected:** a Faraday cage blocks WiFi + radar; metal printing at 4.5 l would
+also be thousands of euros/kilos heavy. (Optionally the front as an aluminium bezel,
+body plastic.)
+
+**Design adapted to SLS:** `TOL` 0.2 → **0.4 mm** (SLS fit), front insert holes made
+through-going (powder escape instead of a blind cavity), split stays (build volume
+~230 mm). The ASA-specific rule (V-0 separation) in CLAUDE.md generalised to "printed
+enclosure"; README §6 "ASA/PLA" is thereby outdated (material now PA12).
+
+**Providers:** JLC3DP (PayPal, cheapest, China shipping) vs. Craftcloud/ZELTA3D/
+PRINCORE (EU/DE, faster shipping). Details + procedure in
 [[docs/enclosure-sintering.md]] (`docs/enclosure-sintering.md`).
 
 ---
 
-## 2026-07-11 — Review-Fixes: Gehäuse robust, Firmware, Verteilung
+## 2026-07-11 — Review fixes: robust enclosure, firmware, distribution
 
-Nach Gehäuse- und Komponenten-Review autonom abgearbeitet:
+Worked off autonomously after the enclosure and component review:
 
-**Gehäuse (`cad/balkon_borg.py`):**
-- **Nahtverschraubung:** Klemmblöcke an X=0 (Clearance -X / M3-Insert +X) + Dowels.
-  Bezel klemmt zusätzlich die Front-Naht. (Kritischer Fehler behoben: Hälften waren
-  vorher nur ausgerichtet, nicht gespannt.)
-- **Verschraubbare Front:** separater **Bezel** (`balkon-borg-bezel-left/right`) klemmt
-  den Diffusor (kein Kleben), Front-Zugang zum Service. RECESS=0, M2.5-Inserts in der
-  Frontborde.
-- **Lüftung neu:** 2-mm-Schlitze in der freien Rückwand-Mittelzone (vorher hinter den
-  Platinen), Abluft hoch an den Stirnwänden, insektenfein.
-- **Dome-Löcher auf Insert-Maß** (M2.5=3,4 / M3=4,0) statt Selbstschneid.
-- **Mounts + Trenner:** WLED (Oberwand), Radar/Mikro/BME (Boden), Divider-Rippen
-  (Carrier | Mitte | Pi). Pi+SDR als größerer Sperrbereich nach +X.
-- **BME280-Bodenöffnung** (Gitter) für Außenluft.
-Alle Features numerisch verifiziert, Body 622 cm³, baut fehlerfrei.
+**Enclosure (`cad/balkon_borg.py`):**
+- **Seam screwing:** clamp blocks at X=0 (clearance -X / M3 insert +X) + dowels. The
+  bezel additionally clamps the front seam. (Critical bug fixed: the halves were only
+  aligned before, not clamped.)
+- **Screwable front:** a separate **bezel** (`balkon-borg-bezel-left/right`) clamps the
+  diffuser (no gluing), front access for service. RECESS=0, M2.5 inserts in the front
+  border.
+- **New ventilation:** 2 mm slits in the clear rear-wall middle zone (previously behind
+  the boards), exhaust high on the end walls, insect-fine.
+- **Boss holes at insert size** (M2.5=3.4 / M3=4.0) instead of self-tapping.
+- **Mounts + dividers:** WLED (top wall), radar/mic/BME (bottom), divider ribs (carrier
+  | middle | Pi). Pi+SDR as a larger keep-out towards +X.
+- **BME280 bottom opening** (grid) for outside air.
+All features verified numerically, body 622 cm³, builds without error.
 
-**Firmware (`firmware/esphome/balkon-borg.yaml`):** Taster/Encoder/Radar/BME →
-**Lichtsteuerung direkt über WLED-MQTT** (Toggle, Presets, Helligkeit, Präsenz-
-Automatik, Status-LEDs). YAML strukturell validiert.
+**Firmware (`firmware/esphome/balkon-borg.yaml`):** buttons/encoder/radar/BME →
+**light control directly over WLED MQTT** (toggle, presets, brightness, presence
+automation, status LEDs). YAML structurally validated.
 
-**System-Docs:** `docs/power-distribution.md` (5-V-Stern mit **10-A-LED-/5-A-Pi-
-Abzweigsicherungen**), `docs/build-notes.md` (Pi5-PD/`usb_max_current_enable`,
-ESP-Flash vor Einbau, WLAN-Antennenlage, Druckorientierung, Hardware-Checkliste).
+**System docs:** `docs/power-distribution.md` (5 V star with **10 A LED / 5 A Pi branch
+fuses**), `docs/build-notes.md` (Pi5 PD/`usb_max_current_enable`, ESP flash before
+install, WiFi antenna placement, print orientation, hardware checklist).
 
-**Nutzerentscheidungen:** ADS-B nicht genutzt (keine Himmelsantenne); Heat-Inserts
-statt Selbstschneid; Front verschraubbar gewünscht.
+**User decisions:** ADS-B not used (no sky antenna); heat-set inserts instead of
+self-tapping; screwable front wanted.
 
-**Platzhalter zu verifizieren:** WLED-/BME280-Modulmaße, Athom-Lochbild.
-
----
-
-## 2026-07-10 — Breite Power-Bahnen + ESP-Reihenabstand bestätigt
-
-**Power-Bahnen:** Netzklasse "Power" (in `place-board.py` via
-`NET_SETTINGS.SetNetclassPatternAssignment`) setzt **+5V/+5V_IN/GND auf 1,0 mm**
-(hält ~3 A, 1oz), Signale bleiben 0,2 mm. Grund (Hinweis eines Freundes): eine
-0,25-mm-Bahn hält nur ~0,7 A und würde vor der 2-A-Sicherung F1 durchbrennen →
-F1 wäre sinnlos. Landet korrekt in der DSN (`(class Power ... (width 1000))`),
-Freerouting routet entsprechend. Verifiziert: +5V/GND = 1,0 mm, DRC 0/0.
-
-**ESP-Reihenabstand bestätigt: 25,4 mm (1 Zoll)**, offizielles Espressif-Maß für
-DevKitC-V4 (mehrere Quellen). War schon der Platzhalterwert → keine Änderung.
-(Klone wie AZ-Delivery: 25,0 mm, Differenz beim Stecken innerhalb Toleranz.)
-Damit ist `ESP_ROW=25.4` final, kein offener Punkt mehr.
+**Placeholders to verify:** WLED/BME280 module dimensions, Athom hole pattern.
 
 ---
 
-## 2026-07-10 — Board finalisiert + mit Gehäuse gekoppelt, HagiOne drauf
+## 2026-07-10 — Wide power traces + ESP row spacing confirmed
 
-**Board final:** 150×92 mm, kompakt neu platziert, **4 M3-Eckbohrungen** (Muster
-136×78), **"HagiOne" als F.Silkscreen** oben mittig. Neu autoroutet, **DRC 0/0**,
-Aisler-Zip neu erzeugt. Der ganze Zyklus lief **headless per Skript**
-(`place-board.py` → DSN via `pcbnew.ExportSpecctraDSN` → Freerouting →
-`apply-ses.py` via `pcbnew.ImportSpecctraSES`); KiCad-GUI nur zum Ansehen.
+**Power traces:** the "Power" net class (in `place-board.py` via
+`NET_SETTINGS.SetNetclassPatternAssignment`) sets **+5V/+5V_IN/GND to 1.0 mm** (holds
+~3 A, 1oz), signals stay 0.2 mm. Reason (a friend's tip): a 0.25 mm trace holds only
+~0.7 A and would burn out before the 2 A fuse F1 → F1 would be pointless. Lands
+correctly in the DSN (`(class Power ... (width 1000))`), Freerouting routes
+accordingly. Verified: +5V/GND = 1.0 mm, DRC 0/0.
 
-**Kopplung Gehäuse↔Board (gemeinsame Wahrheit):**
+**ESP row spacing confirmed: 25.4 mm (1 inch)**, the official Espressif dimension for
+the DevKitC-V4 (several sources). Was already the placeholder value → no change.
+(Clones like AZ-Delivery: 25.0 mm, the difference is within socket tolerance.) So
+`ESP_ROW=25.4` is final, no longer an open point.
+
+---
+
+## 2026-07-10 — Board finalised + coupled to enclosure, HagiOne on it
+
+**Board final:** 150×92 mm, freshly placed compact, **4 M3 corner holes** (pattern
+136×78), **"HagiOne" as F.Silkscreen** top centre. Re-autorouted, **DRC 0/0**, Aisler
+zip regenerated. The whole cycle ran **headless by script** (`place-board.py` → DSN via
+`pcbnew.ExportSpecctraDSN` → Freerouting → `apply-ses.py` via
+`pcbnew.ImportSpecctraSES`); KiCad GUI only for viewing.
+
+**Enclosure↔board coupling (shared truth):**
 - `cad/balkon_borg.py`: `CARR_BOARD_W/H=150/92`, `CARR_HOLE_DX/DZ=136/78`,
-  `CARR_CENTER=(-105,55)`. Dome an (-173,16),(-173,94),(-37,16),(-37,94) =
-  exakt die 4 Board-Löcher. Diese Werte MÜSSEN mit `pcb/place-board.py` übereinstimmen.
-- Board sitzt auf der Rückwand-Innenseite links (x -180..-30), 96 mm Abstand zum
-  Pi (x 66..124). **Status-LEDs nach rechts verschoben** (x 150-210), damit sie
-  nicht hinter der Platine liegen.
+  `CARR_CENTER=(-105,55)`. Bosses at (-173,16),(-173,94),(-37,16),(-37,94) = exactly the
+  4 board holes. These values MUST match `pcb/place-board.py`.
+- Board sits on the rear-wall inside, left (x -180..-30), 96 mm from the Pi (x 66..124).
+  **Status LEDs moved right** (x 150-210) so they are not behind the board.
 
-**Offen bleibt nur:** ESP-Header-Reihenabstand (ESP_ROW, in place-board.py UND als
-Sockel-Footprint) am realen DevKit final messen; Kontur ist jetzt real (150×92),
-nicht mehr Platzhalter.
-
----
-
-## 2026-07-10 — Board platziert + autoroutet (Unrouted 0)
-
-**Platzierung:** `pcb/place-board.py` (KiCad pcbnew-Modul, System-Python) ordnet die
-33 Footprints ordentlich an (2 senkrechte ESP-Spalten mittig, Widerstände
-flankierend, Stecker an den Rändern, Transistoren über den Tastern) und zieht eine
-Platzhalter-Kontur 160×110. ESP-Header sind senkrechte 1x19-Spalten, Abstand
-ESP_ROW=25,4 mm (Platzhalter, am echten DevKit prüfen).
-
-**Routing:** Freerouting **1.9.0** (Java 21; 2.x braucht Java 25) headless über die
-aus KiCad exportierte DSN, Batch (`-de/-do -mp 30 -oit 1`) auf DISPLAY=:0. Voll
-geroutet in ~1 s, Optimierung ~50 % kürzer, `.ses` zurück in KiCad importiert →
-**Unrouted 0**. Jar liegt im Scratchpad (nicht im Projekt).
-
-**DRC sauber (0/0).** Fertigungsdaten erzeugt via `scripts/gen-outputs.py` →
-`pcb/output/balkon-borg-carrier-aisler.zip` (Gerber + Bohrdatei). BOM leer (Bauteile
-im Board, kein Schaltplan) — für die nackte Platine egal.
-
-**Vor dem echten Bestellen final setzen:** ESP-Header-Reihenabstand am realen
-DevKit messen (sonst steckt das Modul nicht), Außenkontur aus der Gehäuse-Carrier-
-Bucht übernehmen (aktuell Platzhalter 160×110).
+**Only open:** measure the ESP header row spacing (ESP_ROW, in place-board.py AND as the
+socket footprint) on the real DevKit; the outline is now real (150×92), no longer a
+placeholder.
 
 ---
 
-## 2026-07-10 — Board: Netzliste per SKiDL (statt GUI-Schaltplan)
+## 2026-07-10 — Board placed + autorouted (unrouted 0)
 
-**Kontext:** Beim Board-Schritt "KiCad" stand die Wahl: kompletter GUI-Schaltplan
-in Eeschema (viel Klickerei, fehleranfällig bei den 38 ESP-Pins) vs. Netzliste per
-Code. Nutzer wählte **Code**.
+**Placement:** `pcb/place-board.py` (KiCad pcbnew module, system Python) arranges the 33
+footprints tidily (2 vertical ESP columns centred, resistors flanking, connectors at the
+edges, transistors above the buttons) and draws a placeholder outline 160×110. ESP
+headers are vertical 1x19 columns, spacing ESP_ROW=25.4 mm (placeholder, check on the
+real DevKit).
 
-**Umsetzung:** `pcb/gen-netlist.py` (SKiDL, Tool KICAD9) beschreibt die komplette
-Schaltung aus `docs/board-spec.md` inkl. **korrekter ESP32-DevKitC-V4-Pinzuordnung**
-(offizieller Pinout, J2 links / J3 rechts). ESP als 2× `Conn_01x19` (gesteckt).
-Erzeugt `balkon-borg-carrier.net` (KiCad-Netzliste), **0 Fehler**, 33 Bauteile mit
-Footprints. End-to-end verifiziert (I2C_SDA→J3.6/GPIO21, RADAR_TX→J3.12/GPIO16,
-BTN_LEDK→Q.Collector, +5V/+3V3/GND korrekt).
+**Routing:** Freerouting **1.9.0** (Java 21; 2.x needs Java 25) headless over the DSN
+exported from KiCad, batch (`-de/-do -mp 30 -oit 1`) on DISPLAY=:0. Fully routed in ~1 s,
+optimisation ~50 % shorter, `.ses` imported back into KiCad → **unrouted 0**. The jar
+lives in the scratchpad (not in the project).
 
-**Ablauf:** Netzliste in KiCad-PCB-Editor importieren (*Datei → Importieren →
-Netzliste*), dann Layout (Kontur, Platzierung, Routing) im GUI. Nutzer macht nur
-das Layout, die fehleranfällige Pin-Logik ist im Code. Schaltungsänderungen immer
-in `gen-netlist.py`.
+**DRC clean (0/0).** Fabrication data generated via `scripts/gen-outputs.py` →
+`pcb/output/balkon-borg-carrier-aisler.zip` (Gerber + drill file). BOM empty (parts in
+the board, no schematic) — irrelevant for the bare board.
 
-**Toolchain:** SKiDL 2.2.3 im venv; braucht `KICAD9_SYMBOL_DIR` /
-`KICAD9_FOOTPRINT_DIR` auf `/usr/share/kicad/{symbols,footprints}`.
-
----
-
-## 2026-07-10 — XT60E-M real, Feinschliff (Gussets, Panel-Nasen, Toleranzen)
-
-**Strom-Stecker: Amass XT60E-M** (real erhältliches Panel-Mount, UL94-V0, 30/60 A,
-gut verfügbar). Aus Datenblatt: Körper-Ausschnitt ~16×9 mm, 2× M3 (ø3,2) mit
-~14 mm Abstand. Im Modell so eingetragen (an realem Teil feinjustieren/kleben).
-**Verdrahtung bestätigt:** externes Netzteil → kurzes 5-V-Kabel → XT60 in der
-Rückwand → innen ein dediziertes 5-V-Kabel an die Verteilung → Abnehmer.
-
-**Feinschliff im Modell:**
-- **Ohr-Gussets:** dreieckige Stützrippen unter allen 4 Nasen (gegen Abbrechen an
-  der Wurzel beim Anschrauben).
-- **Panel-Positionier-Nasen:** 4 Ecknasen am Rahmen-Rücken (Panel klebt dazwischen,
-  verrutscht nicht).
-- **Druck-Toleranz:** globaler Parameter TOL=0,2 mm auf die Passungen (Taster-
-  Löcher 12,2, Diffusor-Nut, Passstift-Löcher).
+**Set final before really ordering:** measure the ESP header row spacing on the real
+DevKit (else the module will not seat), take the outline from the enclosure carrier bay
+(currently placeholder 160×110).
 
 ---
 
-## 2026-07-10 — Netzteil extern (final), Strom-Stecker, Sensor-Durchbrüche
+## 2026-07-10 — Board: netlist via SKiDL (instead of a GUI schematic)
 
-**Netzteil: extern (endgültig).** Netzteil-Gehäuse hängt neben dem Hub, ~5-m-Schuko
-vom Netzteil-Gehäuse zur Steckdose, nur **kurzer 5-V-Sprung** in den Hub. Löst das
-Brandschutz-Thema (überholt den geparkten "Netzteil innen"-Punkt); README §6 gilt
-wieder.
+**Context:** at the board step "KiCad" the choice was: a full GUI schematic in Eeschema
+(much clicking, error-prone with the 38 ESP pins) vs. a netlist from code. The user chose
+**code**.
 
-**Bestätigt und verworfen:** Die Variante "Netzteil an der Steckdose, 5 m 5-V-Kabel
-zum Hub" wurde geprüft und **verworfen** (5 V über 5 m bei 10-15 A: >1 V Abfall,
-Brownout; bräuchte Schweißkabel). Langes Kabel gehört auf die 230-V-Seite, nicht
-auf die 5-V-Seite. Nutzer bestätigt.
+**Implementation:** `pcb/gen-netlist.py` (SKiDL, tool KICAD9) describes the complete
+circuit from `docs/board-spec.md` incl. the **correct ESP32-DevKitC-V4 pin assignment**
+(official pinout, J2 left / J3 right). ESP as 2× `Conn_01x19` (socketed). Produces
+`balkon-borg-carrier.net` (KiCad netlist), **0 errors**, 33 parts with footprints. End to
+end verified (I2C_SDA→J3.6/GPIO21, RADAR_TX→J3.12/GPIO16, BTN_LEDK→Q.Collector,
++5V/+3V3/GND correct).
 
-**Strom-Anschluss: steckbarer Panel-Stecker (XT60) in der Rückwand.** Nutzer will
-einstecken/abziehen können. XT60: ~60 A, verpolungssicher, robust, deckt die
-~10-15 A (Panel + Pi). Cutout = Rechteckloch + 2 Schraublöcher (Maße an den realen
-Panel-Halter anpassen). Ersetzt die frühere Kabelverschraubung.
+**Procedure:** import the netlist in the KiCad PCB editor (*File → Import → Netlist*),
+then layout (outline, placement, routing) in the GUI. The user only does the layout, the
+error-prone pin logic is in code. Circuit changes always in `gen-netlist.py`.
 
-**Sensor-Durchbrüche in der Unterseite (-Z, schaut nach unten auf die Terrasse):**
-- **Kamera** (Modul 3): 12 mm Objektivloch (großzügig) + 4 Montagedome. Werte aus
-  der offiziellen RPi-Maßzeichnung: Board 25×23,862, Löcher ø2,2, Muster ~14,4×12,5
-  (asymmetrisch). Versatz Objektiv↔Löcher ist in der Zeichnung nicht sauber
-  angegeben (RPi-Forum bestätigt), daher Objektivloch groß; am realen Teil prüfen
-  oder Kamera kleben. CSI-Kabel: **Standard-Mini 200 mm** (Reichweite Kamera unten
-  ↔ Pi Rückwand damit unkritisch, CSI-Sorge erledigt).
-- **Radar LD2410B: 2-mm-Membran** (Wand innen auf 2 mm ausgedünnt, 26×26 mm).
-- **Mikrofon**: 4 mm Loch.
-Rechte Hälfte der Unterseite (x>0), klar neben Balkon-Borg-Slogan (links) und Fuge.
-
-**Offen/Platzhalter:** Kamera-Lochmuster + Standoff-Höhe, XT60-Halter-Maße,
-Radar-/Kamera-Halterung im Detail.
+**Toolchain:** SKiDL 2.2.3 in the venv; needs `KICAD9_SYMBOL_DIR` /
+`KICAD9_FOOTPRINT_DIR` on `/usr/share/kicad/{symbols,footprints}`.
 
 ---
 
-## 2026-07-10 — Offen: Netzteil innen? (Brandschutz, geparkt)
+## 2026-07-10 — XT60E-M real, finishing (gussets, panel nubs, tolerances)
 
-**Kontext:** Nutzer möchte das 230-V-Netzteil INS Gehäuse und ein 4-m-Schuko-
-Kabel nach außen. Das widerspricht README §6 (230 V getrennt im V-0-/Metall-
-gehäuse, Druckteil nur Kleinspannung).
+**Power connector: Amass XT60E-M** (a really available panel mount, UL94-V0, 30/60 A,
+well stocked). From the datasheet: body cut-out ~16×9 mm, 2× M3 (ø3.2) ~14 mm apart.
+Entered in the model like this (fine-tune/glue on the real part). **Wiring confirmed:**
+external PSU → short 5 V cable → XT60 in the rear wall → inside a dedicated 5 V cable to
+the distribution → loads.
 
-**Status: offen, geparkt.** Empfehlung, falls innen: Netzteil in eigenem Blech-/
-V-0-Abteil im Gehäuse (230 V nur dort, Schuko mit Zugentlastung, PE an Chassis,
-nur 5 V raus, Lüftung). Alternativen: offen im ASA (abgeraten, Brandrisiko) oder
-extern nahe der Steckdose (am sichersten). Entscheidung vom Nutzer vertagt; keine
-andere Arbeit dadurch blockiert.
-
----
-
-## 2026-07-10 — Front-Sitz, mehr Tiefe, Taster an die Seite
-
-**Front-Sitz (Nutzerantworten):** Opal-Acryl-Diffusor **3 mm**, in Front-Nut,
-**1 mm versenkt**; **8 mm** Luftspalt LED→Diffusor; **Nut + kleben** (kein Bezel).
-Umgesetzt als 12 mm tiefer Frontrahmen (FRAME_D): Lichtfenster 434×84, davor
-Diffusor-Rebate 444×94 (4 mm tief), Panel klebt an der Rahmen-Rückseite.
-
-**Tiefe 75 → 95 mm:** Platz für alle Boards (WLED-Controller, RTL-SDR, Mikro,
-Verkabelung). Rückwandfläche 454×104 war nie eng; der Front-Sitz frisst 12 mm,
-darum tiefer. Nutzer: "tiefer ist egal".
-
-**Taster von unten an die -X-Stirnseite** (senkrechte Reihe). Grund (Nutzer):
-hinten/innen liegen die Platinen im Weg; die Stirnseite ist beim Split-Zusammenbau
-offen zugänglich, also einfacher zu montieren und zu verdrahten. Folge: -X-Slogan
-entfällt, HagiOne bleibt +X, Balkon Borg bleibt unten. (Seite -X, per Parameter
-spiegelbar.)
+**Finishing in the model:**
+- **Ear gussets:** triangular support ribs under all 4 ears (against breaking off at the
+  root when screwing to the ceiling).
+- **Panel positioning nubs:** 4 corner nubs on the frame back (the panel glues between
+  them, does not slip).
+- **Print tolerance:** global parameter TOL=0.2 mm on the fits (button holes 12.2,
+  diffuser rebate, dowel-pin holes).
 
 ---
 
-## 2026-07-10 — Orientierung umgekehrt: Licht nach vorne (überholt Downlight)
+## 2026-07-10 — PSU external (final), power connector, sensor cut-outs
 
-**Kontext:** Nach kurzem Hin und Her endgültig festgelegt. Das im Tool gewählte
-"Downlight" wurde per Folgenachrichten korrigiert. **Überholt den Downlight-
-Eintrag vom selben Tag.**
+**PSU: external (final).** The PSU enclosure hangs next to the hub, ~5 m Schuko from the
+PSU enclosure to the socket, only a **short 5 V hop** into the hub. Solves the fire-safety
+topic (supersedes the parked "PSU inside" point); README §6 applies again.
 
-**Endgültige Orientierung ("Front zur Terrasse"):**
-- **Vorderseite (+Y, senkrecht, zur Terrasse): LED-Panel, Licht nach vorne.**
-  Offene Fläche = Lichtfenster (Panel + Diffusor). **Bleibt textfrei.**
-- **Unterseite (-Z, unten): Taster + Encoder** (von unten erreichbar).
-- **Rückseite (-Y, zum Haus): Status-/Effekt-LEDs** (kleine Einzel-LEDs, kein
-  Flächenlicht), plus Kabelverschraubung und Lüftung.
-- **Oberseite (+Z): Decke**, Ohren protrudieren in ±Y, Schrauben vertikal.
-- **Stirnseiten (±X): Slogans** (HagiOne / Balkon Borg).
+**Confirmed and rejected:** the variant "PSU at the socket, 5 m 5 V cable to the hub" was
+checked and **rejected** (5 V over 5 m at 10-15 A: >1 V drop, brownout; would need welding
+cable). The long cable belongs on the 230 V side, not the 5 V side. User confirmed.
 
-**Achsen im Modell:** X = Breite (Panel-Spalten, 460), Z = Höhe (Panel 80 + Rand,
-110), Y = Tiefe (Front-Rück, ~78). Front +Y offen. Pi5 + Carrier hängen an der
-Rückwand-Innenseite. Split X=0 bleibt.
+**Power connection: pluggable panel connector (XT60) in the rear wall.** The user wants to
+plug/unplug. XT60: ~60 A, polarity-safe, robust, covers the ~10-15 A (panel + Pi). Cut-out
+= rectangular hole + 2 screw holes (adjust to the real panel holder). Replaces the earlier
+cable gland.
 
-**Begründung:** Nutzerentscheidung. Licht soll die Sitzecke anstrahlen, nicht den
-Tisch von oben; Bedienung von unten; Rückseite für Statusanzeige.
+**Sensor cut-outs in the underside (-Z, looks down onto the terrace):**
+- **Camera** (Module 3): 12 mm lens hole (generous) + 4 mounting bosses. Values from the
+  official RPi drawing: board 25×23.862, holes ø2.2, pattern ~14.4×12.5 (asymmetric). The
+  lens↔hole offset is not cleanly given in the drawing (RPi forum confirms), so the lens
+  hole is large; check on the real part or glue the camera. CSI cable: **standard mini
+  200 mm** (reach camera bottom ↔ Pi rear wall thus uncritical, CSI worry resolved).
+- **Radar LD2410B: 2 mm membrane** (wall thinned to 2 mm inside, 26×26 mm).
+- **Microphone**: 4 mm hole.
+Right half of the underside (x>0), clearly beside the Balkon-Borg slogan (left) and the
+seam.
 
-**Offen:** Große Slogans / weitere Flächen erst platzieren, wenn die neue
-Geometrie sichtbar ist (Flächen haben sich verschoben). CSI-Kameranähe zur Front
-im Blick behalten (Pi an der Rückwand ~75 mm entfernt).
-
----
-
-## 2026-07-10 — Slogans auf den Stirnseiten
-
-**Entscheidung:** Erhabene Schrift (1,2 mm), mitgedruckt:
-- **+X-Stirnseite: "HagiOne"** (Codename des Nutzers).
-- **-X-Stirnseite: "Balkon Borg"** (Projektname, = Repo-Verzeichnis).
-- Schriftgröße 12 mm, waagerecht entlang Y, mittig auf der Wand. Jede Schrift
-  liegt komplett in einer Split-Hälfte (kein Fugenkonflikt).
-- **Lüftungsschlitze dafür auf die +Y-Längswand verlegt** (Stirnseiten frei für Text).
-
-**Begründung:** Codename + Projektname als Typenschild; erhaben gewünscht. Stirn-
-seiten waren ohnehin frei (Bedienung -Y, Kabel +Y).
-
-**Offen:** Slogan auf der unteren gedruckten Platte (früher gewünscht) noch offen;
-kommt beim Bau des Front-Lichtfenster-Rahmens dazu, falls weiterhin erwünscht.
-Druckorientierung so wählen, dass die erhabene Schrift nicht als Überhang druckt.
+**Open/placeholder:** camera hole pattern + standoff height, XT60 holder dimensions,
+radar/camera mounting in detail.
 
 ---
 
-## 2026-07-10 — Thermik-Vorgabe gestrichen, untere Platte wird gedruckt
+## 2026-07-10 — Open: PSU inside? (fire safety, parked)
 
-**Kontext:** Die Projektbeschreibung machte die Alu-Platte zum Pflicht-Kühlkörper
-der LED-Ebene ("Thermik im Sommer" als Top-Risiko). Nutzer streicht das bewusst:
-LED läuft vor allem nachts, Standort ausreichend kühl, Lüftung über seitliche
-Schlitze reicht.
+**Context:** the user wants the 230 V PSU INSIDE the enclosure and a 4 m Schuko cable to
+the outside. That contradicts README §6 (230 V separated in a V-0/metal enclosure, printed
+part low voltage only).
 
-**Entscheidung:**
-- **Kein Alu-Kühlkörper mehr zwingend.** Überschreibt README §6 Thermik und §4
-  ("Alu-Platte = Front + Kühlkörper"). Risiko "Thermik im Sommer" herabgestuft.
-- **Untere Platte wird gedruckt** (ASA), mit **Diffusor-Lichtfenster** über den
-  LEDs (Licht muss durch, ASA ist opak). Alu entfällt als tragende Frontplatte.
-- **Zusätzliche Lüftungsschlitze in den Seitenwänden.**
-- Damit ist die untere gedruckte Fläche auch Träger des erhabenen Slogans.
-
-**Begründung:** Nutzerentscheidung, Nutzungsprofil (Nacht, kühl) trägt das Risiko.
-Vereinfacht Aufbau (kein Alu-Zukauf/-Kontaktierung) und macht die Slogan-Idee auf
-der Unterseite überhaupt erst druckbar.
-
-**Folge:** LED-Panel + Diffusor sitzen im Lichtfenster der gedruckten Unterplatte.
-Falls es doch zu warm wird, ist ein Alu-Retrofit hinter den LEDs jederzeit möglich.
+**Status: open, parked.** Recommendation if inside: PSU in its own sheet-metal/V-0
+compartment in the enclosure (230 V only there, Schuko with strain relief, PE to chassis,
+only 5 V out, ventilation). Alternatives: open in the ASA (advised against, fire risk) or
+external near the socket (safest). Decision deferred by the user; no other work blocked by
+it.
 
 ---
 
-## 2026-07-10 — Deckenmontage: Orientierung, Ohren, seitliche Bedienung
+## 2026-07-10 — Front seat, more depth, buttons to the side
 
-**Kontext:** Gehäuse wird an die Decke (Balkonunterseite) geschraubt, Panel zeigt
-nach unten auf den Tisch. Oben ist die Deckenseite (unzugänglich).
+**Front seat (user answers):** opal acrylic diffuser **3 mm**, in the front rebate, **1 mm
+recessed**; **8 mm** air gap LED→diffuser; **rebate + glue** (no bezel). Implemented as a
+12 mm deep front frame (FRAME_D): light window 434×84, in front of it a diffuser rebate
+444×94 (4 mm deep), the panel glues to the frame back.
 
-**Entscheidungen (im CadQuery-Modell umgesetzt):**
-- **Orientierung:** +Z = oben (Decke, geschlossene Oberwand), -Z = unten (offene
-  Front, Alu-Platte/Panel/Diffusor leuchtet nach unten). X = Breite, Y = Tiefe.
-- **Bedienung an der Seitenwand**, nicht oben und nicht in der leuchtenden Front:
-  4 Taster (12 mm) + Encoder (7 mm) als Bohrungen in der **-Y-Wand** (zur Terrasse).
-  Als Cluster in **einer Hälfte** (x = 35..195), damit kein Loch auf der X=0-Fuge
-  liegt.
-- **Deckenbefestigung über seitliche "Nasen":** 4 Laschen an den oberen Ecken,
-  ragen in ±Y heraus, vertikales Durchgangsloch (~M5). Von unten durch die Nase
-  nach oben in den Deckendübel schrauben. Laschenoberseite bündig mit Gehäuseober-
-  seite (liegt an der Decke an).
-- **Kabelverschraubung in der +Y-Seitenwand** (M12), nicht mehr im Boden.
-- **Lüftung** als Schlitze in den Stirnwänden nahe der offenen (unteren) Front, so
-  dass Wärme/Kondensat nach unten entweichen kann.
-- **Pi5 + Carrier** hängen an Domen von der Oberwand; Split X=0, Passstift-Posten.
+**Depth 75 → 95 mm:** room for all boards (WLED controller, RTL-SDR, mic, wiring). The
+rear-wall area 454×104 was never tight; the front seat eats 12 mm, hence deeper. User:
+"deeper does not matter".
 
-**Begründung:** Deckenlage kehrt oben/unten um; Bedienung und Kabel müssen an die
-Seite, weil oben die Decke und unten das Lichtfeld ist. Nasen sind die einfachste
-werkzeugfreundliche Deckenbefestigung (von unten schraubbar).
-
-**Offen / parametrisch:** genaue Seiten-/Positionswahl (Taster -Y, Kabel +Y als
-Default), Ohr-Maße und Deckenschraubengröße, Vent-Anordnung. Alles Parameter in
-`cad/balkon_borg.py`. Kamera-/Radar-/Mikro-Durchbrüche und die Alu-Frontplatte als
-eigenes Teil folgen.
+**Buttons from below to the -X end wall** (vertical row). Reason (user): the boards are in
+the way at the back/inside; the end wall is openly accessible during split assembly, so
+easier to mount and wire. Consequence: the -X slogan drops, HagiOne stays +X, Balkon Borg
+stays on the bottom. (Side -X, mirrorable by parameter.)
 
 ---
 
-## 2026-07-10 — Gehäuse aus Datenblattmaßen, nicht aus Vermessung
+## 2026-07-10 — Orientation reversed: light to the front (supersedes downlight)
 
-**Kontext:** Ich hatte das CadQuery-Gehäuse als "blockiert bis Teile vermessen"
-eingestuft. Nutzer widerspricht zu Recht: die Maße der Standardteile stehen als
-Zeichnungen online, und sein Ansatz ist bewusst großzügig ("im Zweifel etwas
-größer, hängt halt rum").
+**Context:** after some back and forth, finally fixed. The "downlight" chosen in the tool
+was corrected by follow-up messages. **Supersedes the downlight entry of the same day.**
 
-**Entscheidung:** Gehäuse **jetzt** aus Datenblattmaßen + großzügigen Freigaben
-parametrisch bauen, keine physische Vermessung nötig. Toleranz über Schlupf statt
-über Präzision. Gehäuse-Arbeit ist damit nicht länger vom Bauteil-Eingang blockiert.
+**Final orientation ("front to the terrace"):**
+- **Front (+Y, vertical, to the terrace): LED panel, light forward.** The open face =
+  light window (panel + diffuser). **Stays text-free.**
+- **Underside (-Z, down): buttons + encoder** (reachable from below).
+- **Rear (-Y, to the house): status/effect LEDs** (small single LEDs, no area light), plus
+  cable gland and ventilation.
+- **Top (+Z): ceiling**, ears protrude in ±Y, screws vertical.
+- **End walls (±X): slogans** (HagiOne / Balkon Borg).
 
-**Einzige echte räumliche Randbedingung:** kurzes Pi-5-CSI-Kabel → Kamera nah am
-Pi. Lösung: Pi-Kammer hinter der Kameraöffnung oder längeres CSI-FPC (200-300 mm).
-Von "größer bauen" nicht abgedeckt, separat zu lösen.
+**Axes in the model:** X = width (panel columns, 460), Z = height (panel 80 + border,
+110), Y = depth (front-rear, ~78). Front +Y open. Pi5 + carrier hang on the rear-wall
+inside. Split X=0 stays.
 
-**Folge:** Reihenfolge angepasst: CadQuery-Gehäuse kann parallel/vor dem
-Schaltplan starten. Board-Kontur wird als großzügig reservierte Bucht im Gehäuse
-geführt, damit Board-Layout und Gehäuse entkoppelt bleiben.
+**Rationale:** user decision. The light should illuminate the seating corner, not the
+table from above; operation from below; the rear for status display.
 
----
-
-## 2026-07-10 — Konkrete Bauteile: ESP32-Board, Taster, BME280-Pullups
-
-**Kontext:** Nutzer delegiert die Bauteilwahl ("nimm was technisch geeignet und
-erhältlich ist, was alle verwenden") und bittet um Guide zu den I²C-Pullups.
-
-**Entscheidungen:**
-- **ESP32: Espressif ESP32-DevKitC-V4 (WROOM-32E), 38-Pin, offiziell.** Grund:
-  Qualität vor Preis, dokumentierte Mechanik (Reihenabstand belegt), breit
-  erhältlich. Gesteckt auf 2× `PinSocket_1x19_P2.54mm`. **KiCad hat keinen
-  DevKitC-Footprint** → Buchsenleisten-Footprints, Abstand aus Espressif-Zeichnung.
-- **Taster: 12-mm-Metall, momentan, beleuchtet, 5-V-Ring-LED, 1NO (IP65)**, der
-  gängige Standardtyp. Folge: 5-V-LED nicht direkt von 3,3-V-GPIO treibbar →
-  **je Taster ein NPN (BC337-40/2N3904, TO-92)** als Low-Side-Schalter, GPIO über
-  1 kΩ an die Basis. Taster-Stecker dadurch **4-polig** (SW, GND, 5V, LEDK). Die
-  4× 330 Ω LED-Vorwiderstände entfallen (LED bringt ihren mit).
-- **BME280-Pullups: 2× 4,7 kΩ als DNP** vorsehen. Fast alle Breakouts haben
-  Pullups an Bord → Plätze bleiben leer, nur im Ausnahmefall bestücken.
-  **Echtes Bosch-BME280** kaufen, BMP280-Fälschungen (ohne Feuchte) vermeiden.
-
-**Begründung:** Alle drei Wahlen zielen auf "verbreitet, erhältlich, robust,
-lötarm für einen Nicht-Hardware-Bauer". Der NPN-Treiber ist der Preis dafür, dass
-gängige Leuchttaster 5-V-LEDs haben; Alternative (2-V-LED direkt am GPIO) wäre
-bauteilabhängig fragil.
-
-**Verworfen:** 30-Pin-Klon-Board (geringere QC, variabler Reihenabstand) zugunsten
-offiziellem DevKitC-V4. Direkter GPIO-LED-Antrieb zugunsten NPN-Treiber.
-
-**Offen:** Reihenabstand-Maß aus Espressif-Zeichnung eintragen; beim Bestellen
-5-V-Taster-Variante sicherstellen; Board-Kontur weiter aus dem Gehäuse.
+**Open:** place large slogans / further faces only once the new geometry is visible (faces
+have shifted). Keep the CSI camera proximity to the front in view (Pi ~75 mm away on the
+rear wall).
 
 ---
 
-## 2026-07-10 — Tastergröße final: 12 mm
+## 2026-07-10 — Slogans on the end walls
 
-**Kontext:** Kurz auf 16 mm gewechselt (wegen großer Finger), vom Nutzer aber
-umgehend auf **12 mm zurückgenommen**. Also bleibt es bei 12 mm.
+**Decision:** raised text (1.2 mm), printed along:
+- **+X end wall: "HagiOne"** (the user's codename).
+- **-X end wall: "Balkon Borg"** (project name, = repo directory).
+- Font size 12 mm, horizontal along Y, centred on the wall. Each text lies fully within one
+  split half (no seam conflict).
+- **Ventilation slits moved to the +Y long wall for this** (end walls free for text).
 
-**Entscheidung:** Beleuchtete Taster **12 mm**. Ergonomie wird stattdessen über
-**großzügige Abstände** zwischen den Tastern aufgefangen (siehe Ergonomie-
-Eintrag), nicht über größere Taster. Board-Schaltplan unverändert; Frontbohrung
-12 mm, LED-Modell in Board-Spec Punkt 2.
+**Rationale:** codename + project name as a nameplate; raised wanted. The end walls were
+free anyway (operation -Y, cables +Y).
 
----
-
-## 2026-07-10 — Ergonomie: großzügig dimensionieren
-
-**Kontext:** Nutzer hat große Finger und ist eigenen Angaben nach eher
-ungeschickt. Board und Gehäuse dürfen "ein wenig größer" sein.
-
-**Entscheidung:** Durchgängig großzügig auslegen. Bedienelemente, Steckverbinder
-und Befestigungen weit auseinander; Board darf über das Minimalmaß hinaus
-wachsen; Gehäuse geräumig. Keine gedrängten Layouts, keine fummelige Montage.
-
-**Folge / offene Spannung:** Der Nutzer fand die Edelstahltaster "grob" und wählte
-12 mm, große Finger sprechen aber eher für größere Taster **oder** klar
-großzügige Abstände zwischen den 12-mm-Tastern. Beim Front-Layout darauf achten;
-Taster-Größe ggf. nochmal gegen Bedienbarkeit prüfen (16 mm bleibt Option).
-Auch als persistente User-Notiz gespeichert ([[user-prefers-roomy-builds]]).
+**Open:** the slogan on the lower printed plate (wanted earlier) still open; comes when
+building the front light-window frame, if still wanted. Choose the print orientation so the
+raised text does not print as an overhang.
 
 ---
 
-## 2026-07-10 — EDA-Tool auf KiCad, beleuchtete Taster, Gehäuse-Anforderungen
+## 2026-07-10 — Thermal rule dropped, lower plate is printed
 
-**Kontext:** Nutzer hat die Tool-Wahl wieder offengelassen ("wenn andere Software
-auf Debian installierbar, gern") und ist kein Hardware-/Firmware-Mensch. Zudem
-neue Wünsche: feinere, möglichst selbstleuchtende Taster; diverses im Gehäuse
-festschraubbar (Pi5, Kamera); Hinweis, dass das Pi-5-CSI-Kamerakabel sehr kurz ist.
+**Context:** the project description made the aluminium plate the mandatory heatsink of the
+LED layer ("thermal in summer" as the top risk). The user deliberately drops this: the LED
+runs mostly at night, the location is cool enough, ventilation through side slits suffices.
 
-**Entscheidungen:**
-- **EDA-Tool: KiCad (GUI)** statt atopile. **Überholt die atopile-Entscheidung**
-  vom selben Tag. Grund: per apt auf Debian, riesige THT-Bibliothek, beste
-  Aisler-Anbindung (direkter Push/nativer Import), kein Bibliotheks-Bastelaufwand.
-  Passt zum nicht-Hardware-Profil. Python bleibt nur für Fertigungsoutput/DRC/BOM,
-  nicht für den Erstentwurf. Code-Ethos gilt weiter fürs CadQuery-Gehäuse, nicht
-  fürs PCB.
-- **Taster: beleuchtet, 12 mm Metall**, momentan, mit LED, schraubbar in die
-  Front (Ersatz für die als "zu grob" empfundenen Edelstahltaster). Anzahl "ein
-  paar", vorerst 4 (anpassbar).
-  - **Board-Folge:** je Taster **3-poliger JST-XH** (SW-Signal, LED-Ansteuerung,
-    gemeinsames GND) statt des früheren Sammelsteckers. LED **GPIO-gesteuert**
-    über THT-Vorwiderstand → kann Zustand (Szene/Automatik) anzeigen. GPIO-Budget
-    des DevKitC reicht (Zählung: UART 2 + Radar-OUT 1 + I²C 2 + Encoder 3 +
-    4 Taster-Inputs + 4 LED-Outputs = 15 nutzbare GPIOs, passt).
-  - **Front-Folge:** 12-mm-Bohrungen mit Panelmutter statt großer Edelstahl-Ausschnitte.
+**Decision:**
+- **No mandatory aluminium heatsink anymore.** Overrides README §6 thermal and §4
+  ("aluminium plate = front + heatsink"). Risk "thermal in summer" downgraded.
+- **The lower plate is printed** (ASA), with a **diffuser light window** over the LEDs
+  (light must pass, ASA is opaque). Aluminium drops as the load-bearing front plate.
+- **Additional ventilation slits in the side walls.**
+- Thus the lower printed face also carries the raised slogan.
 
-**Erfasste Gehäuse-Anforderungen (CadQuery-Track, später zu detaillieren):**
-- **Pi5 in eigener Kammer** mit Schraubdomen (M2,5-Lochraster des Pi5), nah an
-  der Kamera wegen kurzem CSI; getrennt von der kühlen Sensor-Frontplatte, mit
-  Belüftung/Active-Cooler-Platz.
-- **Kamera** als eigenes Modul (nicht aufs Trägerboard, eigenes CSI-Interface) in
-  eigener Aufnahme hinter Frontdurchbruch. Kurzes CSI → Pi-Kammer direkt dahinter
-  oder längeres CSI-FPC beschaffen (beim Gehäuse klären).
-- **Trägerboard** bekommt eigene Schraublöcher zu Gehäusedomen (Lochbild aus dem
-  Gehäuse, noch offen).
-- Weiter gilt: 230-V-Netzteil in eigener V-0-Kammer, getrennt vom Druckteil.
+**Rationale:** user decision, the usage profile (night, cool) carries the risk. Simplifies
+the build (no aluminium purchase/contacting) and makes the slogan idea on the underside
+printable in the first place.
 
-**Verworfen:** atopile (jung, SMD-lastig, THT-Bibliotheksaufwand) und SKiDL
-zugunsten KiCad-GUI. Unbeleuchtete und 16-mm-Taster zugunsten 12 mm beleuchtet.
-
-**Folge:** `pcb/` wird ein KiCad-Projekt. Nächster Schritt: KiCad auf Debian
-installieren, Projektgerüst, Schaltplan nach aktueller Spec.
+**Consequence:** LED panel + diffuser sit in the light window of the printed lower plate.
+If it does get too warm, an aluminium retrofit behind the LEDs is possible any time.
 
 ---
 
-## 2026-07-10 — Trägerplatine: Werkzeug, ESP32, Strom, Verbinder
+## 2026-07-10 — Ceiling mount: orientation, ears, side operation
 
-**Kontext:** Zusätzlich zum Gehäuse soll eine **Trägerplatine (Carrier/Backplane)
-nur für Sensorik und Signale** entstehen (ESP32-Domäne: LD2410B-Radar, BME280,
-4 Taster, Encoder), gefertigt bei **Aisler** (EU). Kein System-Backplane; die
-Lichtseite (Athom-WLED + SK6812-Panel, eigenes 5 V/Datenkabel) und die Pi-Peripherie
-(RTL-SDR, USB-Mikro, Kamera) bleiben getrennt.
+**Context:** the enclosure is screwed to the ceiling (balcony underside), the panel points
+down onto the table. The top is the ceiling side (inaccessible).
 
-**Entscheidungen:**
-- **Werkzeug: atopile** (Code-first EDA, eigene Sprache), Export nach KiCad →
-  Aisler. Gewählt trotz Hinweis, dass die offizielle KiCad-Python-API zum
-  Erstentwurf schlecht taugt (Eeschema hat keine stabile Python-API).
-  **>> ÜBERHOLT am selben Tag, siehe Eintrag "EDA-Tool auf KiCad, beleuchtete
-  Taster". Jetzt KiCad-GUI.**
-- **ESP32: ESP32-DevKitC (38-Pin), steckbar** auf Buchsenleisten, lötfrei
-  tauschbar und regulär bestellbar. Nutzer ist ausdrücklich kein Hardware-/
-  Firmware-Bastler, daher steckbar statt gelötetes Bare-Modul.
-- **Strom: 5 V rein, 3,3 V vom ESP-Modul.** Board bringt nur abgesichertes 5 V
-  an den DevKit; dessen Onboard-Regler versorgt ESP und Sensoren mit 3,3 V. Kein
-  eigener Regler an Bord (minimal, robust). Grenze im Auge behalten: reicht der
-  DevKit-LDO für BME280 + Radar? LD2410B läuft auf 5 V, zieht 3,3 V nicht.
-- **Verbinder: JST-XH (2,5 mm) durchgängig** für alle Abgänge, verpolungssicher,
-  gecrimpt. Einheitliches Rastermaß, günstig, lötarm.
+**Decisions (implemented in the CadQuery model):**
+- **Orientation:** +Z = top (ceiling, closed top wall), -Z = bottom (open front,
+  aluminium plate/panel/diffuser shines down). X = width, Y = depth.
+- **Operation on the side wall**, not on top and not in the glowing front: 4 buttons
+  (12 mm) + encoder (7 mm) as holes in the **-Y wall** (to the terrace). As a cluster in
+  **one half** (x = 35..195), so no hole lands on the X=0 seam.
+- **Ceiling fixing via side "nubs":** 4 tabs at the top corners, protruding in ±Y,
+  vertical through-hole (~M5). Screw from below through the nub up into the ceiling anchor.
+  The tab top flush with the enclosure top (rests against the ceiling).
+- **Cable gland in the +Y side wall** (M12), no longer in the bottom.
+- **Ventilation** as slits in the end walls near the open (lower) front, so heat/condensate
+  can escape downward.
+- **Pi5 + carrier** hang on bosses from the top wall; split X=0, dowel-pin posts.
 
-**Begründung:** atopile passt am ehesten zum "alles als Code"-Ethos des Projekts
-(vgl. CadQuery-Gehäuse) und kapselt Bausteine als wiederverwendbare Module, was
-den nicht-Hardware-Nutzer entlastet. Steckbarer DevKit + JST + 5-V-Durchleitung
-sind der lötärmste, robusteste Pfad und decken die Rolle "billige, austauschbare
-Frontplatte" ab.
+**Rationale:** the ceiling position flips top/bottom; operation and cables have to go to
+the side, because the ceiling is on top and the light field on the bottom. Nubs are the
+simplest tool-friendly ceiling fixing (screwable from below).
 
-**Verworfen / abgewägt:**
-- *KiCad-Python-API (pcbnew/kipy)* und *SKiDL* als primärer Weg verworfen zugunsten
-  atopile; **bleiben aber Rückfalloption**, falls atopile an Reife-/Bibliotheks-
-  grenzen stößt. Der Wechsel kostet Layout, nicht die Designentscheidungen.
-- *Eigener 3V3-Regler an Bord* und *reine Signaldurchleitung* verworfen.
-- *Qwiic/STEMMA* und *Schraubklemmen* zugunsten einheitlichem JST-XH verworfen.
-
-**Bestückung & Schutz (bestätigt):**
-- **Selbst gelötet, nur THT.** Board ausschließlich mit durchsteckbaren Teilen:
-  JST-XH-Header, Buchsenleisten für den DevKit, THT-Widerstände. Keine
-  Aisler-Bestückung. Folge: atopile braucht ggf. **THT-Footprints/Custom-Parts**
-  (die Bibliothek ist SMD-lastig), das trage ich.
-- **Schutz minimal: nur Serienwiderstände** (THT) auf Radar-UART, Encoder- und
-  Tasterleitungen. **Keine TVS/ESD-Dioden** (wären klobig in THT). I²C braucht
-  Pull-ups: entweder liefert das BME280-Breakout sie, sonst 4,7 kΩ THT an Bord
-  (noch zu klären, hängt vom gewählten Breakout ab).
-
-**Offen / Annahmen (noch zu bestätigen):**
-- **Board-Outline + Befestigungslöcher** gekoppelt an CadQuery-Gehäuse (offener
-  Punkt README §8.3, Board noch nicht vermessen) → vorerst parametrische Platzhalter.
-- **Lagen:** Aisler-Default 2 Lagen angenommen (für Sensor-Carrier ausreichend).
-- **GPIO-Pinmap** ESP32↔Sensoren/Taster noch festzulegen (mit ESPHome-Seite zu
-  koordinieren, README §8.1).
-
-**Folgen:** Neues Domänen-Verzeichnis `pcb/` (atopile-Projekt) sobald erster
-Inhalt entsteht. CLAUDE.md-Domänentabelle entsprechend ergänzen.
+**Open / parametric:** exact side/position choice (buttons -Y, cables +Y as default), ear
+dimensions and ceiling screw size, vent arrangement. All parameters in
+`cad/balkon_borg.py`. Camera/radar/mic cut-outs and the aluminium front plate as its own
+part follow.
 
 ---
 
-## 2026-07-10 — Projekt- und Gedächtnisstruktur angelegt
+## 2026-07-10 — Enclosure from datasheet dimensions, not from measurement
 
-**Kontext:** Projektstart Balkon-Borg. Hardware-plus-Software-Bastelprojekt mit
-mehreren Domänen (CAD, ESP32-Firmware, WLED, Backend-Dienste). Wunsch nach einer
-persistenten Gedächtnisschicht, damit Entscheidungen über die Zeit erhalten
-bleiben und bei jedem Claude-Start verfügbar sind.
+**Context:** I had classified the CadQuery enclosure as "blocked until parts are measured".
+The user rightly disagrees: the dimensions of the standard parts are online as drawings,
+and his approach is deliberately generous ("bigger if in doubt, it just hangs there").
 
-**Entscheidung:** Drei Kern-Dateien im Projektwurzelverzeichnis:
-- `CLAUDE.md` — Arbeitskontext, wird bei jedem Claude-Start automatisch geladen;
-  verweist explizit auf dieses Log und auf `README.md`.
-- `README.md` — vollständiger Projektüberblick (die gelieferte Beschreibung).
-- `log/decisions.md` — dieses Entscheidungslog.
+**Decision:** build the enclosure **now** from datasheet dimensions + generous clearances,
+parametrically, no physical measurement needed. Tolerance via slack rather than precision.
+Enclosure work is thus no longer blocked by parts arriving.
 
-**Begründung:** `CLAUDE.md` ist der Standard-Mechanismus, den Claude Code beim
-Start einliest. Indem sie auf `log/decisions.md` verweist, wird das Log
-verlässlich Teil des Startkontexts. Trennung von Referenz (README, statisch) und
-Verlauf (Log, wächst) hält beides sauber.
+**The only real spatial constraint:** the short Pi 5 CSI cable → camera near the Pi.
+Solution: Pi chamber behind the camera opening or a longer CSI FPC (200-300 mm). Not
+covered by "build bigger", to be solved separately.
 
-**Folgen:** Künftige nicht-triviale Entscheidungen werden hier als datierte
-Einträge angehängt. Domänen-Artefakte kommen in die in `CLAUDE.md` festgelegten
-Verzeichnisse (`cad/`, `firmware/esphome/`, `wled/`, `deploy/quadlets/`,
-`docs/`), sobald der erste echte Inhalt entsteht.
+**Consequence:** order adjusted: the CadQuery enclosure can start in parallel/before the
+schematic. The board outline is carried as a generously reserved bay in the enclosure, so
+board layout and enclosure stay decoupled.
 
 ---
 
-## Vorentschiedenes aus der Projektbeschreibung (Ausgangslage, Stand 2026-07-10)
+## 2026-07-10 — Concrete parts: ESP32 board, buttons, BME280 pull-ups
 
-Bereits mit der Beschreibung festgelegt, hier als Ausgangslage dokumentiert
-(nicht erneut zu diskutieren, sofern kein neuer Grund auftaucht):
+**Context:** the user delegates the part choice ("take what is technically suitable and
+available, what everyone uses") and asks for a guide on the I²C pull-ups.
 
-- **Rechenknoten-Rollen:** Edge-Pi 5 macht Aufnahme und lokale Inferenz; ESP32
-  ist die austauschbare Sensor-/Bedien-Frontplatte; NAS-Pi 5 ist Broker/Storage.
-- **Objekterkennung auf Pi-5-CPU**, kein AI-HAT/Hailo (PCIe bleibt für späteres
-  Retrofit oder NVMe frei). Konsequenz: FPS-/Stream-begrenzt.
-- **Licht** über Athom-WLED-Controller + SK6812-RGBW-WW-Panel (344 px, 8×43),
-  ABL auf ~8 A begrenzt. Kein separater DMX-Blinder (Stairville gestrichen).
-- **LoRa nur Empfang** über den RTL-SDR, kein aktiver Meshtastic-Sendeknoten.
-- **Gehäuse in ASA**, 3D-gedruckt, 2-teilig (Split bei X=0, 4-mm-Passstifte);
-  PLA ausgeschlossen (Sommerhitze). Alu-Platte dient zugleich als Kühlkörper.
-- **Strom:** ein gemeinsames 5-V-Netzteil (Mean Well LRS-150F-5), auf 5,15 V
-  getrimmt, abgesicherte Abgänge; 230 V getrennt im eigenen V-0-Gehäuse.
-- **Gestrichen:** E-Ink-Display, AS3935-Blitzsensor (siehe README §7).
+**Decisions:**
+- **ESP32: Espressif ESP32-DevKitC-V4 (WROOM-32E), 38-pin, official.** Reason: quality over
+  price, documented mechanics (row spacing given), widely available. Socketed on 2×
+  `PinSocket_1x19_P2.54mm`. **KiCad has no DevKitC footprint** → header footprints, spacing
+  from the Espressif drawing.
+- **Buttons: 12 mm metal, momentary, illuminated, 5 V ring LED, 1NO (IP65)**, the common
+  standard type. Consequence: a 5 V LED cannot be driven directly from a 3.3 V GPIO → **one
+  NPN per button (BC337-40/2N3904, TO-92)** as a low-side switch, GPIO through 1 kΩ to the
+  base. The button connector is thus **4-pin** (SW, GND, 5V, LEDK). The 4× 330 Ω LED
+  resistors drop (the LED brings its own).
+- **BME280 pull-ups: 2× 4.7 kΩ as DNP** provided. Almost all breakouts have pull-ups on
+  board → the spots stay empty, populate only in the exceptional case. Buy a **genuine
+  Bosch BME280**, avoid BMP280 fakes (no humidity).
 
-Detail-Kontext zu jedem Punkt in `README.md`.
+**Rationale:** all three choices aim at "common, available, robust, low-solder for a
+non-hardware builder". The NPN driver is the price for common illuminated buttons having
+5 V LEDs; the alternative (2 V LED directly on the GPIO) would be part-dependent and
+fragile.
+
+**Rejected:** 30-pin clone board (lower QC, variable row spacing) in favour of the official
+DevKitC-V4. Direct GPIO LED drive in favour of the NPN driver.
+
+**Open:** enter the row-spacing dimension from the Espressif drawing; when ordering ensure
+the 5 V button variant; board outline further from the enclosure.
+
+---
+
+## 2026-07-10 — Button size final: 12 mm
+
+**Context:** briefly switched to 16 mm (because of big fingers), but immediately taken back
+to **12 mm** by the user. So it stays at 12 mm.
+
+**Decision:** illuminated buttons **12 mm**. Ergonomics is instead handled via **generous
+spacing** between the buttons (see the ergonomics entry), not via larger buttons. Board
+schematic unchanged; front hole 12 mm, LED model in board-spec point 2.
+
+---
+
+## 2026-07-10 — Ergonomics: size up generously
+
+**Context:** the user has big fingers and is, by his own account, rather clumsy. Board and
+enclosure may be "a little bigger".
+
+**Decision:** design generously throughout. Controls, connectors and fixings well apart;
+the board may grow beyond the minimum; the enclosure roomy. No cramped layouts, no fiddly
+assembly.
+
+**Consequence / open tension:** the user found the stainless buttons "coarse" and chose
+12 mm, but big fingers argue rather for bigger buttons **or** clearly generous spacing
+between the 12 mm buttons. Watch for this in the front layout; re-check button size against
+usability if needed (16 mm stays an option). Also saved as a persistent user note
+([[user-prefers-roomy-builds]]).
+
+---
+
+## 2026-07-10 — EDA tool to KiCad, illuminated buttons, enclosure requirements
+
+**Context:** the user left the tool choice open again ("if other software is installable on
+Debian, gladly") and is not a hardware/firmware person. Plus new wishes: finer,
+preferably self-lit buttons; various things screwable inside the enclosure (Pi5, camera);
+note that the Pi 5 CSI camera cable is very short.
+
+**Decisions:**
+- **EDA tool: KiCad (GUI)** instead of atopile. **Supersedes the atopile decision** of the
+  same day. Reason: via apt on Debian, huge THT library, best Aisler integration (direct
+  push/native import), no library tinkering. Fits the non-hardware profile. Python stays
+  only for fabrication output/DRC/BOM, not for the first draft. The code ethos still holds
+  for the CadQuery enclosure, not the PCB.
+- **Buttons: illuminated, 12 mm metal**, momentary, with LED, screwable into the front
+  (replacement for the stainless buttons felt "too coarse"). Count "a few", 4 for now
+  (adjustable).
+  - **Board consequence:** per button a **3-pin JST-XH** (SW signal, LED drive, common
+    GND) instead of the earlier collective connector. LED **GPIO-controlled** through a THT
+    resistor → can show state (scene/automation). The DevKitC GPIO budget suffices (count:
+    UART 2 + radar OUT 1 + I²C 2 + encoder 3 + 4 button inputs + 4 LED outputs = 15 usable
+    GPIOs, fits).
+  - **Front consequence:** 12 mm holes with a panel nut instead of large stainless
+    cut-outs.
+
+**Captured enclosure requirements (CadQuery track, to detail later):**
+- **Pi5 in its own chamber** with screw bosses (the Pi5 M2.5 hole grid), near the camera
+  because of the short CSI; separated from the cool sensor front panel, with
+  ventilation/Active Cooler room.
+- **Camera** as its own module (not on the carrier board, own CSI interface) in its own
+  seat behind a front cut-out. Short CSI → Pi chamber directly behind or procure a longer
+  CSI FPC (settle with the enclosure).
+- **Carrier board** gets its own screw holes to enclosure bosses (hole pattern from the
+  enclosure, still open).
+- Still holds: 230 V PSU in its own V-0 chamber, separated from the printed part.
+
+**Rejected:** atopile (young, SMD-heavy, THT library effort) and SKiDL in favour of the
+KiCad GUI. Unlit and 16 mm buttons in favour of 12 mm illuminated.
+
+**Consequence:** `pcb/` becomes a KiCad project. Next step: install KiCad on Debian,
+project skeleton, schematic per current spec.
+
+---
+
+## 2026-07-10 — Carrier board: tool, ESP32, power, connectors
+
+**Context:** in addition to the enclosure, a **carrier board (carrier/backplane) for
+sensors and signals only** should come about (ESP32 domain: LD2410B radar, BME280, 4
+buttons, encoder), fabricated at **Aisler** (EU). No system backplane; the light side
+(Athom WLED + SK6812 panel, own 5 V/data cable) and the Pi peripherals (RTL-SDR, USB mic,
+camera) stay separate.
+
+**Decisions:**
+- **Tool: atopile** (code-first EDA, own language), export to KiCad → Aisler. Chosen
+  despite the note that the official KiCad Python API is poor for the first draft (Eeschema
+  has no stable Python API). **>> SUPERSEDED the same day, see the entry "EDA tool to
+  KiCad, illuminated buttons". Now KiCad GUI.**
+- **ESP32: ESP32-DevKitC (38-pin), pluggable** on headers, solder-free swappable and
+  regularly orderable. The user is explicitly not a hardware/firmware tinkerer, hence
+  pluggable instead of a soldered bare module.
+- **Power: 5 V in, 3.3 V from the ESP module.** The board brings only fused 5 V to the
+  DevKit; its onboard regulator supplies ESP and sensors with 3.3 V. No own regulator on
+  board (minimal, robust). Keep the limit in view: does the DevKit LDO suffice for BME280 +
+  radar? The LD2410B runs on 5 V, does not draw 3.3 V.
+- **Connectors: JST-XH (2.5 mm) throughout** for all branches, polarity-safe, crimped. One
+  uniform pitch, cheap, low-solder.
+
+**Rationale:** atopile fits the project's "everything as code" ethos best (cf. the CadQuery
+enclosure) and encapsulates building blocks as reusable modules, which relieves the
+non-hardware user. Pluggable DevKit + JST + 5 V pass-through are the lowest-solder, most
+robust path and cover the "cheap, replaceable front panel" role.
+
+**Rejected / weighed:**
+- *KiCad Python API (pcbnew/kipy)* and *SKiDL* as the primary path rejected in favour of
+  atopile; **but they stay a fallback** if atopile hits maturity/library limits. The switch
+  costs layout, not the design decisions.
+- *Own 3V3 regulator on board* and *pure signal pass-through* rejected.
+- *Qwiic/STEMMA* and *screw terminals* rejected in favour of uniform JST-XH.
+
+**Population & protection (confirmed):**
+- **Hand-soldered, THT only.** The board exclusively with through-hole parts: JST-XH
+  headers, headers for the DevKit, THT resistors. No Aisler assembly. Consequence: atopile
+  may need **THT footprints/custom parts** (the library is SMD-heavy), which I carry.
+- **Protection minimal: series resistors only** (THT) on the radar UART, encoder and button
+  lines. **No TVS/ESD diodes** (would be bulky in THT). I²C needs pull-ups: either the
+  BME280 breakout supplies them, else 4.7 kΩ THT on board (still to clarify, depends on the
+  chosen breakout).
+
+**Open / assumptions (still to confirm):**
+- **Board outline + mounting holes** coupled to the CadQuery enclosure (open point README
+  §8.3, board not yet measured) → parametric placeholders for now.
+- **Layers:** Aisler default 2 layers assumed (sufficient for a sensor carrier).
+- **GPIO pinmap** ESP32↔sensors/buttons still to fix (to coordinate with the ESPHome side,
+  README §8.1).
+
+**Consequences:** a new domain directory `pcb/` (atopile project) once first content
+appears. Extend the CLAUDE.md domain table accordingly.
+
+---
+
+## 2026-07-10 — Project and memory structure created
+
+**Context:** project start Balkon-Borg. A hardware-plus-software hobby project with several
+domains (CAD, ESP32 firmware, WLED, backend services). A wish for a persistent memory layer
+so decisions survive over time and are available at every Claude start.
+
+**Decision:** three core files in the project root:
+- `CLAUDE.md` — working context, loaded automatically at every Claude start; points
+  explicitly to this log and to `README.md`.
+- `README.md` — full project overview (the delivered description).
+- `log/decisions.md` — this decision log.
+
+**Rationale:** `CLAUDE.md` is the standard mechanism Claude Code reads at start. By pointing
+to `log/decisions.md`, the log reliably becomes part of the start context. Separating
+reference (README, static) and history (log, growing) keeps both clean.
+
+**Consequences:** future non-trivial decisions are appended here as dated entries. Domain
+artefacts go into the directories fixed in `CLAUDE.md` (`cad/`, `firmware/esphome/`,
+`wled/`, `deploy/quadlets/`, `docs/`), once first real content appears.
+
+---
+
+## Pre-decided from the project description (starting situation, as of 2026-07-10)
+
+Already fixed with the description, documented here as the starting situation (not to be
+discussed again unless a new reason appears):
+
+- **Compute-node roles:** the edge Pi 5 does recording and local inference; the ESP32 is the
+  replaceable sensor/control front panel; the NAS-Pi 5 is broker/storage.
+- **Object recognition on the Pi 5 CPU**, no AI HAT/Hailo (PCIe stays free for a later
+  retrofit or NVMe). Consequence: FPS/stream limited.
+- **Light** via the Athom WLED controller + SK6812 RGBW-WW panel (344 px, 8×43), ABL capped
+  at ~8 A. No separate DMX blinder (Stairville dropped).
+- **LoRa receive only** over the RTL-SDR, no active Meshtastic transmit node.
+- **Enclosure in ASA**, 3D-printed, 2 parts (split at X=0, 4 mm dowel pins); PLA excluded
+  (summer heat). The aluminium plate also serves as a heatsink.
+- **Power:** one shared 5 V PSU (Mean Well LRS-150F-5), trimmed to 5.15 V, fused branches;
+  230 V separated in its own V-0 enclosure.
+- **Dropped:** e-ink display, AS3935 lightning sensor (see README §7).
+
+Detail context for each point in `README.md`.
