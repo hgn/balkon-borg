@@ -168,13 +168,14 @@ VENT_SLIT = 2.0        # slit width (was 4 mm)
 VENT_MID_X = 20.0      # rear vents in the clear zone between carrier and Pi
 VENT_END_Z = 100.0     # exhaust slits high on the end walls
 
-# Rear hex honeycomb grille (the eye-catcher vent). A field of pointy-top hexagons,
-# sized to ~1/6.5 of the rear-wall area, in the clear zone between the boards. SLS
-# handles this trivially (no supports); the walls stay well above the 1 mm minimum.
-GRILLE_CX = 16.0       # grille field centre X on the rear wall
-GRILLE_CZ = 44.0       # grille field centre Z (below the HagiOne band)
-GRILLE_W = 108.0       # field width   (108 x 72 = 7776 mm2 ~ 1/6.5 of 460x110)
-GRILLE_H = 72.0        # field height
+# Rear hex honeycomb grille (the eye-catcher vent). A wide, flat field of pointy-top
+# hexagons sitting entirely in the board-free middle bay (between the carrier board on
+# the left, the Pi board on the right, and clear of the divider ribs), so nothing that
+# holds a PCB is behind it. SLS prints this without supports; webs stay above 1 mm.
+GRILLE_CX = 11.0       # grille field centre X (middle bay, clear of both boards)
+GRILLE_CZ = 53.0       # grille field centre Z
+GRILLE_W = 66.0        # field width  (wide and flat: 66 x 40, aspect ~1.65)
+GRILLE_H = 40.0        # field height (kept low on purpose)
 HEX_PITCH = 12.0       # hexagon centre-to-centre (across flats)
 HEX_WALL = 2.2         # solid web between openings (SLS-safe, > 1 mm)
 

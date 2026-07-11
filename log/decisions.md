@@ -24,11 +24,19 @@ log what is already in the code/YAML.
 cool vent, feasible in the material, at ~1/6-1/7 of the rear-wall area.
 
 **Decision:** a **hex honeycomb grille** on the rear wall (`_hex_grille` in
-`cad/balkon_borg.py`), a field of pointy-top hexagons in the clear zone between the
-boards. Field 108×72 mm = **15.4 % of the rear face (~1/6.5)**; `HEX_PITCH=12`,
-`HEX_WALL=2.2` → 9.8 mm openings, **~67 % open area**, webs 2.2 mm (> the 1 mm SLS
-minimum). Cells that would poke past the field are dropped, giving a clean rectangular
-field with a naturally stepped honeycomb border. HagiOne stays in the band above it.
+`cad/balkon_borg.py`), a field of pointy-top hexagons. `HEX_PITCH=12`, `HEX_WALL=2.2`
+→ 9.8 mm openings, webs 2.2 mm (> the 1 mm SLS minimum). Cells that would poke past the
+field are dropped, giving a clean rectangular field with a naturally stepped honeycomb
+border. HagiOne stays in the band above it.
+
+**Field wide and flat, clear of the board mounts (revised after review):** the grille
+must not sit over any PCB-holding structure. Placed entirely in the **board-free middle
+bay** — between the carrier board (x ≤ -30), the Pi board (x ≥ 52) and clear of the
+divider ribs (x = -25/48). Field **66×40 mm at (11, 53)** (x[-22,44] z[33,73]), aspect
+~1.65, ~5 % of the rear face. Verified: nothing behind it (no boss, board or rib), below
+the HagiOne band. Trade-off: the clear middle bay is only ~70 mm wide, so a
+construction-free grille is smaller than the earlier 1/6-1/7 target; kept wide-and-flat
+per the request. Widening further would mean relocating a board or a divider.
 
 **Rationale:** honeycomb is the classic "cool enclosure vent", reads technical/premium
 and pairs with the cast SLS look; SLS prints it with no supports. Voronoi was the
