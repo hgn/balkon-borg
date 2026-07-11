@@ -18,6 +18,35 @@ log what is already in the code/YAML.
 
 ---
 
+## 2026-07-11 — Rear wall as keep-out zones + centred grille/wordmark layout
+
+**Context:** the single grille was small and off to one side, and the rear wordmark was
+small and looked oddly offset. Wanted a systematic layout: mark where the boards sit,
+derive the free areas, then fill them with grille (with margin) and the centred
+HagiOne / Balkon Borg wordmarks.
+
+**Two realisations that drive the layout:**
+- **Raised text may sit anywhere** on the rear (it is on the outside of the wall); only
+  grille openings, which cut through, must dodge the board keep-outs.
+- There is a **split seam at X=0**. Nothing may cross it (it would be cut between the
+  two printed halves). This was the real cause of the "oddly offset" wordmark: HagiOne
+  sat centred on x=0, i.e. straight on the seam.
+
+**Decision — computed layout, everything centred in its own zone, nothing on the seam:**
+- Keep-outs (for holes): carrier board (left), Pi board (centre-right), status LEDs and
+  XT60 (right), divider ribs, seam.
+- **Four honeycomb panels** (`REAR_GRILLES`) in the board-free zones: far left of the
+  carrier and the middle bay right of the seam (both tall), plus the wide-flat strips
+  above and below the Pi. All verified clear of every board, boss, rib and the seam.
+- **Two wordmarks** (`REAR_TEXTS`), **bold**, bigger (HagiOne 22, Balkon Borg 16), each
+  centred in one half (x=-115 / x=+115, z=55), clear of the seam.
+- The offset bug is fixed by placing text on a **ProjectedOrigin workplane** at the exact
+  (cx, cz) (`_rear_text`) instead of trusting the face bounding-box centre.
+
+Supersedes the earlier single wide-flat grille from today.
+
+---
+
 ## 2026-07-11 — Rear hex honeycomb grille (replaces the diagonal louvres)
 
 **Context:** the diagonal rear louvres were too small and too boring. Wanted a really

@@ -168,16 +168,27 @@ VENT_SLIT = 2.0        # slit width (was 4 mm)
 VENT_MID_X = 20.0      # rear vents in the clear zone between carrier and Pi
 VENT_END_Z = 100.0     # exhaust slits high on the end walls
 
-# Rear hex honeycomb grille (the eye-catcher vent). A wide, flat field of pointy-top
-# hexagons sitting entirely in the board-free middle bay (between the carrier board on
-# the left, the Pi board on the right, and clear of the divider ribs), so nothing that
-# holds a PCB is behind it. SLS prints this without supports; webs stay above 1 mm.
-GRILLE_CX = 11.0       # grille field centre X (middle bay, clear of both boards)
-GRILLE_CZ = 53.0       # grille field centre Z
-GRILLE_W = 66.0        # field width  (wide and flat: 66 x 40, aspect ~1.65)
-GRILLE_H = 40.0        # field height (kept low on purpose)
+# Rear-wall layout. The boards behind the wall define keep-out zones for anything that
+# cuts THROUGH the wall (grille, holes). Raised text sits on the OUTSIDE and may go
+# anywhere there is wall. Nothing crosses the X=0 split seam, and everything is centred
+# in its own zone. SLS prints the honeycomb without supports; webs stay above 1 mm.
 HEX_PITCH = 12.0       # hexagon centre-to-centre (across flats)
 HEX_WALL = 2.2         # solid web between openings (SLS-safe, > 1 mm)
+
+# Honeycomb grille panels (cx, cz, w, h), each fully inside a board-free zone and on
+# one side of the seam: far left of the carrier, the middle bay right of the seam, and
+# the wide-flat strips above and below the Pi.
+REAR_GRILLES = (
+    (-203.0, 55.0, 32.0, 84.0),
+    (  29.0, 55.0, 32.0, 84.0),
+    (  96.0, 93.0, 82.0, 14.0),
+    (  96.0, 16.0, 82.0, 14.0),
+)
+# Raised wordmarks (text, cx, cz, size), each centred in one half, clear of the seam.
+REAR_TEXTS = (
+    ("HagiOne",     -115.0, 55.0, 22.0),
+    ("Balkon Borg",  115.0, 55.0, 16.0),
+)
 
 # WLED controller cradle on the top inner wall. Athom publishes NO mechanical
 # dimensions and the High-Power board has no documented mount holes, so this is a
@@ -216,6 +227,18 @@ def _pattern(center: tuple[float, float], dx: float, dz: float
 
 def _cyl(d: float, h: float, pnt: cq.Vector, direction: cq.Vector) -> cq.Solid:
     return cq.Solid.makeCylinder(d / 2, h, pnt, direction)
+
+
+def _rear_text(body: cq.Workplane, s: str, cx: float, cz: float,
+               size: float, depth: float) -> cq.Workplane:
+    """Raise text on the rear (-Y) outer face, exactly centred at (cx, cz).
+
+    Uses a ProjectedOrigin workplane so the text lands where asked instead of at the
+    face bounding-box centre (which drifts as features are added).
+    """
+    return (body.faces("<Y")
+            .workplane(centerOption="ProjectedOrigin", origin=(cx, 0.0, cz))
+            .text(s, size, depth, combine=True, kind="bold"))
 
 
 def _hex_grille(cx: float, cz: float, w: float, h: float, pitch: float,
@@ -331,10 +354,9 @@ def build_body() -> cq.Workplane:
         body = body.cut(_cyl(PWR_SCREW_D, WALL + 2 * EPS,
                              cq.Vector(px, -EPS, pz + s * PWR_SCREW_DZ / 2),
                              cq.Vector(0, 1, 0)))
-    # Hex honeycomb grille in the rear wall (the eye-catcher vent), in the clear zone
-    # between the carrier and the Pi. Generous open area, insect-safe webs, cast look.
-    body = body.cut(_hex_grille(GRILLE_CX, GRILLE_CZ, GRILLE_W, GRILLE_H,
-                                HEX_PITCH, HEX_WALL, -EPS, WALL + EPS))
+    # Hex honeycomb grille panels filling the board-free rear zones (see REAR_GRILLES).
+    for cx, cz, w, h in REAR_GRILLES:
+        body = body.cut(_hex_grille(cx, cz, w, h, HEX_PITCH, HEX_WALL, -EPS, WALL + EPS))
     # Exhaust: slits high on both end walls (hot air rises; the top is ceiling).
     for sx in (1, -1):
         for z in (VENT_END_Z, VENT_END_Z + 4):
@@ -423,9 +445,9 @@ def build_body() -> cq.Workplane:
             .text(TEXT_RIGHT, TEXT_SIZE, TEXT_DEPTH, combine=True))
     body = (body.faces("<Z").workplane(centerOption="CenterOfBoundBox")
             .center(BOTTOM_X, 0).text(TEXT_BOTTOM, BOTTOM_SIZE, TEXT_DEPTH, combine=True))
-    # HagiOne also on the rear wall, in the clear upper band above the grille.
-    body = (body.faces("<Y").workplane(centerOption="CenterOfBoundBox")
-            .center(0, 35).text(TEXT_RIGHT, TEXT_SIZE, TEXT_DEPTH, combine=True))
+    # Rear wordmarks, each centred in its half (see REAR_TEXTS), clear of the seam.
+    for s, cx, cz, size in REAR_TEXTS:
+        body = _rear_text(body, s, cx, cz, size, TEXT_DEPTH)
 
     # Trim any boolean sliver above the ceiling plane so the ear tops stay flat.
     body = body.cut(cq.Solid.makeBox(
