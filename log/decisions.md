@@ -18,6 +18,28 @@ log what is already in the code/YAML.
 
 ---
 
+## 2026-07-11 — Depth +20 mm for WLED-to-LED clearance
+
+**Context:** a packaging check (plan + rear sections drawn from the CAD dimensions)
+showed everything fits with big margins except the WLED controller: mounted on the top
+wall it hangs 44 mm forward (to y=77) and came within **5 mm of the warm LED panel back**
+(y=82). The rear-mounted boards (Pi+cooler, carrier+ESP) were fine at 51-55 mm.
+
+**Decision:** deepen the enclosure `DEPTH` 95 → **115 mm** (outer Y 98 → 118). The LED
+panel moves forward with the front frame while the top-wall WLED stays put, so the gap
+grows 1:1: **WLED-to-LED now 25 mm** (target ≥15-20). Rear boards now 71-75 mm clear.
+
+**Rationale:** the user preferred adding depth ("stört ja nicht") over relocating the
+WLED. +20 mm gives a comfortable warm-clearance and a round number; the unit hangs under
+the balcony so extra depth is free.
+
+**Still open (minor):** the WLED footprint sits over the carrier's top-right corner in
+X-Z with only 6 mm of depth between them (no collision). Nudging `WLED_CENTER` into the
+middle bay would clear it fully if wanted. Component heights (Pi cooler, ESP stack, WLED
+body) are estimates pending real measurement.
+
+---
+
 ## 2026-07-11 — Rear wall as keep-out zones + centred grille/wordmark layout
 
 **Context:** the single grille was small and off to one side, and the rear wordmark was

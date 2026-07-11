@@ -49,7 +49,8 @@ PANEL_H = PANEL_ROWS * PANEL_PITCH            # 80  (Z)
 
 BORDER = 15.0            # frame around the front light window
 WALL = 3.0              # ASA wall thickness
-DEPTH = 95.0            # internal depth front-to-back (Y); roomy for all boards
+DEPTH = 115.0           # internal depth front-to-back (Y); +20 mm gives the WLED
+                        # controller ~25 mm clearance to the warm LED panel back
 
 # Front seat: diffuser (opal acrylic) in a rebate, LED panel glued behind it.
 WINDOW_W = PANEL_W + 4.0        # 434, light hole (all pixels visible)
