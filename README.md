@@ -18,6 +18,21 @@ by `make render`):
 
 ---
 
+## Documentation
+
+- **Start here:** [decision log](log/decisions.md) (why the build is the way it is) ·
+  [design review](docs/design-review.md) (open issues, ranked) ·
+  [cost estimate](docs/cost-estimate.md)
+- **Build & hardware:** [enclosure & SLS printing](docs/enclosure-sintering.md) ·
+  [build/integration notes](docs/build-notes.md) ·
+  [power distribution](docs/power-distribution.md) ·
+  [carrier board spec](pcb/docs/board-spec.md)
+- **Domains:** [`cad/`](cad/README.md) (enclosure) ·
+  [`pcb/`](pcb/README.md) (carrier board) ·
+  [`firmware/esphome/`](firmware/esphome/README.md) (ESP32)
+
+---
+
 ## 1 · Short description
 
 A compact enclosure, screwed under the balcony (above the terrace, ~2 m from the
