@@ -57,7 +57,7 @@ DIFF_T = 3.0                    # opal acrylic thickness
 DIFF_OVERLAP = 5.0             # ledge the diffuser rests on, per side
 DIFFUSER_W = WINDOW_W + 2 * DIFF_OVERLAP   # 444
 DIFFUSER_H = WINDOW_H + 2 * DIFF_OVERLAP   # 94
-RECESS = 0.0                   # diffuser flush in the pocket; the bezel retains it
+RECESS = 1.0                   # diffuser sits 1 mm recessed, glued into the rebate
 LED_GAP = 8.0                  # air gap LEDs -> diffuser for even glow
 FRAME_D = RECESS + DIFF_T + LED_GAP        # 12, front frame depth
 
@@ -75,12 +75,14 @@ BOSS_OD = 8.0
 BOSS_H = 8.0
 BOSS_HOLE = 2.2
 
-# Ceiling-mount ears ("Nasen"): tabs at the top, protruding in +/-Y, vertical hole.
-EAR_L = 22.0
-EAR_W = 28.0
-EAR_T = 6.0
-EAR_HOLE = 5.5
-EAR_INSET = 10.0
+# Ceiling-mount ears ("Nasen") on the side walls (+/-X): a pad that ramps out of
+# the wall (cast look, not a tacked-on tab), 2 per side, with a vertical screw hole.
+EAR_L = 24.0           # sideways protrusion (X)
+EAR_W = 28.0           # width along the depth (Y)
+EAR_T = 6.0            # pad thickness (Z)
+EAR_HOLE = 5.5         # M5 ceiling screw clearance
+EAR_INSET = 12.0       # from the front/back edge to the ear
+RAMP_H = 22.0          # how far the cast ramp reaches down the wall
 
 # Buttons + encoder in the -X end wall (side): a vertical column. The end wall
 # has clear space behind it and is open during assembly (split at X=0), so the
@@ -158,12 +160,7 @@ SEAM_BLOCK_L = 22.0    # length across the seam (X)
 SEAM_BLOCK_H = 14.0    # height (Z)
 SEAM_Z = (28.0, 82.0)  # z heights of the rear seam clamps
 
-# Screwable front bezel (traps the diffuser, no glue). Bosses in the front border.
-BEZEL_T = 4.0          # bezel plate thickness
-BEZEL_LIP = 4.0        # bezel inner lip overlapping the diffuser edge
-FRONT_SCREWS_X = (-200.0, -100.0, 100.0, 200.0)  # top+bottom border, avoid seam
-FRONT_SCREW_Z = 6.5    # z of the border screw rows (top row = OUT_Z - this)
-FRONT_INSERT_DEPTH = FRAME_D    # through the frame (SLS powder escape, no blind hole)
+# Front is open: the diffuser + LED panel are glued into the frame rebate (no bezel).
 
 # Narrow insect-resistant vent slits.
 VENT_SLIT = 2.0        # slit width (was 4 mm)
@@ -236,13 +233,6 @@ def build_body() -> cq.Workplane:
             body = body.union(cq.Solid.makeBox(
                 NUB, NUB_H, NUB,
                 cq.Vector(nx - NUB / 2, OUT_Y - FRAME_D - NUB_H, nz - NUB / 2)))
-
-    # Front-bezel insert holes in the border (M2.5), opening at the front face.
-    for x in FRONT_SCREWS_X:
-        for z in (FRONT_SCREW_Z, OUT_Z - FRONT_SCREW_Z):
-            body = body.cut(_cyl(INSERT_M25, FRONT_INSERT_DEPTH + EPS,
-                                 cq.Vector(x, OUT_Y - FRONT_INSERT_DEPTH, z),
-                                 cq.Vector(0, 1, 0)))
 
     # Bosses on the rear inner wall (y=WALL) for Pi 5 and carrier, extending +Y.
     # Holes sized for M2.5 heat-set brass inserts (robust, re-openable).
@@ -366,23 +356,22 @@ def build_body() -> cq.Workplane:
             3.0, DIV_H, OUT_Z - 2 * BORDER,
             cq.Vector(dx - 1.5, WALL, BORDER)))
 
-    # Ceiling-mount ears at the four top corners, protruding in +/-Y.
-    for sy in (1, -1):
-        for sx in (1, -1):
-            xc = sx * (OUT_W / 2 - EAR_INSET - EAR_W / 2)
-            y0 = OUT_Y if sy > 0 else -EAR_L
-            body = body.union(cq.Solid.makeBox(
-                EAR_W, EAR_L, EAR_T, cq.Vector(xc - EAR_W / 2, y0, OUT_Z - EAR_T)))
-            yc = OUT_Y + EAR_L / 2 if sy > 0 else -EAR_L / 2
+    # Ceiling-mount ears on the +/-X side walls, ramping out of the wall (cast look).
+    for sx in (1, -1):
+        wall = sx * OUT_W / 2
+        outer = sx * EAR_L
+        for yc in (EAR_INSET + EAR_W / 2, OUT_Y - EAR_INSET - EAR_W / 2):
+            # profile in X-Z: flat pad on top blending into a ramp down the wall
+            pts = [(wall, OUT_Z),
+                   (wall + outer, OUT_Z),
+                   (wall + outer, OUT_Z - EAR_T),
+                   (wall, OUT_Z - EAR_T - RAMP_H)]
+            ear = (cq.Workplane("XZ").polyline(pts).close()
+                   .extrude(-EAR_W).translate((0, yc - EAR_W / 2, 0)))
+            body = body.union(ear)
             body = body.cut(_cyl(EAR_HOLE, EAR_T + 2 * EPS,
-                                 cq.Vector(xc, yc, OUT_Z - EAR_T - EPS),
+                                 cq.Vector(wall + outer / 2, yc, OUT_Z - EAR_T - EPS),
                                  cq.Vector(0, 0, 1)))
-            # Triangular gusset connecting the ear underside to the wall.
-            zt = OUT_Z - EAR_T
-            yw = OUT_Y if sy > 0 else 0.0
-            pts = [(yw, zt), (yw + sy * GUSSET_L, zt), (yw, zt - GUSSET_H)]
-            body = body.union(cq.Workplane("YZ").polyline(pts).close()
-                              .extrude(EAR_W).translate((xc - EAR_W / 2, 0, 0)))
 
     # Raised slogans: HagiOne on the +X end (the -X end now holds the buttons),
     # Balkon Borg on the bottom.
@@ -390,24 +379,14 @@ def build_body() -> cq.Workplane:
             .text(TEXT_RIGHT, TEXT_SIZE, TEXT_DEPTH, combine=True))
     body = (body.faces("<Z").workplane(centerOption="CenterOfBoundBox")
             .center(BOTTOM_X, 0).text(TEXT_BOTTOM, BOTTOM_SIZE, TEXT_DEPTH, combine=True))
+
+    # Trim to the intended envelope (ceiling plane z=OUT_Z and the ear outer faces)
+    # so the ear tops stay flat and no boolean slivers stick out.
+    xw = OUT_W / 2 + EAR_L
+    body = body.intersect(cq.Solid.makeBox(
+        2 * xw, 3 * (OUT_Y + EAR_L), OUT_Z + 60,
+        cq.Vector(-xw, -1.5 * (OUT_Y + EAR_L), -60)))
     return body
-
-
-def build_bezel() -> cq.Workplane:
-    """Removable front frame that screws on and traps the diffuser (no glue)."""
-    ow, oh = DIFFUSER_W - 2 * BEZEL_LIP, DIFFUSER_H - 2 * BEZEL_LIP
-    zc = (OUT_Z - oh) / 2
-    b = (cq.Workplane("XY")
-         .box(OUT_W, BEZEL_T, OUT_Z, centered=(True, False, False))
-         .translate((0, OUT_Y, 0))
-         .edges("|Y").fillet(CORNER_R))             # round the front-face corners
-    b = b.cut(cq.Solid.makeBox(ow, BEZEL_T + 2 * EPS, oh,
-                               cq.Vector(-ow / 2, OUT_Y - EPS, zc)))
-    for x in FRONT_SCREWS_X:
-        for z in (FRONT_SCREW_Z, OUT_Z - FRONT_SCREW_Z):
-            b = b.cut(_cyl(2.8, BEZEL_T + 2 * EPS,      # M2.5 clearance
-                           cq.Vector(x, OUT_Y - EPS, z), cq.Vector(0, 1, 0)))
-    return b
 
 
 def split_halves(body: cq.Workplane) -> tuple[cq.Workplane, cq.Workplane]:
@@ -421,13 +400,9 @@ def main() -> int:
     BUILD.mkdir(exist_ok=True)
     body = build_body()
     left, right = split_halves(body)
-    bezel = build_bezel()
-    bez_l, bez_r = split_halves(bezel)
     for name, shape in {"balkon-borg-body": body,
                         "balkon-borg-left": left,
-                        "balkon-borg-right": right,
-                        "balkon-borg-bezel-left": bez_l,
-                        "balkon-borg-bezel-right": bez_r}.items():
+                        "balkon-borg-right": right}.items():
         cq.exporters.export(shape, str(BUILD / f"{name}.step"))
         cq.exporters.export(shape, str(BUILD / f"{name}.stl"))
         print(f"wrote {name}.step / .stl")
