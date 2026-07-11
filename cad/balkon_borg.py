@@ -91,8 +91,11 @@ RAMP_H = 22.0          # how far the cast ramp reaches down the wall
 # buttons are easy to fit and wire. Rear wall is blocked by the boards.
 BTN_D = 12.0
 ENC_D = 7.0
-CTRL_Z0 = 22.0         # z of the lowest control
-CTRL_PITCH = 18.0      # spacing along Z
+# 4 buttons in a 2x2 rectangle on the -X end wall (two depth columns Y x two rows Z),
+# generously spaced (big fingers), plus the encoder above the top-right button.
+BTN_COLS_Y = (56.0, 92.0)      # button depth columns (Y)
+BTN_ROWS_Z = (34.0, 66.0)      # button height rows (Z)
+ENC_Z = 96.0                   # encoder above the top row, right column
 
 # Status/effect LEDs and vents in the rear (-Y) wall.
 STATUS_LED_D = 5.0
@@ -134,9 +137,11 @@ TEXT_RIGHT = "HagiOne"          # +X end
 TEXT_LEFT = "Balkon Borg"       # -X end
 TEXT_SIZE = 14.0
 TEXT_DEPTH = 1.5
-TEXT_BOTTOM = "Balkon Borg"     # -Z bottom, on the button-free left half
-BOTTOM_SIZE = 24.0
-BOTTOM_X = -110.0
+TEXT_BOTTOM = "Balkon Borg"     # -Z bottom brand plate (faces the terrace below)
+BOTTOM_SIZE = 48.0              # doubled; big Balkon Borg on the underside
+BOTTOM_HG_SIZE = 18.0           # small HagiOne beside it
+BB_POS = (0.0, 98.0)           # Balkon Borg centre (x, y) on the bottom face
+HG_POS = (0.0, 60.0)           # small HagiOne below it
 
 EPS = 0.1
 TOL = 0.4               # SLS/PA12 clearance for fits (holes, pocket, dowels)
@@ -190,6 +195,9 @@ REAR_TEXTS = (
     ("HagiOne",     -115.0, 55.0, 22.0),
     ("Balkon Borg",  115.0, 55.0, 16.0),
 )
+# Honeycomb grille centred on the +X end wall (replaces the old floating HagiOne and
+# the side exhaust slits). In-plane (cy, cz, w=depth Y, h=height Z), below the ears.
+END_GRILLE = (74.0, 45.0, 92.0, 58.0)
 
 # WLED controller cradle on the top inner wall. Athom publishes NO mechanical
 # dimensions and the High-Power board has no documented mount holes, so this is a
@@ -242,32 +250,49 @@ def _rear_text(body: cq.Workplane, s: str, cx: float, cz: float,
             .text(s, size, depth, combine=True, kind="bold"))
 
 
-def _hex_grille(cx: float, cz: float, w: float, h: float, pitch: float,
-                web: float, ylo: float, yhi: float) -> cq.Compound:
-    """A field of pointy-top hexagonal through-holes for a rear vent grille.
+def _bottom_text(body: cq.Workplane, s: str, cx: float, cy: float,
+                 size: float, depth: float) -> cq.Workplane:
+    """Raise text on the bottom (-Z) outer face, readable from below (the terrace).
 
-    Returns one compound of hex prisms (spanning y = ylo..yhi) to cut in a single
-    boolean op. Openings are `pitch - web` across the flats, leaving a uniform `web`
-    between neighbours. Cells whose opening would poke past the field are dropped,
-    giving a clean rectangular field with a naturally stepped honeycomb border.
+    Built on an explicit plane with flipped X so the wordmark is not mirrored when
+    read from underneath, and centred exactly at (cx, cy).
+    """
+    pl = cq.Plane(origin=(cx, cy, 0.3), xDir=(-1, 0, 0), normal=(0, 0, -1))
+    return body.union(cq.Workplane(pl).text(s, size, depth + 0.3, kind="bold"))
+
+
+def _hex_grille(u_c: float, v_c: float, w: float, h: float, pitch: float,
+                web: float, t0: float, t1: float, axis: str = "y") -> cq.Compound:
+    """A field of pointy-top hexagonal through-holes for a vent grille.
+
+    In-plane centre (u_c, v_c) with extents (w, h); the holes go through the wall
+    from t0 to t1 along `axis`. axis="y" is an X-Z wall (rear/front), axis="x" is a
+    Y-Z wall (the side end walls): then u is depth (Y) and v is height (Z). Returns
+    one compound to cut in a single boolean op. Openings are `pitch - web` across the
+    flats; cells that would poke past the field are dropped for a clean stepped edge.
     """
     af = pitch - web                      # opening across-flats
     r = af / math.sqrt(3.0)               # circumradius (also vertical half-extent)
-    half_w, half_h = af / 2.0, r
-    x0, x1 = cx - w / 2.0, cx + w / 2.0
-    z0, z1 = cz - h / 2.0, cz + h / 2.0
-    dy = pitch * math.sqrt(3.0) / 2.0     # row spacing
+    half_u, half_v = af / 2.0, r
+    u0, u1 = u_c - w / 2.0, u_c + w / 2.0
+    v0, v1 = v_c - h / 2.0, v_c + h / 2.0
+    dv = pitch * math.sqrt(3.0) / 2.0     # row spacing
+
+    def pt(a: float, b: float) -> cq.Vector:
+        return cq.Vector(a, t0, b) if axis == "y" else cq.Vector(t0, a, b)
+    thru = cq.Vector(0, t1 - t0, 0) if axis == "y" else cq.Vector(t1 - t0, 0, 0)
+
     prisms: list[cq.Solid] = []
-    z, row = z0 + half_h, 0
-    while z <= z1 - half_h + EPS:
-        x = x0 + half_w + (pitch / 2.0 if row % 2 else 0.0)
-        while x <= x1 - half_w + EPS:
-            pts = [cq.Vector(x + r * math.sin(math.radians(60 * i)), ylo,
-                             z + r * math.cos(math.radians(60 * i))) for i in range(6)]
+    v, row = v0 + half_v, 0
+    while v <= v1 - half_v + EPS:
+        u = u0 + half_u + (pitch / 2.0 if row % 2 else 0.0)
+        while u <= u1 - half_u + EPS:
+            pts = [pt(u + r * math.sin(math.radians(60 * i)),
+                      v + r * math.cos(math.radians(60 * i))) for i in range(6)]
             face = cq.Face.makeFromWires(cq.Wire.makePolygon(pts + [pts[0]]))
-            prisms.append(cq.Solid.extrudeLinear(face, cq.Vector(0, yhi - ylo, 0)))
-            x += pitch
-        z += dy
+            prisms.append(cq.Solid.extrudeLinear(face, thru))
+            u += pitch
+        v += dv
         row += 1
     return cq.Compound.makeCompound(prisms)
 
@@ -334,13 +359,14 @@ def build_body() -> cq.Workplane:
                              cq.Vector(-POST_L / 2 - EPS, WALL + POST_DEPTH / 2, z),
                              cq.Vector(1, 0, 0)))
 
-    # Buttons + encoder as a vertical column in the -X end wall.
-    n = 5
-    for i in range(n):
-        cz = CTRL_Z0 + i * CTRL_PITCH
-        d = ENC_D if i == n - 1 else BTN_D
-        body = body.cut(_cyl(d + TOL, WALL + 2 * EPS,
-                             cq.Vector(-OUT_W / 2 - EPS, CTRL_Y, cz), cq.Vector(1, 0, 0)))
+    # 4 buttons as a 2x2 rectangle in the -X end wall, encoder above the top-right.
+    xw = -OUT_W / 2 - EPS
+    for by in BTN_COLS_Y:
+        for bz in BTN_ROWS_Z:
+            body = body.cut(_cyl(BTN_D + TOL, WALL + 2 * EPS,
+                                 cq.Vector(xw, by, bz), cq.Vector(1, 0, 0)))
+    body = body.cut(_cyl(ENC_D + TOL, WALL + 2 * EPS,
+                         cq.Vector(xw, BTN_COLS_Y[1], ENC_Z), cq.Vector(1, 0, 0)))
 
     # Rear (-Y) wall: status LEDs, cable gland, ventilation slots.
     for i in range(STATUS_N):
@@ -358,13 +384,10 @@ def build_body() -> cq.Workplane:
     # Hex honeycomb grille panels filling the board-free rear zones (see REAR_GRILLES).
     for cx, cz, w, h in REAR_GRILLES:
         body = body.cut(_hex_grille(cx, cz, w, h, HEX_PITCH, HEX_WALL, -EPS, WALL + EPS))
-    # Exhaust: slits high on both end walls (hot air rises; the top is ceiling).
-    for sx in (1, -1):
-        for z in (VENT_END_Z, VENT_END_Z + 4):
-            body = body.cut(cq.Solid.makeBox(
-                WALL + 2 * EPS, 44.0, VENT_SLIT,
-                cq.Vector(sx * OUT_W / 2 - (WALL + 2 * EPS) * (sx > 0),
-                          OUT_Y / 2 - 22, z - VENT_SLIT / 2)))
+    # Honeycomb grille centred on the +X end wall (the side slit vents are gone).
+    ecy, ecz, ew, eh = END_GRILLE
+    body = body.cut(_hex_grille(ecy, ecz, ew, eh, HEX_PITCH, HEX_WALL,
+                                OUT_W / 2 - WALL - EPS, OUT_W / 2 + EPS, axis="x"))
 
     # Sensor openings in the bottom (-Z) face, looking down at the terrace.
     cx, cy = CAM_POS
@@ -440,12 +463,12 @@ def build_body() -> cq.Workplane:
                                  cq.Vector(wall + outer / 2, yc, OUT_Z - EAR_T - EPS),
                                  cq.Vector(0, 0, 1)))
 
-    # Raised slogans: HagiOne on the +X end (the -X end now holds the buttons),
-    # Balkon Borg on the bottom.
-    body = (body.faces(">X").workplane(centerOption="CenterOfBoundBox")
-            .text(TEXT_RIGHT, TEXT_SIZE, TEXT_DEPTH, combine=True))
-    body = (body.faces("<Z").workplane(centerOption="CenterOfBoundBox")
-            .center(BOTTOM_X, 0).text(TEXT_BOTTOM, BOTTOM_SIZE, TEXT_DEPTH, combine=True))
+    # Bottom (-Z) brand plate: big Balkon Borg with small HagiOne below it. Placed via
+    # ProjectedOrigin for exact centring (the +X end now carries a grille, no text).
+    bbx, bby = BB_POS
+    body = _bottom_text(body, TEXT_BOTTOM, bbx, bby, BOTTOM_SIZE, TEXT_DEPTH)
+    hgx, hgy = HG_POS
+    body = _bottom_text(body, "HagiOne", hgx, hgy, BOTTOM_HG_SIZE, TEXT_DEPTH)
     # Rear wordmarks, each centred in its half (see REAR_TEXTS), clear of the seam.
     for s, cx, cz, size in REAR_TEXTS:
         body = _rear_text(body, s, cx, cz, size, TEXT_DEPTH)

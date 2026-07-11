@@ -18,6 +18,28 @@ log what is already in the code/YAML.
 
 ---
 
+## 2026-07-11 — Chassis face rework: end grille, 2x2 buttons, bottom brand
+
+**Context:** review + user feedback on the chassis faces.
+
+**Decisions:**
+- **+X end wall:** the floating `faces(">X")` "HagiOne" (it landed off the wall, in air,
+  review L16) is **removed**; the wall now carries a centred honeycomb grille
+  (`END_GRILLE`, `_hex_grille(..., axis="x")` — the helper is now orientation-aware for
+  X-Z or Y-Z walls).
+- **-X end wall:** the 5-in-a-column controls become a **2x2 button rectangle**
+  (`BTN_COLS_Y` x `BTN_ROWS_Z`, generously spaced for big fingers) with the **encoder
+  above the top-right** button (`ENC_Z`).
+- **Side slit vents removed** entirely per request. Ventilation now relies on the rear
+  honeycomb + the +X end grille + the bottom sensor holes (re-opens review M7: the high
+  side exhaust is gone — watch summer thermals).
+- **Bottom brand plate:** "Balkon Borg" **doubled** (`BOTTOM_SIZE` 24 → 48) with a small
+  "HagiOne" below it, both bold and placed via a new `_bottom_text` (flipped-X plane) so
+  they read correctly from below and are exactly centred. They cross the X=0 seam (it is
+  the down-facing brand); revert to one half if the seam line is unwanted.
+
+---
+
 ## 2026-07-11 — Depth +20 mm for WLED-to-LED clearance
 
 **Context:** a packaging check (plan + rear sections drawn from the CAD dimensions)
