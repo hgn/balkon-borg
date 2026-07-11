@@ -15,11 +15,12 @@ pcb:                           ## board fabrication outputs (pcb/)
 firmware:                      ## validate the ESPHome config (firmware/esphome/)
 	$(MAKE) -C firmware/esphome all
 
-render: cad                    ## render preview images into docs/img/
+render: cad                    ## render preview images + publish STL into docs/img/
 	@mkdir -p docs/img
 	f3d cad/build/balkon-borg-body.stl --output docs/img/enclosure.png \
 	    --resolution 1400,900 --up +Z --camera-direction=-1,-0.6,0.4 \
 	    --ambient-occlusion --anti-aliasing --background-color 0.1,0.1,0.12
+	cp cad/build/balkon-borg-body.stl docs/img/enclosure.stl
 	kicad-cli pcb render pcb/balkon-borg-carrier.kicad_pcb \
 	    -o docs/img/pcb-top.png --side top --background opaque --quality high
 

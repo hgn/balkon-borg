@@ -8,9 +8,11 @@ network and the Raspberry Pi home server.*
 ## Preview
 
 Enclosure (SLS/PA12, rounded edges, ceiling-mount ears, slogans embossed) and the
-ESP32 sensor carrier board (fully placed and routed):
+ESP32 sensor carrier board (fully placed and routed). **Click the enclosure image to
+open the STL in GitHub's interactive 3D viewer** (`docs/img/enclosure.stl`, exported
+by `make render`):
 
-![Enclosure](docs/img/enclosure.png)
+[![Enclosure](docs/img/enclosure.png)](docs/img/enclosure.stl)
 
 ![Carrier board](docs/img/pcb-top.png)
 
