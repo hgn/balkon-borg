@@ -25,13 +25,13 @@ showed everything fits with big margins except the WLED controller: mounted on t
 wall it hangs 44 mm forward (to y=77) and came within **5 mm of the warm LED panel back**
 (y=82). The rear-mounted boards (Pi+cooler, carrier+ESP) were fine at 51-55 mm.
 
-**Decision:** deepen the enclosure `DEPTH` 95 → **115 mm** (outer Y 98 → 118). The LED
+**Decision:** deepen the enclosure `DEPTH` 95 → **145 mm** (outer Y 98 → 148). The LED
 panel moves forward with the front frame while the top-wall WLED stays put, so the gap
-grows 1:1: **WLED-to-LED now 25 mm** (target ≥15-20). Rear boards now 71-75 mm clear.
+grows 1:1: **WLED-to-LED now 55 mm**. Rear boards now 101-105 mm clear.
 
 **Rationale:** the user preferred adding depth ("stört ja nicht") over relocating the
-WLED. +20 mm gives a comfortable warm-clearance and a round number; the unit hangs under
-the balcony so extra depth is free.
+WLED and picked +50 mm for generous room; the unit hangs under the balcony so extra
+depth is free.
 
 **Still open (minor):** the WLED footprint sits over the carrier's top-right corner in
 X-Z with only 6 mm of depth between them (no collision). Nudging `WLED_CENTER` into the
