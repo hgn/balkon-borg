@@ -24,12 +24,16 @@ log what is already in the code/YAML.
 down from the bottom with 4 LEDs, glued in from inside, cable fed down from the board's
 5 V.
 
-**Decision:** a hollow **40×40 mm box protruding 30 mm down** on the bottom (-Z), left
-side, centred in depth, clear of the corner / BME opening / bottom wordmark
-(`LED_BOX*`, `LED_BOX_POS=(-172,74)`). Open to the cavity through the floor wall for the
-cable; **4 LED holes (2×2, 18 mm)** in the box floor, glue LEDs from inside. Entirely in
-the left split half (no seam issue). SLS: no supports, powder escapes via the top
-opening + holes.
+**Decision:** a **tapered** hollow tower on the bottom (-Z): wide at the top, narrowing
+to a **40×40 tip**, **30 mm** down, **20° draft** (`LED_TAPER`; top ~62 mm). Left side,
+centred in depth (`LED_BOX_POS=(-155,74)`), clear of the corner / BME / wordmark. Open to
+the cavity through the floor for the cable; **one LED hole per slanted side** (4 total),
+perpendicular to each face so the LEDs spray out and ~20° downward. Glue LEDs from
+inside. Entirely in the left split half (no seam issue); SLS needs no supports.
+
+The 30° draft first tried made the top 75 mm — too wide for the 61 mm gap between the BME
+opening and the big wordmark, so the user chose **20°** and the bottom "Balkon Borg" /
+"HagiOne" shifted right (`BB_POS`/`HG_POS` x=25) to clear the tower.
 
 **LED choice (5 V rail, always on):** holes **5.2 mm** for standard **5 mm LEDs**
 (body Ø5.0, flange Ø5.8 seats from inside). Best fit: 5 mm LEDs with a **built-in

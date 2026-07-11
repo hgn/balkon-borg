@@ -140,8 +140,8 @@ TEXT_DEPTH = 1.5
 TEXT_BOTTOM = "Balkon Borg"     # -Z bottom brand plate (faces the terrace below)
 BOTTOM_SIZE = 48.0              # doubled; big Balkon Borg on the underside
 BOTTOM_HG_SIZE = 18.0           # small HagiOne beside it
-BB_POS = (0.0, 98.0)           # Balkon Borg centre (x, y) on the bottom face
-HG_POS = (0.0, 60.0)           # small HagiOne below it
+BB_POS = (25.0, 98.0)          # Balkon Borg centre (x, y), shifted right to clear the tower
+HG_POS = (25.0, 60.0)          # small HagiOne below it
 
 EPS = 0.1
 TOL = 0.4               # SLS/PA12 clearance for fits (holes, pocket, dowels)
@@ -218,12 +218,12 @@ BME_HOLE_DX = 16.0                  # BME280 breakout mount spacing (VERIFY)
 # hollow 40x40 box protruding 30 mm down; 4 always-on LEDs glue in from inside and a
 # cable is fed down from the board's 5 V. Holes sized for 5 mm LEDs (5.2 mm); bump to
 # 8.2 for 8 mm LEDs. Kept clear of the corner, the BME opening and the bottom wordmark.
-LED_BOX = 40.0
-LED_BOX_H = 30.0
+LED_BOX = 40.0                 # bottom (tip) square side
+LED_BOX_H = 30.0               # protrusion down (-Z)
 LED_BOX_WALL = 3.0
-LED_BOX_POS = (-172.0, 74.0)   # (x, y) centre on the bottom face
+LED_TAPER = 20.0               # draft angle from vertical: wide at top, 40x40 at bottom
+LED_BOX_POS = (-155.0, 74.0)   # (x, y) tower axis on the bottom face (left, centred depth)
 LED_HOLE_D = 5.2               # 5 mm LED body + clearance (flange seats from inside)
-LED_GRID = 18.0                # 2x2 hole spacing
 
 # Low divider ribs to organise the cavity ("Trenner").
 DIV_H = 22.0           # rib height off the rear wall
@@ -436,21 +436,27 @@ def build_body() -> cq.Workplane:
     for s in (-1, 1):
         _boss_z(bx + s * BME_HOLE_DX / 2, by, 6.0, 2.0)
 
-    # Downward LED indicator tower on the bottom: a hollow 40x40 box protruding down,
-    # open to the cavity (cable feed) with 4 LED holes in its floor (glue LEDs inside).
+    # Downward LED indicator tower: a tapered box (wide at the top, 40x40 tip, LED_TAPER
+    # draft) hollow and open to the cavity, with one LED hole per slanted side (glue LEDs
+    # from inside; they spray out and downward in four directions).
     lbx, lby = LED_BOX_POS
-    body = body.union(cq.Solid.makeBox(
-        LED_BOX, LED_BOX, LED_BOX_H,
-        cq.Vector(lbx - LED_BOX / 2, lby - LED_BOX / 2, -LED_BOX_H)))
-    inner = LED_BOX - 2 * LED_BOX_WALL
-    body = body.cut(cq.Solid.makeBox(               # hollow + open through the floor wall
-        inner, inner, LED_BOX_H - LED_BOX_WALL + WALL + EPS,
-        cq.Vector(lbx - inner / 2, lby - inner / 2, -LED_BOX_H + LED_BOX_WALL)))
-    for sx in (-1, 1):
-        for sy in (-1, 1):
-            body = body.cut(_cyl(LED_HOLE_D, LED_BOX_WALL + 2 * EPS,
-                                 cq.Vector(lbx + sx * LED_GRID / 2, lby + sy * LED_GRID / 2,
-                                           -LED_BOX_H - EPS), cq.Vector(0, 0, 1)))
+    top = LED_BOX + 2 * LED_BOX_H * math.tan(math.radians(LED_TAPER))
+    tower = (cq.Workplane("XY").rect(top, top)
+             .workplane(offset=-LED_BOX_H).rect(LED_BOX, LED_BOX)
+             .loft(combine=False)).translate((lbx, lby, 0))
+    body = body.union(tower)
+    itop, ibot = top - 2 * LED_BOX_WALL, LED_BOX - 2 * LED_BOX_WALL
+    cav = (cq.Workplane("XY").workplane(offset=WALL + EPS).rect(itop, itop)
+           .workplane(offset=-(LED_BOX_H - LED_BOX_WALL + WALL + EPS)).rect(ibot, ibot)
+           .loft(combine=False)).translate((lbx, lby, 0))
+    body = body.cut(cav)
+    off = (top + LED_BOX) / 4.0                     # face-centre horizontal offset
+    n_out, n_down = math.cos(math.radians(LED_TAPER)), math.sin(math.radians(LED_TAPER))
+    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        normal = cq.Vector(dx * n_out, dy * n_out, -n_down)
+        centre = cq.Vector(lbx + dx * off, lby + dy * off, -LED_BOX_H / 2.0)
+        body = body.cut(cq.Solid.makeCylinder(
+            LED_HOLE_D / 2, 8.0, centre - normal.multiply(4.0), normal))
 
     # WLED controller cradle on the top inner wall: a pocket the board drops into,
     # open on the +Y side for cables; final retention by a zip-tie. Size-tolerant.

@@ -72,3 +72,7 @@ Complements `power-distribution.md`, `enclosure-sintering.md` and the log.
 - **Blade fuses** 10 A + 5 A + holders (see `power-distribution.md`).
 - **XT60E-M** + mating plug, **Wago 221**, wire 2.5/1.5/0.5 mm².
 - **CSI cable:** the 200 mm standard-mini is enough; no longer cable needed.
+- **4 indicator LEDs** for the bottom LED tower: **LighthouseLEDs 5 mm, built-in resistor,
+  5–15 V** (lights straight off 5 V), **four different cool colours**. Holes are 5.2 mm;
+  glue from inside, wire all to +5 V/GND (always on). Do not buy generic 12 V pre-wired
+  LEDs (too dim on 5 V).
