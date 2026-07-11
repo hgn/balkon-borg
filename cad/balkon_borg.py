@@ -214,6 +214,17 @@ BME_POS = (-205.0, 49.0)            # (x, y) ambient opening + mount on the bott
 BME_MESH_DX, BME_MESH_DY = 12.0, 12.0   # small vent grid to outside air
 BME_HOLE_DX = 16.0                  # BME280 breakout mount spacing (VERIFY)
 
+# Downward LED indicator tower on the bottom (-Z), left side, centred in depth. A
+# hollow 40x40 box protruding 30 mm down; 4 always-on LEDs glue in from inside and a
+# cable is fed down from the board's 5 V. Holes sized for 5 mm LEDs (5.2 mm); bump to
+# 8.2 for 8 mm LEDs. Kept clear of the corner, the BME opening and the bottom wordmark.
+LED_BOX = 40.0
+LED_BOX_H = 30.0
+LED_BOX_WALL = 3.0
+LED_BOX_POS = (-172.0, 74.0)   # (x, y) centre on the bottom face
+LED_HOLE_D = 5.2               # 5 mm LED body + clearance (flange seats from inside)
+LED_GRID = 18.0                # 2x2 hole spacing
+
 # Low divider ribs to organise the cavity ("Trenner").
 DIV_H = 22.0           # rib height off the rear wall
 DIV_X = (-25.0, 48.0)  # ribs separating carrier | middle | Pi bays
@@ -424,6 +435,22 @@ def build_body() -> cq.Workplane:
                                  cq.Vector(bx + gx, by + gy, -EPS), cq.Vector(0, 0, 1)))
     for s in (-1, 1):
         _boss_z(bx + s * BME_HOLE_DX / 2, by, 6.0, 2.0)
+
+    # Downward LED indicator tower on the bottom: a hollow 40x40 box protruding down,
+    # open to the cavity (cable feed) with 4 LED holes in its floor (glue LEDs inside).
+    lbx, lby = LED_BOX_POS
+    body = body.union(cq.Solid.makeBox(
+        LED_BOX, LED_BOX, LED_BOX_H,
+        cq.Vector(lbx - LED_BOX / 2, lby - LED_BOX / 2, -LED_BOX_H)))
+    inner = LED_BOX - 2 * LED_BOX_WALL
+    body = body.cut(cq.Solid.makeBox(               # hollow + open through the floor wall
+        inner, inner, LED_BOX_H - LED_BOX_WALL + WALL + EPS,
+        cq.Vector(lbx - inner / 2, lby - inner / 2, -LED_BOX_H + LED_BOX_WALL)))
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            body = body.cut(_cyl(LED_HOLE_D, LED_BOX_WALL + 2 * EPS,
+                                 cq.Vector(lbx + sx * LED_GRID / 2, lby + sy * LED_GRID / 2,
+                                           -LED_BOX_H - EPS), cq.Vector(0, 0, 1)))
 
     # WLED controller cradle on the top inner wall: a pocket the board drops into,
     # open on the +Y side for cables; final retention by a zip-tie. Size-tolerant.

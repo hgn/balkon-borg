@@ -18,6 +18,28 @@ log what is already in the code/YAML.
 
 ---
 
+## 2026-07-11 — Downward LED indicator tower on the bottom
+
+**Context:** the user wants a permanently-lit power indicator: a square boss hanging
+down from the bottom with 4 LEDs, glued in from inside, cable fed down from the board's
+5 V.
+
+**Decision:** a hollow **40×40 mm box protruding 30 mm down** on the bottom (-Z), left
+side, centred in depth, clear of the corner / BME opening / bottom wordmark
+(`LED_BOX*`, `LED_BOX_POS=(-172,74)`). Open to the cavity through the floor wall for the
+cable; **4 LED holes (2×2, 18 mm)** in the box floor, glue LEDs from inside. Entirely in
+the left split half (no seam issue). SLS: no supports, powder escapes via the top
+opening + holes.
+
+**LED choice (5 V rail, always on):** holes **5.2 mm** for standard **5 mm LEDs**
+(body Ø5.0, flange Ø5.8 seats from inside). Best fit: 5 mm LEDs with a **built-in
+resistor rated for a wide 5–15 V range** (light straight off 5 V, no extra part), or
+bare high-brightness 5 mm + one ~100 Ω resistor each. NOTE: common "pre-wired" LEDs are
+**12 V** and stay dim on 5 V — avoid those. 4 × ~15–20 mA ≈ 70 mA, negligible on the
+5 V rail. `LED_HOLE_D` bumps to 8.2 for 8 mm LEDs.
+
+---
+
 ## 2026-07-11 — Chassis face rework: end grille, 2x2 buttons, bottom brand
 
 **Context:** review + user feedback on the chassis faces.
