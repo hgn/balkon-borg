@@ -192,10 +192,12 @@ REAR_GRILLES = (
     (  96.0, 93.0, 82.0, 14.0),
     (  96.0, 16.0, 82.0, 14.0),
 )
-# Raised wordmarks (text, cx, cz, size), each centred in one half, clear of the seam.
+# Raised wordmarks (text, cx, cz, size); pre-mirror X (build multiplies by sx). Swapped
+# sides: HagiOne one half, the now-doubled Balkon Borg the other, both clear of the seam
+# (Balkon Borg at 32 is ~182 mm wide, tucked between the seam and the side grille).
 REAR_TEXTS = (
-    ("HagiOne",     -115.0, 55.0, 22.0),
-    ("Balkon Borg",  115.0, 55.0, 16.0),
+    ("HagiOne",      115.0, 55.0, 22.0),
+    ("Balkon Borg",  -93.0, 55.0, 32.0),
 )
 # Honeycomb grille centred on the +X end wall (replaces the old floating HagiOne and
 # the side exhaust slits). In-plane (cy, cz, w=depth Y, h=height Z), below the ears.
