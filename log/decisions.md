@@ -18,6 +18,34 @@ log what is already in the code/YAML.
 
 ---
 
+## 2026-07-12 — Carrier board: final routing pass + GND pour
+
+**Context:** the netlist fixes (F1 radial PTC, J_RADAR 4-pin, M2.5 holes, BC337 CBE) lived
+in `gen-netlist.py` but had never been imported into the committed `.kicad_pcb`, which was
+stale. Requested: run the final routing pass.
+
+**Decision:** rebuilt the board from the netlist end to end — `kinet2pcb` (fresh board from
+the `.net`), `place-board.py`, Freerouting (autoroute + optimize), `apply-ses.py`. Result:
+231 tracks / 3 vias, 0 unconnected. Then `add-ground-pour.py` adds a GND pour on both layers
+with thermal reliefs, plus a no-copper rule area under the DevKit antenna. DRC against the
+Aisler minimums: 0 violations. Verified pinouts: BC337 is CBE (matches the KiCad symbol) and
+the DevKitC-V4 right header map is correct (GND at pins 1/7, strapping/flash avoided).
+
+**Rationale:** the board must reflect the corrected netlist before fabrication; a scripted,
+reproducible pass keeps it regenerable.
+
+**Rejected:** patching the stale board in place — it still had the axial F1 and 5-pin radar.
+
+**Consequences / pcbnew quirks worth remembering:**
+- The GND pour needs THREE separate pcbnew processes (`make pour`): a rule area is dropped on
+  save if a pad zone-connection was set, or if a zone fill ran, in the *same* session.
+- The top ESP header GND pad's thermal spoke tripped a starved-thermal island (the dense
+  header fan-out pinches the pour). Fix: set those socketed GND pins to zone-connection NONE;
+  they keep their routed ground.
+- Freerouting 1.9.0 has no true headless mode (needs a display); ran it against `DISPLAY=:0`.
+- `b.Zones()` / `GetArea()` can hand back untyped SwigPyObjects mid-session; collect zones
+  up front and use `Cast_to_ZONE` for reliable removal.
+
 ## 2026-07-11 — MQTT topic scheme + network doc, light scenarios
 
 **Roles (corrected):** the **borg-pi5 in the enclosure is the hub** the project is about —

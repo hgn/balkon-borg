@@ -123,15 +123,19 @@ pins avoided, power netclass (1.0 mm) is sized well above the ~1 A load. Before 
 - ✅ **DRC to the fab** — `place-board.py` now sets **Aisler** min track/clearance/drill/via/
   annular (also applied to the current board). The 0.2 mm signal / 1.0 mm power widths are
   well within Aisler.
-- 🟡 **ESP antenna keep-out** — keep copper (especially any ground pour) **clear under the
-  DevKit's antenna end**; it socket-mounts ~13 mm above the board but a pour can still detune.
+- ✅ **Ground pour + thermal reliefs** — `add-ground-pour.py` (via `make pour`) fills a GND
+  pour on both layers with thermal reliefs on the THT pads (0.4 mm gap/spoke); the socketed
+  ESP header GND pins bond straight to the plane through their routed tracks.
+- ✅ **ESP antenna keep-out** — a no-copper-pour rule area sits under the DevKit's antenna
+  end (both layers) so the plane does not detune it.
+- ✅ **Fully routed + DRC-clean** — 231 tracks / 3 vias, 0 unconnected, 0 DRC violations
+  against the Aisler minimums.
 - 🟡 **MCAD collision check** — `make -C pcb step` exports the board STEP; drop it into the
   CadQuery enclosure and confirm connectors/tall parts fit the carrier bay (8 mm standoffs,
-  ~100 mm clear to the LED panel — expected OK).
+  ~100 mm clear to the LED panel — expected OK). This still needs a human eye.
 - 🟡 **Connector entry vs cable exits** — J_RADAR → tower (bottom-front), J_BTN → end wall,
-  J_BME → bottom; freeze the JST positions/entry direction to match the routing.
-- 🟡 **Ground pour + thermal reliefs** — add a GND pour (grounding/EMI) and keep **thermal
-  reliefs on the THT pads** so hand-soldering does not make cold joints.
+  J_BME → bottom; freeze the JST positions/entry direction to match the routing before the
+  final board revision.
 - 🟢 **Production data** — Gerber + drill via `gen-outputs.py` → Aisler. Hand-soldered THT,
   so no CPL/POS needed; the BOM table above is the assembly list.
 
@@ -139,9 +143,11 @@ pins avoided, power netclass (1.0 mm) is sized well above the ~1 A load. Before 
 
 The board is generated from code, not clicked in the KiCad GUI:
 
-1. `make -C pcb netlist` runs `gen-netlist.py` (SKiDL) → netlist/`.kicad_pcb` from
-   the tables above; net names taken verbatim.
-2. `place-board.py` places the footprints; export a Specctra DSN.
+1. `make -C pcb netlist` runs `gen-netlist.py` (SKiDL) → `.net`; `kinet2pcb` turns
+   it into a fresh `.kicad_pcb` (footprints, nets taken verbatim).
+2. `place-board.py` places the footprints, draws outline + M2.5 holes, sets the
+   Aisler DRC minimums, exports a Specctra DSN.
 3. Route (Freerouting), then `apply-ses.py` imports the SES back.
-4. Set outline/holes once the enclosure is fixed (open points 4/5).
-5. Fabrication data via `scripts/gen-outputs.py`, then push/upload to Aisler.
+4. `make -C pcb pour` adds the GND pour + antenna keep-out (`add-ground-pour.py`,
+   three phases). Verify with `kicad-cli pcb drc`.
+5. Fabrication data via `make -C pcb outputs`, then upload the Aisler zip.

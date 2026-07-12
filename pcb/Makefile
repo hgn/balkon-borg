@@ -5,11 +5,17 @@ PY := ../.venv/bin/python
 KENV := KICAD9_SYMBOL_DIR=/usr/share/kicad/symbols \
         KICAD9_FOOTPRINT_DIR=/usr/share/kicad/footprints
 
-.PHONY: all netlist outputs step clean
+SYSPY := /usr/bin/python3       # KiCad pcbnew module lives in the system python
+.PHONY: all netlist pour outputs step clean
 all: outputs                   ## generate fabrication outputs from the committed board
 
 netlist:                       ## regenerate the KiCad netlist (then re-import in KiCad)
 	$(KENV) $(PY) gen-netlist.py
+
+pour:                          ## add the GND pour + antenna keep-out (3 separate phases)
+	$(SYSPY) add-ground-pour.py --pours
+	$(SYSPY) add-ground-pour.py --rulearea
+	$(SYSPY) add-ground-pour.py --fill
 
 outputs:                       ## gerbers/drill/pos + Aisler zip into output/
 	$(PY) scripts/gen-outputs.py balkon-borg-carrier.kicad_pcb

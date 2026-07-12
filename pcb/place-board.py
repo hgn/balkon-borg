@@ -84,7 +84,7 @@ def main() -> int:
     # Resistors: two vertical columns flanking the ESP headers.
     for i in range(8):
         place(f"R{i + 1}", 40, 21 + i * 6)
-    for i in range(8):
+    for i in range(7):                       # 15 resistors total (R1..R15)
         place(f"R{i + 9}", 100, 21 + i * 6)
 
     # Board outline (closed rectangle) on Edge.Cuts.

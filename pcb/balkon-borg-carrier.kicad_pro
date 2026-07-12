@@ -296,10 +296,10 @@
     "last_paths": {
       "gencad": "",
       "idf": "",
-      "netlist": "balkon-borg-carrier.net",
+      "netlist": "",
       "plot": "",
       "pos_files": "",
-      "specctra_dsn": "balkon-borg-carrier.dsn",
+      "specctra_dsn": "",
       "step": "",
       "svg": "",
       "vrml": ""

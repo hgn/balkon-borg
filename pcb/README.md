@@ -14,23 +14,31 @@ board is reproducible.
    ```
    make -C pcb netlist
    ```
-2. **Import** into an empty `balkon-borg-carrier.kicad_pcb` (KiCad: *File → Import →
-   Netlist*), or start from the committed board.
+2. **Import** the netlist into a fresh `balkon-borg-carrier.kicad_pcb` with
+   `kinet2pcb` (footprints + nets), or start from the committed board.
 3. **Place + route** (one-time, headless): `place-board.py` lays out the footprints,
-   draws the outline, adds the mounting holes and the "HagiOne" silkscreen, exports a
-   Specctra DSN; Freerouting autoroutes it; `apply-ses.py` imports the session back.
-   (Freerouting is an external tool, not vendored.)
-4. **Fabrication outputs**:
+   draws the outline, adds the mounting holes and the "HagiOne" silkscreen, sets the
+   Aisler DRC minimums, exports a Specctra DSN; Freerouting autoroutes it;
+   `apply-ses.py` imports the session back. (Freerouting is an external tool, not
+   vendored.)
+4. **Ground pour**:
+   ```
+   make -C pcb pour           # GND pour (both layers) + antenna keep-out
+   ```
+5. **Fabrication outputs**:
    ```
    make -C pcb outputs        # gerbers/drill/pos + Aisler zip into output/
    ```
-5. Upload the gerber zip to **Aisler**.
+   The committed board is fully routed and DRC-clean (0 violations, 0 unconnected).
+6. Upload the gerber zip to **Aisler**.
 
 ## Files
 
 - `gen-netlist.py` — SKiDL script, builds the netlist from `docs/board-spec.md`.
 - `place-board.py` / `apply-ses.py` — headless placement and Specctra-session import
   (run with the system python, which has the KiCad `pcbnew` module).
+- `add-ground-pour.py` — GND pour + antenna keep-out, run in three phases (`make pour`);
+  the phases must be separate processes (pcbnew drops the rule area otherwise).
 - `scripts/gen-outputs.py` — fabrication output via `kicad-cli`.
 
 ## Conventions
