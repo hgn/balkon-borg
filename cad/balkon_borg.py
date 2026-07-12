@@ -85,7 +85,7 @@ EAR_T = 6.0            # pad thickness (Z)
 EAR_HOLE = 5.5         # M5 ceiling screw clearance (through-hole, top to underside)
 EAR_CB_D = 11.0        # counterbore for the M5 head: a flat seat on the sloped underside
 EAR_INSET = 12.0       # from the front/back edge to the ear
-RAMP_H = 22.0          # how far the cast ramp reaches down the wall
+RAMP_H = 30.0          # how far the cast blend sweeps down the wall (concave, organic)
 
 # Buttons + encoder in the -X end wall (side): a vertical column. The end wall
 # has clear space behind it and is open during assembly (split at X=0), so the
@@ -95,8 +95,8 @@ ENC_D = 7.0
 # 4 buttons in a 2x2 rectangle on the -X end wall (two depth columns Y x two rows Z),
 # generously spaced (big fingers), plus the encoder above the top-right button.
 BTN_COLS_Y = (56.0, 92.0)      # button depth columns (Y)
-BTN_ROWS_Z = (34.0, 66.0)      # button height rows (Z)
-ENC_Z = 96.0                   # encoder above the top row, right column
+BTN_ROWS_Z = (29.0, 61.0)      # button height rows (Z) — shifted 5 mm down
+ENC_Z = 91.0                   # encoder above the top row (5 mm down, off the top edge)
 
 # Status/effect LEDs and vents in the rear (-Y) wall.
 STATUS_LED_D = 5.0
@@ -323,7 +323,9 @@ def _hex_grille(u_c: float, v_c: float, w: float, h: float, pitch: float,
 def build_body() -> cq.Workplane:
     body = (cq.Workplane("XY")
             .box(OUT_W, OUT_Y, OUT_Z, centered=(True, False, False))
-            .edges("|Z or |Y").fillet(CORNER_R))  # round vertical corners + long edges
+            # round the vertical corners + the BOTTOM long edges; the top edge stays
+            # sharp so the ceiling face is flat/flush (no rounded top edge).
+            .edges("|Z or (|Y and <Z)").fillet(CORNER_R))
     # Hollow it with an open front by cutting the inner cavity. (A shell AFTER
     # filleting fails to hollow in OCC and returns a solid block, so cut instead.)
     body = body.cut(cq.Solid.makeBox(
@@ -511,12 +513,15 @@ def build_body() -> cq.Workplane:
         wall = sx * OUT_W / 2
         outer = sx * EAR_L
         for yc in (EAR_INSET + EAR_W / 2, OUT_Y - EAR_INSET - EAR_W / 2):
-            # profile in X-Z: flat pad on top blending into a ramp down the wall
-            pts = [(wall, OUT_Z),
-                   (wall + outer, OUT_Z),
-                   (wall + outer, OUT_Z - EAR_T),
-                   (wall, OUT_Z - EAR_T - RAMP_H)]
-            ear = (cq.Workplane("XZ").polyline(pts).close()
+            # profile in X-Z: flat pad on top, then a CONCAVE arc sweeping back into the
+            # wall (organic "cast" blend instead of a tacked-on ramp).
+            top_out = (wall + outer, OUT_Z)
+            pad_bot = (wall + outer, OUT_Z - EAR_T)
+            root = (wall, OUT_Z - EAR_T - RAMP_H)
+            arc_mid = (wall + outer * 0.28, OUT_Z - EAR_T - RAMP_H * 0.62)
+            ear = (cq.Workplane("XZ")
+                   .moveTo(wall, OUT_Z).lineTo(*top_out).lineTo(*pad_bot)
+                   .threePointArc(arc_mid, root).close()
                    .extrude(-EAR_W).translate((0, yc - EAR_W / 2, 0)))
             body = body.union(ear)
             # C1 fix: a full through-hole (top through the ramp to the underside) plus a

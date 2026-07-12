@@ -43,6 +43,20 @@ live on the always-on nas-Pi5 so they work when the borg-pi5 is off.
 
 ---
 
+## 2026-07-12 — Button height, flat ceiling top, organic ears
+
+- **Controls 5 mm lower:** `BTN_ROWS_Z` (34,66)→(29,61), `ENC_Z` 96→91 — the top
+  (encoder) hole was too close to the ceiling edge.
+- **Flat top edge:** the fillet no longer rounds the top long edges
+  (`"|Z or (|Y and <Z)"`) — vertical corners + bottom stay rounded, but the top face/edge
+  is flat so it screws flush to the ceiling. (The 4 vertical corners still carry a small
+  r6 round up to the top; can be removed if dead-sharp corners are wanted.)
+- **Organic ears:** the straight ramp becomes a **concave arc** sweeping back into the
+  wall (`RAMP_H` 22→30 + a `threePointArc` underside), so the ears blend into the body
+  ("anschmiegen") instead of looking tacked-on.
+
+---
+
 ## 2026-07-12 — Review fixes C1/C2/H3/H4 (fabrication-gating)
 
 - **C1 (ear screw blind hole):** the ceiling-screw hole was only in the 6 mm pad and
