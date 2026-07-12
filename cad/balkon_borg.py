@@ -327,11 +327,16 @@ def build_body() -> cq.Workplane:
             # round the vertical corners + bottom side edges (top stays sharp = flat
             # ceiling face); one radius so the bottom corners blend cleanly and organic.
             .edges("|Z or (|Y and <Z)").fillet(CORNER_R))
-    # Hollow it with an open front by cutting the inner cavity. (A shell AFTER
-    # filleting fails to hollow in OCC and returns a solid block, so cut instead.)
-    body = body.cut(cq.Solid.makeBox(
-        OUT_W - 2 * WALL, OUT_Y - WALL + EPS, OUT_Z - 2 * WALL,
-        cq.Vector(-(OUT_W / 2 - WALL), WALL, WALL)))
+    # Hollow it with an open front by cutting the inner cavity. (A shell AFTER filleting
+    # fails to hollow in OCC, so cut instead.) The cavity is ROUNDED to follow the outer
+    # corners (r = CORNER_R - WALL) so the shell stays a uniform WALL thick around the
+    # rounding — otherwise a large corner radius eats through the thin wall (a gap/crack).
+    cav = (cq.Workplane("XY")
+           .box(OUT_W - 2 * WALL, OUT_Y - WALL + EPS, OUT_Z - 2 * WALL,
+                centered=(True, False, False))
+           .edges("|Z or (|Y and <Z)").fillet(CORNER_R - WALL)
+           .translate((0, WALL, WALL)))
+    body = body.cut(cav)
 
     # Front frame: light window, diffuser rebate, and a face to glue the panel.
     zw = (OUT_Z - WINDOW_H) / 2

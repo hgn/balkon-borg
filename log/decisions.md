@@ -43,6 +43,23 @@ live on the always-on nas-Pi5 so they work when the borg-pi5 is off.
 
 ---
 
+## 2026-07-12 — Fix wall gap from the corner rounding (rounded cavity)
+
+**Bug:** with `CORNER_R`=12 > `WALL`=3, the outer corner fillet ate through the thin wall
+at the lower side corners → a real gap/crack between the side wall and the body (user
+spotted it). **Fix:** round the inner cavity cut to follow the outer corners
+(`fillet(CORNER_R - WALL)`), so the shell stays a uniform 3 mm around the rounding. The
+cavity is thus "offset into the corpus" as the user asked. Verified: continuous wall at
+the corner, no gap.
+
+**Ear-to-corpus merge (attempted, reverted):** filleting the ears' vertical junction
+edges to blend them into the wall (not a 90° meeting) **segfaults OCC** on this complex
+body (a hard crash, not catchable). Left the ears with the concave arc underside + rounded
+outer edges. A robust "merge" would need a lofted/gusseted ear rather than a boolean
+fillet — a separate, deliberate rework.
+
+---
+
 ## 2026-07-12 — Button height, flat ceiling top, organic ears
 
 - **Controls 5 mm lower:** `BTN_ROWS_Z` (34,66)→(29,61), `ENC_Z` 96→91 — the top
