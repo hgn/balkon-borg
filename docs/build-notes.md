@@ -75,7 +75,9 @@ Complements `power-distribution.md`, `enclosure-sintering.md` and the log.
 - **4 indicator LEDs** for the bottom LED tower: **LighthouseLEDs 5 mm, built-in resistor,
   5–15 V** (lights straight off 5 V), **four different cool colours**. Holes are 5.2 mm;
   glue from inside, wire all to +5 V/GND (always on). Do not buy generic 12 V pre-wired
-  LEDs (too dim on 5 V).
+  LEDs (too dim on 5 V). If they turn out too bright, dim them later with a series
+  resistor or a small inline trimmer — no board or firmware change (decision: keep plain,
+  always-on LEDs; PWM/PCA9685/addressable control was considered and skipped).
 - **SDR antenna**: a cheap **telescopic SMA whip** (extends to ~30 cm+, wideband when
   length-tuned) is the best budget "covers a lot" antenna. For one specific band (e.g.
   ADS-B 1090 MHz) a tuned antenna beats a whip.
