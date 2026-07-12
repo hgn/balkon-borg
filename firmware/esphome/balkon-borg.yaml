@@ -11,7 +11,7 @@
 #   Button 4 : toggle presence-automatic (radar auto-on)
 #   Encoder  : brightness up/down;  encoder push: light off
 #   Radar    : when automatic is on, presence turns the light on, absence off
-# Button LEDs: LED1 = presence, LED4 = automatic active.
+# Button LEDs: LED1 = presence, LED2/LED3 = active scene (cozy/party), LED4 = automatic.
 
 substitutions:
   name: balkon-borg
@@ -113,8 +113,12 @@ sensor:
   # Rotary encoder -> brightness.
   - platform: rotary_encoder
     id: enc
-    pin_a: GPIO32
-    pin_b: GPIO33
+    pin_a:
+      number: GPIO32
+      mode: INPUT_PULLUP          # M8: EC11 contacts to GND; no external pull-ups
+    pin_b:
+      number: GPIO33
+      mode: INPUT_PULLUP
     on_clockwise:
       - lambda: "id(brightness) = min(255, id(brightness) + 16);"
       - script.execute: send_brightness
@@ -189,6 +193,8 @@ binary_sensor:
           topic: "${wled_topic}/api"
           payload: |-
             root["ps"] = 1;
+      - output.turn_on: led2          # M9: LED2 marks the active scene (cozy)
+      - output.turn_off: led3
 
   # Button 3: scene party (preset 2).
   - platform: gpio
@@ -202,6 +208,8 @@ binary_sensor:
           topic: "${wled_topic}/api"
           payload: |-
             root["ps"] = 2;
+      - output.turn_on: led3          # M9: LED3 marks the active scene (party)
+      - output.turn_off: led2
 
   # Button 4: toggle presence-automatic.
   - platform: gpio
@@ -231,3 +239,5 @@ binary_sensor:
       - mqtt.publish:
           topic: "${wled_topic}"
           payload: "OFF"
+      - output.turn_off: led2          # M9: clear the scene LEDs when the light is off
+      - output.turn_off: led3

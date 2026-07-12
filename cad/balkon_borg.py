@@ -121,6 +121,8 @@ PWR_POS = (190.0, 30.0)
 # clearly given in the drawing (RPi forum confirms), so the lens hole is oversized
 # and CAM_POS marks the hole-pattern centre; verify against the real part or glue.
 CAM_LENS_D = 12.0
+CAM_CHAMFER_D = 20.0   # M13: conical lens opening (12 mm inside -> 20 mm outside) so a
+                       # wide-FOV Camera Module 3 is not vignetted by the 3 mm wall
 CAM_HOLE_DX, CAM_HOLE_DY = 14.4, 12.5
 CAM_POS = (70.0, 45.0)
 CAM_BOSS_OD, CAM_BOSS_H = 6.0, 6.0
@@ -232,7 +234,8 @@ BME_HOLE_DX = 16.0                  # BME280 breakout mount spacing (VERIFY)
 # cable is fed down from the board's 5 V. Holes sized for 5 mm LEDs (5.2 mm); bump to
 # 8.2 for 8 mm LEDs. Kept clear of the corner, the BME opening and the bottom wordmark.
 LED_BOX = 40.0                 # bottom (tip) square side
-LED_BOX_H = 30.0               # protrusion down (-Z)
+LED_BOX_H = 38.0               # protrusion down (-Z); tall enough to hold the LD2410B
+                               # radar (35 mm) behind the front face (see radar note)
 LED_BOX_WALL = 3.0
 LED_TAPER = 20.0               # draft angle from vertical: wide at top, 40x40 at bottom
 LED_BOX_POS = (-155.0, 74.0)   # (x, y) tower axis on the bottom face (left, centred depth)
@@ -435,32 +438,22 @@ def build_body() -> cq.Workplane:
                          cq.Vector(OUT_W / 2 - WALL - EPS, ANT_POS[0], ANT_POS[1]),
                          cq.Vector(1, 0, 0)))
 
-    # Sensor openings in the bottom (-Z) face, looking down at the terrace.
+    # Bottom (-Z) sensor openings — camera only now: the radar moved to the LED tower
+    # (facing forward) and the microphone moved to the Pi 5 (USB), so no bottom mic port.
     cx, cy = CAM_POS
-    body = body.cut(_cyl(CAM_LENS_D, WALL + 2 * EPS,
-                         cq.Vector(cx, cy, -EPS), cq.Vector(0, 0, 1)))
+    body = body.cut(cq.Solid.makeCone(          # M13: conical lens hole (anti-vignette)
+        CAM_CHAMFER_D / 2, CAM_LENS_D / 2, WALL + 2 * EPS,
+        cq.Vector(cx, cy, -EPS), cq.Vector(0, 0, 1)))
     for bx, by in _pattern(CAM_POS, CAM_HOLE_DX, CAM_HOLE_DY):
         body = body.union(_cyl(CAM_BOSS_OD, CAM_BOSS_H,
                                cq.Vector(bx, by, WALL), cq.Vector(0, 0, 1)))
         body = body.cut(_cyl(2.2, CAM_BOSS_H + 2 * EPS,
                              cq.Vector(bx, by, WALL - EPS), cq.Vector(0, 0, 1)))
-    rx, ry = RADAR_POS
-    body = body.cut(cq.Solid.makeBox(
-        RADAR_AREA, RADAR_AREA, WALL - RADAR_MEMBRANE + EPS,
-        cq.Vector(rx - RADAR_AREA / 2, ry - RADAR_AREA / 2, RADAR_MEMBRANE)))
-    mx, my = MIC_POS
-    body = body.cut(_cyl(MIC_D, WALL + 2 * EPS, cq.Vector(mx, my, -EPS), cq.Vector(0, 0, 1)))
 
     def _boss_z(x: float, y: float, h: float, hole: float) -> None:
         nonlocal body
         body = body.union(_cyl(6.0, h, cq.Vector(x, y, WALL), cq.Vector(0, 0, 1)))
         body = body.cut(_cyl(hole, h + 2 * EPS, cq.Vector(x, y, WALL - EPS), cq.Vector(0, 0, 1)))
-
-    # Radar + mic holders on the bottom (module sits on the bosses, wired to J_*).
-    for s in (-1, 1):
-        _boss_z(rx + s * RADAR_MNT_DX / 2, ry, 6.0, 2.0)
-    mhx, mhy = MIC_HOLDER
-    _boss_z(mhx, mhy + 10, 6.0, 2.0)
 
     # BME280 ambient opening + mount on the bottom, so it reads OUTSIDE air.
     bx, by = BME_POS
@@ -487,7 +480,9 @@ def build_body() -> cq.Workplane:
     body = body.cut(cav)
     off = (top + LED_BOX) / 4.0                     # face-centre horizontal offset
     n_out, n_down = math.cos(math.radians(LED_TAPER)), math.sin(math.radians(LED_TAPER))
-    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+    # 3 LED holes; the +Y (front) face is left blank for the LD2410B radar, which mounts
+    # inside the tower facing forward+down and sees through the wall (damping accepted).
+    for dx, dy in ((1, 0), (-1, 0), (0, -1)):
         normal = cq.Vector(dx * n_out, dy * n_out, -n_down)
         centre = cq.Vector(lbx + dx * off, lby + dy * off, -LED_BOX_H / 2.0)
         body = body.cut(cq.Solid.makeCylinder(

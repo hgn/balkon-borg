@@ -81,13 +81,13 @@ for c in (c1, c2):
     p3v3 += c[1]
     gnd += c[2]
 
-# Radar LD2410B (5V, GND, RX, TX, OUT) with 220R series.
-jrad = conn("J_RADAR", 5, FP_J5, "LD2410B")
+# Radar LD2410B (5V, GND, RX, TX) with 220R series. Presence comes over UART, so the
+# separate OUT pin (GPIO34) is dropped (M10: it was dead copper) -> 4-pin connector.
+jrad = conn("J_RADAR", 4, FP_J4, "LD2410B")
 p5v += jrad[1]
 gnd += jrad[2]
 series(jrad[3], GPIO17, "220", "RADAR_RX")   # ESP TX2 -> radar RX
 series(jrad[4], GPIO16, "220", "RADAR_TX")   # radar TX -> ESP RX2
-series(jrad[5], GPIO34, "220", "RADAR_OUT")  # presence out (input-only pin)
 
 # BME280 (3V3, GND, SCL, SDA), direct I2C + optional 4k7 pull-ups (DNP-capable).
 jbme = conn("J_BME", 4, FP_J4, "BME280")

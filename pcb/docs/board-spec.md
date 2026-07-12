@@ -23,7 +23,6 @@ Strapping pins (0, 2, 5, 12, 15) and flash pins (6-11) avoided. Input-only pins
 |---|---|---|---|---|---|
 | `RADAR_TX` | 16 (RX2) | in  | LD2410 TX | 220 Ω | UART2 RX |
 | `RADAR_RX` | 17 (TX2) | out | LD2410 RX | 220 Ω | UART2 TX |
-| `RADAR_OUT`| 34 | in  | LD2410 OUT | 220 Ω | input-only ok, radar drives push-pull |
 | `I2C_SDA`  | 21 | bidir | BME280 SDA | – | pull-up 4.7 kΩ (optional, see below) |
 | `I2C_SCL`  | 22 | bidir | BME280 SCL | – | pull-up 4.7 kΩ (optional, see below) |
 | `ENC_A`    | 32 | in  | encoder A | 100 Ω | internal pull-up |
@@ -38,7 +37,8 @@ Strapping pins (0, 2, 5, 12, 15) and flash pins (6-11) avoided. Input-only pins
 | `BTN3_LED` | 18 | out | NPN Q3 base | 1 kΩ | drives button-3 LED (5 V) low-side |
 | `BTN4_LED` | 19 | out | NPN Q4 base | 1 kΩ | drives button-4 LED (5 V) low-side |
 
-Used: 15 of the 15 usable bidirectional GPIOs + 1 input-only (34). Full, but it
+Used: 15 of the 15 usable bidirectional GPIOs (input-only GPIO34 now free after the
+RADAR_OUT drop). Full, but it
 fits.
 
 **Button-LED drive:** the 5 V ring LEDs cannot be driven directly from a 3.3 V GPIO.
@@ -51,7 +51,7 @@ brings its own series resistor (5 V type).
 | Ref | Pins | Pinout | Target |
 |---|---|---|---|
 | `J_PWR`   | 2 | 5V, GND | 5 V feed from the PSU |
-| `J_RADAR` | 5 | 5V, GND, `RADAR_RX`(→radar RX), `RADAR_TX`(←radar TX), `RADAR_OUT` | LD2410B (HLK breakout) |
+| `J_RADAR` | 4 | 5V, GND, `RADAR_RX`(→radar RX), `RADAR_TX`(←radar TX) | LD2410B (HLK breakout) |
 | `J_BME`   | 4 | 3V3, GND, `I2C_SCL`, `I2C_SDA` | BME280 |
 | `J_ENC`   | 4 | `ENC_A`, `ENC_B`, `ENC_SW`, GND | rotary encoder with button (EC11) |
 | `J_BTN1`  | 4 | `BTN1_SW`, GND, 5V, `BTN1_LEDK` | illuminated button 1 |
@@ -70,12 +70,12 @@ JST-XH crimp housing; buttons with a pigtail or self-crimped.
 | 1 | ESP32-DevKitC-V4 (WROOM-32E) | 38-pin, Espressif | external, socketed (not in the Aisler BOM) |
 | 2 | female header 1×19 | 2.54 mm | row spacing from the Espressif mechanical drawing |
 | 1 | JST-XH header | 2-pin | `J_PWR` |
-| 1 | JST-XH header | 5-pin | `J_RADAR` |
+| 1 | JST-XH header | 4-pin | `J_RADAR` |
 | 1 | JST-XH header | 4-pin | `J_BME` |
 | 1 | JST-XH header | 4-pin | `J_ENC` |
 | 4 | JST-XH header | 4-pin | `J_BTN1..4` |
 | 4 | NPN transistor | BC337-40 / 2N3904, TO-92 | button-LED driver Q1..Q4 |
-| 3 | resistor | 220 Ω | UART TX/RX, radar OUT |
+| 2 | resistor | 220 Ω | radar UART TX/RX |
 | 7 | resistor | 100 Ω | encoder + button series R |
 | 4 | resistor | 1 kΩ | NPN base resistors |
 | 2 | resistor | 4.7 kΩ | I²C pull-ups (optional/DNP, see below) |
