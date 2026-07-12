@@ -86,16 +86,18 @@ JST-XH crimp housing; buttons with a pigtail or self-crimped.
 ## Open points (to settle before layout)
 
 1. **DevKitC row spacing** — board = Espressif ESP32-DevKitC-V4. KiCad has **no**
-   DevKitC footprint → place two `PinSocket_1x19_P2.54mm` and enter the exact row
-   spacing from the Espressif mechanical drawing before layout.
+   DevKitC footprint → two `PinSocket_1x19_P2.54mm` at **25.4 mm (1 inch)** row spacing
+   (`ESP_ROW`), the official DevKitC-V4 value (RESOLVED). A caliper check on the real
+   module is still wise, since clones vary.
 2. **Button-LED voltage** — model = 12 mm metal, illuminated, **5 V** ring LED. When
    ordering pick the 5 V variant (not 12/24 V); then the NPN driver needs no extra
    resistor.
 3. **I²C pull-ups** — provide 4.7 kΩ as **DNP**. Buy a genuine Bosch BME280 (BMP280
    fakes do not measure humidity); typical breakouts have pull-ups on board, so the
    DNP stays empty.
-4. **Outline + mounting holes** — come from the CadQuery enclosure. Placeholder
-   outline with 4× M3 holes until measured.
+4. **Outline + mounting holes** — outline 150×92 from the enclosure carrier bay; the 4
+   corner holes are **M2.5 (2.7 mm, `MountingHole_2.7mm_M2.5`)** to match the enclosure's
+   M2.5 carrier inserts (RESOLVED — were M3, which did not fit the inserts).
 5. **Connector placement** — the JST header positions follow the cable exits in the
    enclosure; freeze only once the rough layout is set.
 

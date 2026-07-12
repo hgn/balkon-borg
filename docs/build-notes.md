@@ -62,10 +62,13 @@ Complements `power-distribution.md`, `enclosure-sintering.md` and the log.
 
 ## Hardware checklist (easy to forget)
 
-- **Ceiling anchors** to match the ceiling material (4× M5 through the ears, they
-  carry everything).
-- **Heat-set inserts**: M2.5 (Pi, carrier, WLED), M3 (seam clamps).
-- **Screws**: M2.5 (Pi/carrier/WLED), M3 (seam), M5 (ceiling).
+- **Ceiling anchors** to match the ceiling material (**4× M5** through the ears, they
+  carry everything). The ear hole is a through-hole with a counterbore, so the M5 head
+  seats flat under the ear; any standard M5 head (≤11 mm) fits. A washer helps.
+- **Heat-set inserts**: **M2.5** ×~8 (Pi + carrier 4 + WLED), **M3** ×**3** (seam clamps:
+  2 rear + 1 front).
+- **Screws**: **M2.5** (Pi/carrier/WLED — the carrier PCB holes are M2.5/2.7 mm), **M3** ×3
+  (seam), **M5** ×4 (ceiling).
 - **Dowel pins 4 mm** (split alignment).
 - **Panel nuts** for the 12 mm buttons (check the 3 mm wall is within their clamp
   range).

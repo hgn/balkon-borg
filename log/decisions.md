@@ -43,6 +43,26 @@ live on the always-on nas-Pi5 so they work when the borg-pi5 is off.
 
 ---
 
+## 2026-07-12 — Review fixes C1/C2/H3/H4 (fabrication-gating)
+
+- **C1 (ear screw blind hole):** the ceiling-screw hole was only in the 6 mm pad and
+  dead-ended in the solid ramp. Now a **full through-hole** (`EAR_T+RAMP_H`) plus an
+  **`EAR_CB_D`=11 mm counterbore** giving the M5 head a flat seat on the sloped underside.
+- **C2 (unsupported front seam):** added **one more seam clamp near the open front** on the
+  bottom wall (`FRONT_SEAM_Y`=115), M3 clearance/insert like the rear pair → the deep
+  148 mm front edges are pulled together. Adds 1× M3 insert + screw.
+- **H3 (fastener mismatch):** carrier PCB mounting holes changed **M3 → M2.5**
+  (`MountingHole_2.7mm_M2.5` in `place-board.py`) to match the enclosure's M2.5 carrier
+  inserts. Board regenerates at layout time.
+- **H4 (ESP row spacing):** confirmed **25.4 mm (1 inch)** as the official ESP32-DevKitC-V4
+  row spacing (Espressif docs + the esp32.com thread). `ESP_ROW=25.4` kept; caliper-check
+  the real module (clones vary). No longer a placeholder.
+
+Order-list impact: M3 inserts/screws for seam clamps go 2 → 3; M5 heads seat in the ear
+counterbore (any standard head ≤11 mm, washer helps). Design-review updated with ✅ notes.
+
+---
+
 ## 2026-07-11 — Full left/right mirror of the enclosure
 
 **Context:** the user asked to swap the left and right sides. A partial swap does not

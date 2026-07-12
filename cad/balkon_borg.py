@@ -82,7 +82,8 @@ BOSS_HOLE = 2.2
 EAR_L = 24.0           # sideways protrusion (X)
 EAR_W = 28.0           # width along the depth (Y)
 EAR_T = 6.0            # pad thickness (Z)
-EAR_HOLE = 5.5         # M5 ceiling screw clearance
+EAR_HOLE = 5.5         # M5 ceiling screw clearance (through-hole, top to underside)
+EAR_CB_D = 11.0        # counterbore for the M5 head: a flat seat on the sloped underside
 EAR_INSET = 12.0       # from the front/back edge to the ear
 RAMP_H = 22.0          # how far the cast ramp reaches down the wall
 
@@ -167,6 +168,8 @@ CLR_M3 = 3.4           # M3 clearance hole
 # Seam clamp blocks on the rear wall straddling X=0: clearance on -X, insert +X.
 SEAM_BLOCK_L = 22.0    # length across the seam (X)
 SEAM_BLOCK_H = 14.0    # height (Z)
+FRONT_SEAM_Y = 115.0   # a seam clamp near the open front (bottom wall), so the deep
+                       # front edges of the two halves cannot gap before gluing
 SEAM_Z = (28.0, 82.0)  # z heights of the rear seam clamps
 
 # Front is open: the diffuser + LED panel are glued into the frame rebate (no bezel).
@@ -370,6 +373,17 @@ def build_body() -> cq.Workplane:
         body = body.cut(_cyl(INSERT_M3, SEAM_BLOCK_L / 2 + EPS,    # +X insert
                              cq.Vector(0, yc, z), cq.Vector(1, 0, 0)))
 
+    # C2 fix: one more seam clamp near the open front, on the bottom inner wall, so the
+    # deep (148 mm) front edges of the two halves are pulled together, not left free.
+    body = body.union(cq.Solid.makeBox(
+        SEAM_BLOCK_L, POST_DEPTH, SEAM_BLOCK_H,
+        cq.Vector(-SEAM_BLOCK_L / 2, FRONT_SEAM_Y - POST_DEPTH / 2, WALL)))
+    fzc = WALL + SEAM_BLOCK_H / 2
+    body = body.cut(_cyl(CLR_M3, SEAM_BLOCK_L / 2 + EPS,           # -X clearance
+                         cq.Vector(-SEAM_BLOCK_L / 2 - EPS, FRONT_SEAM_Y, fzc), cq.Vector(1, 0, 0)))
+    body = body.cut(_cyl(INSERT_M3, SEAM_BLOCK_L / 2 + EPS,        # +X insert
+                         cq.Vector(0, FRONT_SEAM_Y, fzc), cq.Vector(1, 0, 0)))
+
     # Dowel posts straddling the split, top and bottom, on the rear inner wall.
     for z in (OUT_Z - BORDER, BORDER):
         body = body.union(cq.Solid.makeBox(
@@ -505,8 +519,15 @@ def build_body() -> cq.Workplane:
             ear = (cq.Workplane("XZ").polyline(pts).close()
                    .extrude(-EAR_W).translate((0, yc - EAR_W / 2, 0)))
             body = body.union(ear)
-            body = body.cut(_cyl(EAR_HOLE, EAR_T + 2 * EPS,
-                                 cq.Vector(wall + outer / 2, yc, OUT_Z - EAR_T - EPS),
+            # C1 fix: a full through-hole (top through the ramp to the underside) plus a
+            # counterbore giving the M5 head a flat, level seat. The old hole was only in
+            # the 6 mm pad and dead-ended in the solid ramp below — a screw could not pass.
+            hx = wall + outer / 2
+            body = body.cut(_cyl(EAR_HOLE, EAR_T + RAMP_H + 2 * EPS,
+                                 cq.Vector(hx, yc, OUT_Z - EAR_T - RAMP_H - EPS),
+                                 cq.Vector(0, 0, 1)))
+            body = body.cut(_cyl(EAR_CB_D, RAMP_H + EPS,
+                                 cq.Vector(hx, yc, OUT_Z - EAR_T - RAMP_H - EPS),
                                  cq.Vector(0, 0, 1)))
 
     # Optional full left/right mirror, applied to the finished geometry so every

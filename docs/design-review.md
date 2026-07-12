@@ -21,6 +21,8 @@ function-critical (ceiling mount). Not yet ready to order.
 
 ## 🔴 Critical / high
 
+*Status 2026-07-12: C1, C2, H3, H4 all resolved (see the ✅ notes).*
+
 **C1 [Chassis] The ceiling screw cannot pass through the ear.**
 `EAR_HOLE` is only drilled through the top 6 mm pad (z≈104–110) at x≈−242. Exactly there
 the ramp (`RAMP_H`) fills the space below: at x−242 there is solid PA12 from z≈93–104. A
@@ -28,23 +30,32 @@ screw driven up into the ceiling hits 11 mm of solid material → **blind hole, 
 impossible as drawn.**
 Fix: run the hole down to the ear underside (length ≈ `RAMP_H+EAR_T`) or move it out to
 the thin edge (x≈−254) where there is air under the pad. Plan the head seat from below.
+**✅ Resolved:** full through-hole (`EAR_T+RAMP_H`) plus an `EAR_CB_D`=11 mm counterbore
+that gives the M5 head a flat, level seat on the sloped underside.
 
 **C2 [Chassis] Front seam unsupported.**
 The two halves are bolted only at the rear wall (2 clamps at z28/z82) + 2 dowels. The
 **148 mm deep front edges** cantilever free — before the diffuser is glued they gap /
 shift. Increasing the depth to 148 mm made this worse.
 Fix: add a clamp/snap near the open front (still drivable while the front is open).
+**✅ Resolved:** added a front seam clamp on the bottom wall at `FRONT_SEAM_Y`=115 (M3,
+clearance/insert like the rear clamps).
 
 **H3 [PCB↔Chassis] Fastener mismatch.**
 PCB holes are **M3 (3.2 mm)** (`MountingHole_3.2mm_M3`); the enclosure carrier bosses use
 **M2.5 inserts** (`INSERT_M25`). An M3 screw will not fit the M2.5 insert; an M2.5 screw
 is sloppy in a 3.2 mm hole. Board-spec point 4 already calls the M3 holes "provisional".
 Fix: standardise on M2.5 (the Pi is M2.5 anyway) → PCB holes ~2.7 mm.
+**✅ Resolved:** PCB holes are now `MountingHole_2.7mm_M2.5` (place-board.py); the board is
+regenerated at layout time.
 
 **H4 [PCB] `ESP_ROW = 25.4` unconfirmed.**
 The row spacing of the two 1×19 headers is a placeholder. If wrong, **the DevKit will not
 seat**. This is the one real show-stopper dimension before fabrication. Measure on the
 real module before the board goes out.
+**✅ Resolved:** confirmed **25.4 mm (1 inch)**, the official DevKitC-V4 row spacing
+(Espressif docs + the esp32.com thread on exactly this). Kept `ESP_ROW=25.4`; a caliper
+check on the actual module is still wise since clones vary.
 
 ## 🟡 Medium
 

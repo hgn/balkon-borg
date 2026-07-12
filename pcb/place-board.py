@@ -6,12 +6,12 @@ Runs with the SYSTEM python (KiCad pcbnew module), board CLOSED in KiCad:
     /usr/bin/python3 place-board.py
 
 Does everything headless: clears old routing, places the 33 footprints compactly,
-draws the final 150x92 outline, adds 4 M3 mounting holes at the corners (pattern
+draws the final 150x92 outline, adds 4 M2.5 mounting holes at the corners (pattern
 must match the enclosure carrier bosses in cad/balkon_borg.py), adds the "HagiOne"
 silkscreen, saves, and exports the Specctra DSN for the autorouter.
 
-The ESP header row spacing (ESP_ROW) is a placeholder; confirm against the real
-DevKitC before the final board.
+ESP header row spacing (ESP_ROW) = 25.4 mm (1 inch), the official DevKitC-V4 value;
+a caliper check on the actual module is still wise since clones vary.
 """
 
 from pathlib import Path
@@ -24,8 +24,11 @@ DSN = HERE / "balkon-borg-carrier.dsn"
 MH_LIB = "/usr/share/kicad/footprints/MountingHole.pretty"
 
 W, H = 150.0, 92.0                 # board outline
-HOLE = ((7, 7), (143, 7), (7, 85), (143, 85))   # M3 mounting holes -> pattern 136x78
-ESP_ROW = 25.4                     # spacing between the two ESP header rows (VERIFY)
+HOLE = ((7, 7), (143, 7), (7, 85), (143, 85))   # M2.5 mounting holes -> pattern 136x78
+ESP_ROW = 25.4                     # ESP header row spacing: 25.4 mm (1 inch), the
+                                   # official DevKitC-V4 value; caliper-check the real
+                                   # module (clones vary) but this is confirmed.
+MH_FP = "MountingHole_2.7mm_M2.5"  # M2.5 to match the enclosure carrier inserts (H3)
 
 
 def mm(v: float) -> int:
@@ -93,9 +96,9 @@ def main() -> int:
     rect.SetWidth(mm(0.15))
     b.Add(rect)
 
-    # M3 mounting holes at the corners (pattern mirrored into the enclosure).
+    # M2.5 mounting holes at the corners; pattern mirrors the enclosure carrier inserts.
     for i, (x, y) in enumerate(HOLE):
-        fp = pcbnew.FootprintLoad(MH_LIB, "MountingHole_3.2mm_M3")
+        fp = pcbnew.FootprintLoad(MH_LIB, MH_FP)
         fp.SetReference(f"H{i + 1}")
         fp.SetPosition(pcbnew.VECTOR2I(mm(x), mm(y)))
         b.Add(fp)
