@@ -43,6 +43,26 @@ live on the always-on nas-Pi5 so they work when the borg-pi5 is off.
 
 ---
 
+## 2026-07-12 — SLS/PA12 DfAM pre-print hardening
+
+Final DfAM pass before printing:
+- **`TOL` 0.4 → 0.5 mm** — off the SLS low limit (dowels/diffuser/button fits).
+- **Drain holes** (`DRAIN_D`=5): one in the bottom wall + one in the tower floor (lowest
+  points) → condensation runs out, doubles as powder escape for the tower pocket.
+- **Tapered feet** (`FOOT_W`/`FOOT_H`, additive cones/lofts — no fragile post-union
+  fillets) at the Pi/carrier/bottom **bosses**, **seam clamps**, front clamp and **dowel
+  posts**, softening the abrupt 3 mm-wall → block transition (stress/sink/warp).
+- **Internal stiffening ribs** (`RIB_*`, 4× on the inner bottom wall, front-to-back, clear
+  of tower/camera/BME/drain, below the panel) against long-panel warp.
+- **Front frame cored** from the back to a channel section (~5 mm front skin + 3 mm walls +
+  a surround around the window/nubs) instead of a solid ~13×12 mm ring → less mass, warp
+  and material (body 833 → 804 cm³). Moderate, nubs and glue face preserved.
+
+No enclosed voids; the open front + these holes depowder cleanly. Location is
+sun/rain-protected (UV/water low-risk); the tower/bottom drains handle condensation.
+
+---
+
 ## 2026-07-12 — Review medium round: radar forward, mic to Pi, audio out, M8/9/10/13
 
 **Sensors:**

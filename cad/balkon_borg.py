@@ -76,6 +76,8 @@ CARR_CENTER = (-105.0, 55.0)            # board centre on the rear wall (x, z)
 BOSS_OD = 8.0
 BOSS_H = 8.0
 BOSS_HOLE = 2.2
+FOOT_W = 2.0           # tapered foot flare at boss/clamp bases (softens the abrupt
+FOOT_H = 2.5           # 3 mm-wall -> block transition; reduces stress/sink/warp)
 
 # Ceiling-mount ears ("Nasen") on the side walls (+/-X): a pad that ramps out of
 # the wall (cast look, not a tacked-on tab), 2 per side, with a vertical screw hole.
@@ -148,8 +150,11 @@ BB_POS = (25.0, 98.0)          # Balkon Borg centre (x, y), shifted right to cle
 HG_POS = (25.0, 60.0)          # small HagiOne below it
 
 EPS = 0.1
-TOL = 0.4               # SLS/PA12 clearance for fits (holes, pocket, dowels)
+TOL = 0.5               # SLS/PA12 clearance for fits (holes, pocket, dowels) — mid of
+                        # the SLS range, not the 0.4 low limit (dowels/diffuser fit)
 CORNER_R = 12.0        # rounded vertical corners + bottom edges (organic; top stays flat)
+RIB_W, RIB_H = 3.0, 8.0   # internal stiffening ribs against long-panel warp (bottom wall)
+RIB_X = (-95.0, -40.0, 40.0, 95.0)   # rib X positions, clear of tower/camera/drain
 MIRROR = True          # full left/right (X) mirror: swaps the busy +X side (Pi/SDR,
                        # camera/radar/mic) with the quiet -X side (buttons, LED tower)
 
@@ -242,6 +247,11 @@ LED_BOX_POS = (-155.0, 74.0)   # (x, y) tower axis on the bottom face (left, cen
 LED_HOLE_D = 5.2               # 5 mm LED body + clearance (flange seats from inside)
 RADAR_WIN_D = 18.0             # radar window in the front (+Y) tower face (LD2410B view)
 
+# Drain holes at the lowest points (ceiling-mounted, bottom faces down): condensation
+# runs out, and they double as powder-escape for the tower pocket.
+DRAIN_D = 5.0
+BOTTOM_DRAIN_POS = (120.0, 25.0)   # a clear bottom spot (pre-mirror), off boards/text
+
 # Low divider ribs to organise the cavity ("Trenner").
 DIV_H = 22.0           # rib height off the rear wall
 DIV_X = (-25.0, 48.0)  # ribs separating carrier | middle | Pi bays
@@ -264,6 +274,17 @@ def _pattern(center: tuple[float, float], dx: float, dz: float
 
 def _cyl(d: float, h: float, pnt: cq.Vector, direction: cq.Vector) -> cq.Solid:
     return cq.Solid.makeCylinder(d / 2, h, pnt, direction)
+
+
+def _foot(lu: float, lv: float, origin: tuple[float, float, float],
+          normal: tuple[float, float, float]) -> cq.Workplane:
+    """A tapered foot to blend a rear/bottom-wall block into the wall (softer transition):
+    an (lu+2*FOOT_W) x (lv+2*FOOT_W) base at `origin` tapering to lu x lv over FOOT_H along
+    `normal`. Additive (robust) — avoids fragile post-union junction fillets."""
+    return (cq.Workplane(cq.Plane(origin=origin, normal=normal, xDir=(1, 0, 0)))
+            .rect(lu + 2 * FOOT_W, lv + 2 * FOOT_W)
+            .workplane(offset=FOOT_H).rect(lu, lv)
+            .loft(combine=False))
 
 
 def _rear_text(body: cq.Workplane, s: str, cx: float, cz: float,
@@ -354,6 +375,18 @@ def build_body() -> cq.Workplane:
         DIFFUSER_W + TOL, RECESS + DIFF_T + EPS, DIFFUSER_H + TOL,
         cq.Vector(-(DIFFUSER_W + TOL) / 2, OUT_Y - (RECESS + DIFF_T), zd - TOL / 2)))
 
+    # Core the frame border from the back (leave a ~5 mm front skin + 3 mm walls + a
+    # surround around the window/nubs) so it is not a solid ~13x12 mm ring — cuts mass,
+    # warp/sink and material. Moderate ("nicht zu stark").
+    fskin = RECESS + DIFF_T + 1.0
+    core_outer = cq.Solid.makeBox(
+        OUT_W - 2 * WALL, FRAME_D - fskin + EPS, OUT_Z - 2 * WALL,
+        cq.Vector(-(OUT_W / 2 - WALL), OUT_Y - FRAME_D - EPS, WALL))
+    core_keep = cq.Solid.makeBox(
+        WINDOW_W + 8, FRAME_D, WINDOW_H + 8,
+        cq.Vector(-(WINDOW_W + 8) / 2, OUT_Y - FRAME_D - EPS, (OUT_Z - WINDOW_H - 8) / 2))
+    body = body.cut(core_outer.cut(core_keep))
+
     # LED panel locating nubs at the board corners on the frame back.
     zp = OUT_Z / 2
     for sx in (1, -1):
@@ -369,6 +402,8 @@ def build_body() -> cq.Workplane:
     for x, z in _pattern(PI_CENTER, PI_HOLE_DX, PI_HOLE_DZ) + \
             _pattern(CARR_CENTER, CARR_HOLE_DX, CARR_HOLE_DZ):
         body = body.union(_cyl(BOSS_OD, BOSS_H, cq.Vector(x, WALL, z), cq.Vector(0, 1, 0)))
+        body = body.union(cq.Solid.makeCone(       # tapered foot into the wall
+            BOSS_OD / 2 + FOOT_W, BOSS_OD / 2, FOOT_H, cq.Vector(x, WALL, z), cq.Vector(0, 1, 0)))
         body = body.cut(_cyl(INSERT_M25, BOSS_H + 2 * EPS,
                              cq.Vector(x, WALL - EPS, z), cq.Vector(0, 1, 0)))
 
@@ -379,6 +414,7 @@ def build_body() -> cq.Workplane:
         body = body.union(cq.Solid.makeBox(
             SEAM_BLOCK_L, POST_DEPTH, SEAM_BLOCK_H,
             cq.Vector(-SEAM_BLOCK_L / 2, WALL, z - SEAM_BLOCK_H / 2)))
+        body = body.union(_foot(SEAM_BLOCK_L, SEAM_BLOCK_H, (0, WALL, z), (0, 1, 0)))
         yc = WALL + POST_DEPTH / 2
         body = body.cut(_cyl(CLR_M3, SEAM_BLOCK_L / 2 + EPS,       # -X clearance
                              cq.Vector(-SEAM_BLOCK_L / 2 - EPS, yc, z), cq.Vector(1, 0, 0)))
@@ -390,6 +426,7 @@ def build_body() -> cq.Workplane:
     body = body.union(cq.Solid.makeBox(
         SEAM_BLOCK_L, POST_DEPTH, SEAM_BLOCK_H,
         cq.Vector(-SEAM_BLOCK_L / 2, FRONT_SEAM_Y - POST_DEPTH / 2, WALL)))
+    body = body.union(_foot(SEAM_BLOCK_L, POST_DEPTH, (0, FRONT_SEAM_Y, WALL), (0, 0, 1)))
     fzc = WALL + SEAM_BLOCK_H / 2
     body = body.cut(_cyl(CLR_M3, SEAM_BLOCK_L / 2 + EPS,           # -X clearance
                          cq.Vector(-SEAM_BLOCK_L / 2 - EPS, FRONT_SEAM_Y, fzc), cq.Vector(1, 0, 0)))
@@ -401,6 +438,7 @@ def build_body() -> cq.Workplane:
         body = body.union(cq.Solid.makeBox(
             POST_L, POST_DEPTH, POST_H,
             cq.Vector(-POST_L / 2, WALL, z - POST_H / 2)))
+        body = body.union(_foot(POST_L, POST_H, (0, WALL, z), (0, 1, 0)))
         body = body.cut(_cyl(DOWEL_D + TOL, POST_L + 2 * EPS,
                              cq.Vector(-POST_L / 2 - EPS, WALL + POST_DEPTH / 2, z),
                              cq.Vector(1, 0, 0)))
@@ -454,6 +492,8 @@ def build_body() -> cq.Workplane:
     def _boss_z(x: float, y: float, h: float, hole: float) -> None:
         nonlocal body
         body = body.union(_cyl(6.0, h, cq.Vector(x, y, WALL), cq.Vector(0, 0, 1)))
+        body = body.union(cq.Solid.makeCone(       # tapered foot into the bottom wall
+            3.0 + FOOT_W, 3.0, FOOT_H, cq.Vector(x, y, WALL), cq.Vector(0, 0, 1)))
         body = body.cut(_cyl(hole, h + 2 * EPS, cq.Vector(x, y, WALL - EPS), cq.Vector(0, 0, 1)))
 
     # BME280 ambient opening + mount on the bottom, so it reads OUTSIDE air.
@@ -464,6 +504,16 @@ def build_body() -> cq.Workplane:
                                  cq.Vector(bx + gx, by + gy, -EPS), cq.Vector(0, 0, 1)))
     for s in (-1, 1):
         _boss_z(bx + s * BME_HOLE_DX / 2, by, 6.0, 2.0)
+
+    # Condensation drain in the bottom wall (clear spot).
+    ddx, ddy = BOTTOM_DRAIN_POS
+    body = body.cut(_cyl(DRAIN_D, WALL + 2 * EPS, cq.Vector(ddx, ddy, -EPS), cq.Vector(0, 0, 1)))
+
+    # Internal stiffening ribs on the inner bottom wall (against long-panel warp), running
+    # front-to-back at a few X, clear of the tower/camera/BME/drain and below the panel.
+    for rx in RIB_X:
+        body = body.union(cq.Solid.makeBox(
+            RIB_W, 108.0, RIB_H, cq.Vector(rx - RIB_W / 2, 12.0, WALL)))
 
     # Downward LED indicator tower: a tapered box (wide at the top, 40x40 tip, LED_TAPER
     # draft) hollow and open to the cavity, with one LED hole per slanted side (glue LEDs
@@ -492,6 +542,9 @@ def build_body() -> cq.Workplane:
     rcentre = cq.Vector(lbx, lby + off, -LED_BOX_H / 2.0)
     body = body.cut(cq.Solid.makeCylinder(
         RADAR_WIN_D / 2, 8.0, rcentre - rnorm.multiply(4.0), rnorm))
+    # Drain in the tower floor (lowest point): condensation + powder escape.
+    body = body.cut(_cyl(DRAIN_D, WALL + 2 * EPS,
+                         cq.Vector(lbx, lby, -LED_BOX_H - EPS), cq.Vector(0, 0, 1)))
 
     # WLED controller cradle on the top inner wall: a pocket the board drops into,
     # open on the +Y side for cables; final retention by a zip-tie. Size-tolerant.
