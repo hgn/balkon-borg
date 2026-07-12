@@ -145,3 +145,39 @@ The honeycomb keep-out logic against boards/seam is properly verified. The power
 
 **Next priorities:** C1 (ear hole) and H4 (ESP_ROW) are fabrication-gating, C2/H3 right
 after. The rest is finishing.
+
+## Signal-flow review (per subsystem, 2026-07-13)
+
+Walked each subsystem sensor → processing (ESP / Pi / WLED) → effector. Path complete
+unless noted. Gaps are flagged, not fixed.
+
+- **Radar → light (U1):** LD2410B → ESP UART → presence → MQTT `wled/balkon` → broker
+  → WLED → panel. Firmware complete. **SF1 [gap]:** the whole light path (radar *and*
+  buttons) runs through the **borg-pi5 broker**, which is not 24/7. With the Pi off there
+  is no button/radar light — exactly the U1/U2 core cases. Options: run the broker on the
+  always-on nas-Pi5, or (cleaner) have the ESP talk to WLED **directly** over its JSON/UDP
+  API so light never depends on the Pi. Trade-off is logged (2026-07-11) but worth revisiting.
+- **Buttons/encoder → light (U2):** GPIO → ESP → MQTT → WLED. Complete. Button **LEDs**
+  are driven locally (ESP GPIO → NPN), so the panel indicators work even with the Pi off;
+  only the actual light switching is broker-bound (SF1).
+- **BME280 → dashboard (U4):** I²C → ESP → MQTT sensors → Grafana. Firmware done; the
+  Grafana/Mosquitto **quadlets do not exist yet** (§8.2).
+- **Camera → Frigate (U7):** CSI → Pi → MQTT events + storage. CSI, no USB contention.
+  Quadlet pending.
+- **Mic → BirdNET (U6) / SDR → tar1090 (U5,U8):** USB → Pi → stats/map. Quadlets pending.
+  **SF2 [gap]:** the RTL-SDR should sit on a **USB2** port (USB3 radiates on 1090 MHz);
+  note it in the build. Pi 5 has enough ports for SDR + mic + speaker.
+- **Speaker → audio feedback (U9):** event → Pi → play wav. Hardware fine, but **SF3
+  [gap]:** nothing yet subscribes to the detection topics and plays the clip — no service,
+  script or quadlet defines the trigger. This path is named but not specified.
+- **WLED panel (effector):** WLED controller → SK6812, own power, always on WLAN; its own
+  time presets run without the broker. ABL at 8 A caps heat/current.
+- **Bottom indicator LEDs:** 4× always-on 5 V, no signal path — fine.
+- **SF4 [clarify]:** the rear-wall "status/effect LEDs" (small holes in the -Y wall) have
+  no driver in the firmware (only the 4 button LEDs exist) or the board. Decide whether
+  they are more always-on indicators or ESP/Pi-driven; if driven, the path is missing.
+
+**Net:** the ESP-side chains are complete and correct; the open items are the Pi-side
+**backend services (quadlets, §8.2)**, the **audio-feedback trigger (SF3)**, the
+**broker-availability question for the core light cases (SF1)**, and a small clarification
+on the rear status LEDs (SF4).

@@ -157,3 +157,34 @@ WiFi repeater → cable → Fritz!Box → nas-Pi5 (see [network](docs/network.md
 - **Thermal in summer** — CPU detection raises the continuous load; ventilation and the Active Cooler decide stability.
 - **Recognition performance** — without an NPU, FPS/stream limited; possibly a lighter model or a later Hailo retrofit.
 - **Humidity/condensation** — mind the downward ventilation and possibly pressure equalisation so nothing collects.
+
+## 10 · Built with Claude (Opus / Fable)
+
+The complete hardware design in this repo — the parametric CadQuery enclosure, the
+SKiDL → KiCad → Freerouting carrier board, the ESPHome firmware, the MQTT/Podman
+plumbing and the docs — was generated in collaboration with Anthropic's **Claude**
+(Opus 4.x and **Fable 5**), driving the CAD, PCB, render and review tooling directly.
+For the curious, a `/context` snapshot from one of the working sessions:
+
+```text
+Context Usage
+⛁ ⛁ ⛁ ⛁ ⛀ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁   Fable 5
+⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁   claude-fable-5
+⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁   323k/1m tokens (32%)
+⛁ ⛁ ⛁ ⛁ ⛁ ⛀ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶
+⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   Estimated usage by category
+⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ System prompt:  3.9k tokens (0.4%)
+⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ System tools:   8.8k tokens (0.9%)
+⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ Memory files:   5.6k tokens (0.6%)
+⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ Skills:         2.6k tokens (0.3%)
+⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ Messages:     302.8k tokens (30.3%)
+                                        ⛶ Free space:   676.4k (67.6%)
+
+MCP tools · 25 tools · loaded on-demand
+Memory files · 3 files · 5.6k tokens
+Skills · 21 skills · 2.6k tokens
+```
+
+The bulk (the "Messages" slice) is the working transcript: CAD builds and OpenCascade
+booleans, KiCad/pcbnew scripting, Freerouting runs, DRC reports and render round-trips.
+
