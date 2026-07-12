@@ -112,15 +112,17 @@ Scope matches the use cases: the board is the **ESP32 domain only** — radar (U
 the Pi, correctly **not** on this board. GPIO map is consistent (netlist/firmware), strapping
 pins avoided, power netclass (1.0 mm) is sized well above the ~1 A load. Before fabrication:
 
-- 🔴 **BC337 pinout** — verify the KiCad symbol E/B/C ↔ `TO-92_Inline` pad numbering ↔ the
-  **real BC337 datasheet** (EBC vs CBE). A wrong mapping = the button LEDs never switch.
-- 🔴 **ESP DevKitC-V4 header order** — the `espR` pin→GPIO mapping assumes GND at right pins
-  1/7; caliper- and pinout-check the actual module (row spacing 25.4 mm is confirmed).
-- 🔴 **F1 polyfuse footprint** — fixed from an axial-resistor to a radial `FP_PTC`; still
+- ✅ **BC337 pinout** — verified: the KiCad symbol is `Q_NPN_CBE` (pin1=C, 2=B, 3=E) and the
+  real BC337 is physically **CBE** (flat face, legs down: C-B-E); the netlist wires C→LED
+  cathode, B→1k→GPIO, E→GND (low-side). Just insert the transistor flat-face-to-silk.
+- ✅ **ESP DevKitC-V4 header order** — verified: `espR` matches the official V4 right column
+  (GND at pins 1/7) and avoids TX0/RX0, strapping and flash pins. Row spacing 25.4 mm
+  confirmed. (A caliper check on the actual module is still wise for clones.)
+- ✅ **F1 polyfuse footprint** — fixed from an axial-resistor to a radial `FP_PTC`; still
   confirm it matches the actual PTC you buy (PTC packages vary).
-- 🟡 **DRC to the fab** — set min track/clearance/drill/annular to **Aisler's** spec before
-  routing (do not route on KiCad defaults). The 0.2 mm signal / 1.0 mm power widths are well
-  within Aisler.
+- ✅ **DRC to the fab** — `place-board.py` now sets **Aisler** min track/clearance/drill/via/
+  annular (also applied to the current board). The 0.2 mm signal / 1.0 mm power widths are
+  well within Aisler.
 - 🟡 **ESP antenna keep-out** — keep copper (especially any ground pour) **clear under the
   DevKit's antenna end**; it socket-mounts ~13 mm above the board but a pour can still detune.
 - 🟡 **MCAD collision check** — `make -C pcb step` exports the board STEP; drop it into the

@@ -125,6 +125,15 @@ def main() -> int:
     if hasattr(ns, "RecomputeEffectiveNetclasses"):
         ns.RecomputeEffectiveNetclasses()
 
+    # DRC constraints to the fab (Aisler 2-layer) so DRC checks against real limits,
+    # not KiCad defaults. Guarded so it survives pcbnew API changes.
+    ds = b.GetDesignSettings()
+    for attr, val in (("m_TrackMinWidth", 0.15), ("m_MinClearance", 0.15),
+                      ("m_ViasMinSize", 0.45), ("m_MinThroughDrill", 0.30),
+                      ("m_ViasMinAnnularWidth", 0.13), ("m_HoleToHoleMin", 0.25)):
+        if hasattr(ds, attr):
+            setattr(ds, attr, mm(val))
+
     pcbnew.SaveBoard(str(BOARD), b)
     pcbnew.ExportSpecctraDSN(b, str(DSN))
     print(f"placed {len(b.GetFootprints())} footprints (incl. 4 holes), wrote DSN")
