@@ -235,6 +235,7 @@ WLED_CENTER = (-30.0, 55.0)          # (x, y) on the top inner wall
 LID_MARGIN = 18.0      # solid border kept around the opening (from the outer edge)
 LID_CORNER_R = 12.0    # rounded opening corners (SLS: avoid sharp inside notches)
 LID_NOTCH_M = 6.0      # extra material kept around the WLED cradle inside the opening
+LID_TONGUE_RIB = 5.0   # extra ceiling-wall thickness under the notch tongue (stiffen it)
 
 # Radar + mic holders and BME280 ambient opening on the bottom face.
 RADAR_MNT_DX = 38.0                  # boss spacing flanking the radar membrane
@@ -300,12 +301,14 @@ def _rear_text(body: cq.Workplane, s: str, cx: float, cz: float,
                size: float, depth: float) -> cq.Workplane:
     """Raise text on the rear (-Y) outer face, exactly centred at (cx, cz).
 
-    Uses a ProjectedOrigin workplane so the text lands where asked instead of at the
-    face bounding-box centre (which drifts as features are added).
+    Built on an explicit plane at the rear wall (y=0), not `faces("<Y")`: after the
+    first wordmark is raised, the lowest-Y face is that glyph, so a second face-based
+    call lands its text on the first glyph's plane and floats ~1.5 mm off the wall.
+    The explicit plane (like _bottom_text) starts just inside the wall so the text
+    fuses cleanly instead of becoming a loose solid.
     """
-    return (body.faces("<Y")
-            .workplane(centerOption="ProjectedOrigin", origin=(cx, 0.0, cz))
-            .text(s, size, depth, combine=True, kind="bold"))
+    pl = cq.Plane(origin=(cx, 0.3, cz), xDir=(1, 0, 0), normal=(0, -1, 0))
+    return body.union(cq.Workplane(pl).text(s, size, depth + 0.3, kind="bold"))
 
 
 def _bottom_text(body: cq.Workplane, s: str, cx: float, cy: float,
@@ -586,6 +589,17 @@ def build_body() -> cq.Workplane:
         knx, kny1 + EPS, WALL + 4 * EPS,
         cq.Vector(wcx - knx / 2, -EPS, OUT_Z - WALL - 2 * EPS)))
     body = body.cut(lid.val())
+
+    # Reinforce that tongue: thicken the ceiling wall over the notch downward by
+    # LID_TONGUE_RIB so it does not flex or snap at its root, keeping the cradle pocket
+    # clear so the WLED board still drops in. There is head-room here inside the box.
+    rib = cq.Solid.makeBox(                        # overlap the standing tongue wall so
+        knx, kny1 + EPS, WALL + LID_TONGUE_RIB,    # the union fuses cleanly (no slivers)
+        cq.Vector(wcx - knx / 2, -EPS, OUT_Z - WALL - LID_TONGUE_RIB))
+    rib = rib.cut(cq.Solid.makeBox(                # keep the cradle pocket open below the wall
+        pw, pl, LID_TONGUE_RIB + 2 * EPS,
+        cq.Vector(wcx - pw / 2, wcy - pl / 2, OUT_Z - WALL - LID_TONGUE_RIB - EPS)))
+    body = body.union(rib)
 
     # Low divider ribs on the rear wall: carrier | middle (WLED/SDR/wiring) | Pi.
     for dx in DIV_X:
