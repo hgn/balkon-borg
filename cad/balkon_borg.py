@@ -227,6 +227,15 @@ WLED_WALL = 3.0
 WLED_POST_H = 10.0
 WLED_CENTER = (-30.0, 55.0)          # (x, y) on the top inner wall
 
+# Ceiling (+Z) service/vent opening: a big central cut-out. The front panel is glued
+# on, so this is the only way back to the internals; it also adds ventilation (warm
+# air to the concrete above / out through any gap) and saves material. A solid border
+# is kept all round (still lies flat against the ceiling), and the opening is notched
+# around the WLED cradle so that pocket keeps its wall and stays attached.
+LID_MARGIN = 18.0      # solid border kept around the opening (from the outer edge)
+LID_CORNER_R = 12.0    # rounded opening corners (SLS: avoid sharp inside notches)
+LID_NOTCH_M = 6.0      # extra material kept around the WLED cradle inside the opening
+
 # Radar + mic holders and BME280 ambient opening on the bottom face.
 RADAR_MNT_DX = 38.0                  # boss spacing flanking the radar membrane
 MIC_HOLDER = (205.0, 49.0)          # near the mic hole
@@ -560,6 +569,23 @@ def build_body() -> cq.Workplane:
         pw, WLED_WALL + 2 * EPS, WLED_POST_H,
         cq.Vector(wcx - pw / 2, wcy + pl / 2, zbot)))
     body = body.union(cradle)
+
+    # Ceiling service/vent opening: a big rounded rectangle through the top wall,
+    # notched around the WLED cradle so that pocket keeps its ceiling wall (a tongue
+    # of material reaches in from the front border to hold it). Cut pre-mirror, so it
+    # stays aligned with the cradle when the whole body is mirrored.
+    lid_len_y = OUT_Y - 2 * LID_MARGIN
+    lid_cy = LID_MARGIN + lid_len_y / 2
+    lid = (cq.Workplane("XY")
+           .box(OUT_W - 2 * LID_MARGIN, lid_len_y, WALL + 2 * EPS)
+           .translate((0, lid_cy, OUT_Z - WALL / 2))
+           .edges("|Z").fillet(LID_CORNER_R))
+    knx = pw + 2 * WLED_WALL + 2 * LID_NOTCH_M
+    kny1 = wcy + pl / 2 + WLED_WALL + LID_NOTCH_M   # tongue reaches in from the rear
+    lid = lid.cut(cq.Solid.makeBox(
+        knx, kny1 + EPS, WALL + 4 * EPS,
+        cq.Vector(wcx - knx / 2, -EPS, OUT_Z - WALL - 2 * EPS)))
+    body = body.cut(lid.val())
 
     # Low divider ribs on the rear wall: carrier | middle (WLED/SDR/wiring) | Pi.
     for dx in DIV_X:

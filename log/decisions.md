@@ -18,6 +18,27 @@ log what is already in the code/YAML.
 
 ---
 
+## 2026-07-12 — Ceiling service/vent opening
+
+**Context:** the front LED panel gets glued on, so once assembled there is no way back
+to the internals. User asked for a big open rectangle in the top (ceiling) face.
+
+**Decision:** a central rounded-rectangle opening through the +Z wall, ~61% of the
+ceiling area (18 mm solid border all round, which still lies flat against the ceiling;
+mount screws are in the outer ears, not this face). Serves three purposes: service
+access, ventilation (warm air to the concrete above / out through any mounting gap),
+and ~125 cm3 / 15% less material (body 801 -> 676 cm3). Corners rounded (SLS).
+
+**Rejected / handled:** the opening overlapped the WLED controller cradle on the top
+inner wall. Options were removing the cradle, relocating it, or notching the opening;
+user chose **notch**. A tongue of ceiling wall reaches in from the rear border and
+keeps the cradle attached (verified: tongue + cradle walls still present, no loose
+solids introduced). Consequence: the opening is a U around that tongue, not a clean
+rectangle, and nets slightly above 60% instead of the full ~70%.
+
+**Note:** the opening is unscreened; if bugs/dust matter, add a mesh or a snap grille
+later (there is border to attach to).
+
 ## 2026-07-12 — Carrier board: final routing pass + GND pour
 
 **Context:** the netlist fixes (F1 radial PTC, J_RADAR 4-pin, M2.5 holes, BC337 CBE) lived
