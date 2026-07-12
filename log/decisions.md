@@ -51,9 +51,13 @@ live on the always-on nas-Pi5 so they work when the borg-pi5 is off.
   (`"|Z or (|Y and <Z)"`) — vertical corners + bottom stay rounded, but the top face/edge
   is flat so it screws flush to the ceiling. (The 4 vertical corners still carry a small
   r6 round up to the top; can be removed if dead-sharp corners are wanted.)
-- **Organic ears:** the straight ramp becomes a **concave arc** sweeping back into the
-  wall (`RAMP_H` 22→30 + a `threePointArc` underside), so the ears blend into the body
-  ("anschmiegen") instead of looking tacked-on.
+- **Organic ears:** the straight ramp becomes a deep **concave arc** sweeping back into
+  the wall (`RAMP_H` 22→40 + a `threePointArc` underside) with softened outer edges
+  (`EAR_EDGE_R`), so the ears "anschmiegen" into the body instead of looking tacked-on.
+- **Rounder bottom:** `CORNER_R` 6→12 on the vertical corners + bottom side edges → much
+  rounder, more organic bottom corners. (Note: OCC would not let a *larger* bottom radius
+  meet the r6 verticals, nor fillet the rear-bottom edge across the corner fillets, so it
+  is one uniform r12; the front-bottom stays square where the diffuser frame sits.)
 
 ---
 

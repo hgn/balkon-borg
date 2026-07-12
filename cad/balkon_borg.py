@@ -85,7 +85,8 @@ EAR_T = 6.0            # pad thickness (Z)
 EAR_HOLE = 5.5         # M5 ceiling screw clearance (through-hole, top to underside)
 EAR_CB_D = 11.0        # counterbore for the M5 head: a flat seat on the sloped underside
 EAR_INSET = 12.0       # from the front/back edge to the ear
-RAMP_H = 30.0          # how far the cast blend sweeps down the wall (concave, organic)
+RAMP_H = 40.0          # how far the cast blend sweeps down the wall (concave, organic)
+EAR_EDGE_R = 6.0       # soften the ear's outer edges so it flows into the wall
 
 # Buttons + encoder in the -X end wall (side): a vertical column. The end wall
 # has clear space behind it and is open during assembly (split at X=0), so the
@@ -146,7 +147,7 @@ HG_POS = (25.0, 60.0)          # small HagiOne below it
 
 EPS = 0.1
 TOL = 0.4               # SLS/PA12 clearance for fits (holes, pocket, dowels)
-CORNER_R = 6.0         # rounded vertical corners (SLS lets us; premium look)
+CORNER_R = 12.0        # rounded vertical corners + bottom edges (organic; top stays flat)
 MIRROR = True          # full left/right (X) mirror: swaps the busy +X side (Pi/SDR,
                        # camera/radar/mic) with the quiet -X side (buttons, LED tower)
 
@@ -323,8 +324,8 @@ def _hex_grille(u_c: float, v_c: float, w: float, h: float, pitch: float,
 def build_body() -> cq.Workplane:
     body = (cq.Workplane("XY")
             .box(OUT_W, OUT_Y, OUT_Z, centered=(True, False, False))
-            # round the vertical corners + the BOTTOM long edges; the top edge stays
-            # sharp so the ceiling face is flat/flush (no rounded top edge).
+            # round the vertical corners + bottom side edges (top stays sharp = flat
+            # ceiling face); one radius so the bottom corners blend cleanly and organic.
             .edges("|Z or (|Y and <Z)").fillet(CORNER_R))
     # Hollow it with an open front by cutting the inner cavity. (A shell AFTER
     # filleting fails to hollow in OCC and returns a solid block, so cut instead.)
@@ -523,6 +524,13 @@ def build_body() -> cq.Workplane:
                    .moveTo(wall, OUT_Z).lineTo(*top_out).lineTo(*pad_bot)
                    .threePointArc(arc_mid, root).close()
                    .extrude(-EAR_W).translate((0, yc - EAR_W / 2, 0)))
+            # soften the ear's outer vertical edges (keep the top flush and the inner
+            # wall edges sharp so they merge cleanly on union).
+            osel = ">X" if sx > 0 else "<X"
+            try:
+                ear = ear.edges("|Z").edges(osel).fillet(EAR_EDGE_R)
+            except Exception:
+                pass
             body = body.union(ear)
             # C1 fix: a full through-hole (top through the ramp to the underside) plus a
             # counterbore giving the M5 head a flat, level seat. The old hole was only in
