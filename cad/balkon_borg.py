@@ -240,6 +240,7 @@ LED_BOX_WALL = 3.0
 LED_TAPER = 20.0               # draft angle from vertical: wide at top, 40x40 at bottom
 LED_BOX_POS = (-155.0, 74.0)   # (x, y) tower axis on the bottom face (left, centred depth)
 LED_HOLE_D = 5.2               # 5 mm LED body + clearance (flange seats from inside)
+RADAR_WIN_D = 18.0             # radar window in the front (+Y) tower face (LD2410B view)
 
 # Low divider ribs to organise the cavity ("Trenner").
 DIV_H = 22.0           # rib height off the rear wall
@@ -480,13 +481,17 @@ def build_body() -> cq.Workplane:
     body = body.cut(cav)
     off = (top + LED_BOX) / 4.0                     # face-centre horizontal offset
     n_out, n_down = math.cos(math.radians(LED_TAPER)), math.sin(math.radians(LED_TAPER))
-    # 3 LED holes; the +Y (front) face is left blank for the LD2410B radar, which mounts
-    # inside the tower facing forward+down and sees through the wall (damping accepted).
+    # 3 LED holes on the side/rear faces...
     for dx, dy in ((1, 0), (-1, 0), (0, -1)):
         normal = cq.Vector(dx * n_out, dy * n_out, -n_down)
         centre = cq.Vector(lbx + dx * off, lby + dy * off, -LED_BOX_H / 2.0)
         body = body.cut(cq.Solid.makeCylinder(
             LED_HOLE_D / 2, 8.0, centre - normal.multiply(4.0), normal))
+    # ...and a larger radar window in the front (+Y) face for the LD2410B, facing forward.
+    rnorm = cq.Vector(0, n_out, -n_down)
+    rcentre = cq.Vector(lbx, lby + off, -LED_BOX_H / 2.0)
+    body = body.cut(cq.Solid.makeCylinder(
+        RADAR_WIN_D / 2, 8.0, rcentre - rnorm.multiply(4.0), rnorm))
 
     # WLED controller cradle on the top inner wall: a pocket the board drops into,
     # open on the +Y side for cables; final retention by a zip-tie. Size-tolerant.

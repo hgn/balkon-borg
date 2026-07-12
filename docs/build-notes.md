@@ -83,9 +83,9 @@ Complements `power-distribution.md`, `enclosure-sintering.md` and the log.
   always-on LEDs; PWM/PCA9685/addressable control was considered and skipped). Now **3
   LEDs** — the front (+Y) tower face holds the radar instead.
 - **Radar LD2410B** (35×7 mm) mounts **inside the bottom LED tower**, facing **forward and
-  down** through the front tower face (the front LED was dropped for it). It sees through
-  the wall (damping accepted); cable runs up into the cavity to `J_RADAR` (now 4-pin, no
-  OUT). It is no longer on the bottom face.
+  down** through an **18 mm window** (`RADAR_WIN_D`) in the front tower face (the front LED
+  was dropped for it). Cable runs up into the cavity to `J_RADAR` (now 4-pin, no OUT). It
+  is no longer on the bottom face.
 - **Microphone**: USB mic on the **Pi 5 only** — no acoustic port in the enclosure.
 - **USB speaker** for audio out (a small USB speaker, or a cheap USB soundcard + mini
   speaker) on the borg-pi5, powered off a Pi USB port (small draw, fits the 5 V budget).
