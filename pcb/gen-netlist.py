@@ -31,6 +31,8 @@ FP_R = "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"
 FP_CD = "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm"
 FP_CP = "Capacitor_THT:CP_Radial_D5.0mm_P2.50mm"
 FP_Q = "Package_TO_SOT_THT:TO-92_Inline"
+FP_PTC = "Capacitor_THT:C_Disc_D7.5mm_W5.0mm_P5.00mm"  # radial 2-lead PTC (5 mm pitch);
+# VERIFY against the actual polyfuse part — a PTC is radial, not an axial resistor.
 
 
 def res(val: str) -> Part:
@@ -69,7 +71,7 @@ def series(outside, esp_pin, val: str, netname: str) -> None:
 
 # 5 V input with resettable fuse.
 jpwr = conn("J_PWR", 2, FP_J2, "5V in")
-f1 = Part("Device", "Polyfuse", ref="F1", value="2A", footprint=FP_R)
+f1 = Part("Device", "Polyfuse", ref="F1", value="2A", footprint=FP_PTC)
 Net("+5V_IN").connect(jpwr[1], f1[1])
 f1[2] += p5v
 gnd += jpwr[2]

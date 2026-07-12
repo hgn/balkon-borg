@@ -5,7 +5,7 @@ PY := ../.venv/bin/python
 KENV := KICAD9_SYMBOL_DIR=/usr/share/kicad/symbols \
         KICAD9_FOOTPRINT_DIR=/usr/share/kicad/footprints
 
-.PHONY: all netlist outputs clean
+.PHONY: all netlist outputs step clean
 all: outputs                   ## generate fabrication outputs from the committed board
 
 netlist:                       ## regenerate the KiCad netlist (then re-import in KiCad)
@@ -13,6 +13,11 @@ netlist:                       ## regenerate the KiCad netlist (then re-import i
 
 outputs:                       ## gerbers/drill/pos + Aisler zip into output/
 	$(PY) scripts/gen-outputs.py balkon-borg-carrier.kicad_pcb
+
+step:                          ## export board as STEP for the MCAD collision check
+	@mkdir -p output
+	kicad-cli pcb export step balkon-borg-carrier.kicad_pcb \
+	    -o output/balkon-borg-carrier.step --subst-models --no-dnp
 
 clean:                         ## remove generated outputs, netlists and caches
 	rm -rf output __pycache__ *.net *.dsn *.ses *.rpt *-backups \

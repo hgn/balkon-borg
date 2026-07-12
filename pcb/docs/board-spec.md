@@ -105,6 +105,34 @@ JST-XH crimp housing; buttons with a pigtail or self-crimped.
 connectors and holes well apart, easy to grip and solder; do not optimise for minimum
 area. See the log entry "Ergonomie".
 
+## PCB review / pre-fab checklist (2026-07-12)
+
+Scope matches the use cases: the board is the **ESP32 domain only** — radar (UART), BME280
+(I²C), 4 buttons, encoder, 4 button-LED drivers, 5 V in + F1. SDR/camera/mic/speaker are on
+the Pi, correctly **not** on this board. GPIO map is consistent (netlist/firmware), strapping
+pins avoided, power netclass (1.0 mm) is sized well above the ~1 A load. Before fabrication:
+
+- 🔴 **BC337 pinout** — verify the KiCad symbol E/B/C ↔ `TO-92_Inline` pad numbering ↔ the
+  **real BC337 datasheet** (EBC vs CBE). A wrong mapping = the button LEDs never switch.
+- 🔴 **ESP DevKitC-V4 header order** — the `espR` pin→GPIO mapping assumes GND at right pins
+  1/7; caliper- and pinout-check the actual module (row spacing 25.4 mm is confirmed).
+- 🔴 **F1 polyfuse footprint** — fixed from an axial-resistor to a radial `FP_PTC`; still
+  confirm it matches the actual PTC you buy (PTC packages vary).
+- 🟡 **DRC to the fab** — set min track/clearance/drill/annular to **Aisler's** spec before
+  routing (do not route on KiCad defaults). The 0.2 mm signal / 1.0 mm power widths are well
+  within Aisler.
+- 🟡 **ESP antenna keep-out** — keep copper (especially any ground pour) **clear under the
+  DevKit's antenna end**; it socket-mounts ~13 mm above the board but a pour can still detune.
+- 🟡 **MCAD collision check** — `make -C pcb step` exports the board STEP; drop it into the
+  CadQuery enclosure and confirm connectors/tall parts fit the carrier bay (8 mm standoffs,
+  ~100 mm clear to the LED panel — expected OK).
+- 🟡 **Connector entry vs cable exits** — J_RADAR → tower (bottom-front), J_BTN → end wall,
+  J_BME → bottom; freeze the JST positions/entry direction to match the routing.
+- 🟡 **Ground pour + thermal reliefs** — add a GND pour (grounding/EMI) and keep **thermal
+  reliefs on the THT pads** so hand-soldering does not make cold joints.
+- 🟢 **Production data** — Gerber + drill via `gen-outputs.py` → Aisler. Hand-soldered THT,
+  so no CPL/POS needed; the BOM table above is the assembly list.
+
 ## Workflow (scripted, SKiDL)
 
 The board is generated from code, not clicked in the KiCad GUI:
