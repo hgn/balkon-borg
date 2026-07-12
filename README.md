@@ -1,7 +1,22 @@
 # Balkon-Borg — project overview
 
-*Smart, partly self-built multifunction unit under the balcony, tied into the home
-network and the Raspberry Pi home server.*
+*A smart, partly self-built **sensor-and-effector "borg"** under the balcony, tied into the
+home network and the Raspberry Pi home server.*
+
+It **senses** the terrace from many sources and **acts** on it:
+
+- **Inputs (senses):** presence/motion **radar** (LD2410B, pointing forward), **acoustics**
+  via a USB **microphone** (bird calls → BirdNET), **environment** (BME280:
+  temperature, humidity, pressure), a **camera** (person/animal detection with Frigate),
+  and **radio** via an RTL-SDR (aircraft/ADS-B, optional LoRa), plus **manual** input
+  (four illuminated buttons + a rotary encoder).
+- **Outputs (acts):** **light** — a WLED RGBW panel from cosy dinner glow to party effects;
+  **sound** — a small USB speaker that plays a clip or says hello when something is
+  detected; and the **home network / nas-Pi** — every event, reading and control flows
+  over MQTT to dashboards, storage and remote access.
+
+Everything runs on the enclosure's own **borg-pi5** (the hub) plus a low-solder ESP32
+front panel, off one shared 5 V feed.
 
 ---
 
@@ -63,13 +78,15 @@ runs off a shared 5 V feed and an MQTT/WiFi bus. The goal is a build that looks
 | U6 | Bird-call log | USB microphone → BirdNET → species statistics over the season |
 | U7 | Camera + local recognition | Camera Module 3 → Frigate (people/animals) **on the Pi 5 CPU** |
 | U8 | Passive radio listening (optional) | LoRa/Meshtastic **RX** over the SDR (no active transmit node) |
+| U9 | Audio feedback | small **USB speaker** on the borg-pi5 → plays a short clip / says hello when something is detected |
 
 ## 4 · System components (current state)
 
 - **Central compute (borg-pi5):** Raspberry Pi 5 (8 GB) + Active Cooler, microSD in the enclosure — **the hub the project is about**: recording (camera/audio/SDR), local inference (Frigate, readsb/tar1090, BirdNET-Go), and the **MQTT broker (Mosquitto), dashboards and app**. Powered on **only when needed**, not 24/7.
 - **Sensor/control front panel:** ESP32 (ESPHome) with LD2410B (UART), BME280 (I²C), 4 buttons + encoder (GPIO).
 - **Light:** Athom high-power WLED controller + SK6812 RGBW-WW compact panel (8 rows × 43 = 344 px) on a 3 mm aluminium plate, opal acrylic diffuser.
-- **Reception:** RTL-SDR V3 (ADS-B 1090 MHz, optional LoRa RX), USB microphone.
+- **Reception:** RTL-SDR V3 (ADS-B 1090 MHz, optional LoRa RX), USB microphone (on the Pi 5). The LD2410B radar points **forward** (in the LED tower), toward the terrace.
+- **Audio out:** a small **USB speaker** (or a cheap USB soundcard + mini speaker) on the borg-pi5 — plays a short wav on events (detection, greeting).
 - **Power:** Mean Well LRS-150F-5 (5 V/22 A) in its own V-0 enclosure, fused branches.
 - **Enclosure:** 3D print in SLS/PA12 (black), 2 parts (build-volume split with dowel pins); aluminium plate = front + heatsink.
 - **nas-Pi5 (existing, minor role):** a separate, **always-on** Raspberry Pi 5 wired to the Fritz!Box. Only the **remote-access point** (reach the unit from outside) and occasional **image/data storage** — not the hub (see [network](docs/network.md)).

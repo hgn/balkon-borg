@@ -21,7 +21,8 @@ function-critical (ceiling mount). Not yet ready to order.
 
 ## 🔴 Critical / high
 
-*Status 2026-07-12: C1, C2, H3, H4 all resolved (see the ✅ notes).*
+*Status 2026-07-12: C1, C2, H3, H4 resolved. Medium round: M5 & M12 accepted; M6, M8, M9,
+M10, M13 resolved. See the ✅ notes on each.*
 
 **C1 [Chassis] The ceiling screw cannot pass through the ear.**
 `EAR_HOLE` is only drilled through the top 6 mm pad (z≈104–110) at x≈−242. Exactly there
@@ -64,11 +65,15 @@ it attenuates the **24 GHz LD2410B** through the 2 mm membrane *and* the 2.4 GHz
 ESP/WLED through the wall. Many SLS colourings are a dye bath (fine), some are carbon
 loaded (bad). Fix: ask the provider about the dyeing method, or measure a membrane
 coupon.
+**✅ Accepted:** the user treats the damping as uncritical — the radar sees through the
+tower wall and WiFi through the plastic is fine as-is.
 
 **M6 [System] Microphone contradiction.** README / use case U6 = **USB microphone**
 (BirdNET on the Pi). The enclosure models a **4 mm acoustic port + holder** (electret
 capsule). A USB dongle does not mount to a 4 mm hole. Decide: USB mic (cable + tray) or
 I²S/electret (then it belongs on the Pi/a board, not a 4 mm hole).
+**✅ Resolved:** the mic is a **USB mic on the Pi 5 only**; the 4 mm bottom port + holder
+are removed from the enclosure.
 
 **M7 [Chassis/thermal] Intake/exhaust unbalanced.** Intake = large honeycomb field +
 bottom holes; exhaust = only **2×2 slits (44×2 mm) per end wall** ≈ 350 mm². For
@@ -79,15 +84,19 @@ panel. Fix: enlarge the exhaust area up top significantly.
 `pin_a: GPIO32 / pin_b: GPIO33` → default **without** internal pull-up. The board has no
 external ones (board-spec: "internal pull-up"). EC11 contacts to GND then float. Fix: set
 `mode: INPUT_PULLUP` explicitly (already done correctly on the buttons).
+**✅ Resolved:** `mode: INPUT_PULLUP` set on both encoder pins.
 
 **M9 [FW] Button LEDs 2 & 3 dead.** `led2`/`led3` are defined as outputs but **never**
 switched. Only LED1 (presence) and LED4 (automatic) light. The scene buttons (cozy/party)
 stay dark, and there is **no LED for the light on/off state**. UX gap on deliberately
 illuminated buttons. Fix: tie the LEDs to preset/state.
+**✅ Resolved:** LED2/LED3 now track the active scene (cozy/party) and clear when the
+light is turned off.
 
 **M10 [PCB/FW] `RADAR_OUT` (GPIO34) is dead copper.** Wired on the board (220R + connector
 pin) but **never used** in firmware (radar runs over UART). Either use it as a fast
 presence input or drop it (saves a pin + connector pin + resistor).
+**✅ Resolved:** dropped — `J_RADAR` is 4-pin, GPIO34 is free (radar runs over UART).
 
 **M11 [Cost] Depth +50 mm.** For 20 mm of WLED clearance, +50 mm was chosen → ~**+50 %
 part volume** in SLS (priced by volume/build box). A deliberate user decision, but the
@@ -95,10 +104,13 @@ cost lever is real; relocating the WLED would have cost nothing.
 
 **M12 [Chassis] RTL-SDR free-hanging.** The ~60 mm dongle cantilevers off the Pi USB with
 no holder. Knocks/vibration load the USB socket. Fix: clip/rest in the middle bay.
+**✅ Accepted:** left as is (no SDR holder) per the user.
 
 **M13 [Chassis] Camera hole may vignette.** 12 mm hole in a 3 mm wall → half-angle ~63°.
 Borderline for Camera Module 3 **standard** (66°), too tight for **wide** (120°). Fix:
 chamfer/taper the hole or widen it, depending on the lens.
+**✅ Resolved:** the lens hole is now **conical** (12 mm inside → 20 mm outside,
+`CAM_CHAMFER_D`).
 
 **M14 [System] U5 ADS-B contradictory.** README lists ADS-B as U5; log/build-notes say
 "not used". The SDR keep-out is in the enclosure but the purpose is open. Pin down the

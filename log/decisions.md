@@ -43,6 +43,32 @@ live on the always-on nas-Pi5 so they work when the borg-pi5 is off.
 
 ---
 
+## 2026-07-12 — Review medium round: radar forward, mic to Pi, audio out, M8/9/10/13
+
+**Sensors:**
+- **Radar forward:** the LD2410B (35×7 mm) moves off the bottom into the **LED tower**,
+  facing **forward + down** (the front tower LED was dropped → 3 LEDs; `LED_BOX_H` 30→38 to
+  fit it). Sees through the tower wall (damping accepted, M5). The bottom radar
+  membrane/bosses are gone.
+- **Mic to the Pi 5 only** (USB) — the 4 mm bottom acoustic port + holder are removed (M6).
+- **Camera** lens hole is now **conical** (`CAM_CHAMFER_D` 20 → 12 mm) so a wide-FOV
+  Module 3 is not vignetted (M13).
+
+**Firmware:** M8 encoder pins `INPUT_PULLUP`; M9 button LEDs 2/3 track the active scene
+(cozy/party) + clear on off. **PCB:** M10 drop `RADAR_OUT` (GPIO34 dead copper) → `J_RADAR`
+4-pin, 2×220R, GPIO34 free.
+
+**Audio out (new):** a small **USB speaker** (or USB soundcard + mini speaker) on the
+borg-pi5, powered off a Pi USB port; plays a wav on events (detection / greeting). Added as
+use case U9. **Accepted without change:** M5 (damping uncritical), M12 (SDR free-hanging),
+intake ventilation (enough holes).
+
+**README teaser** rewritten: it is a **sensor-and-effector "borg"** — inputs (radar,
+acoustics/mic, environment, camera, SDR, buttons) and outputs (light, sound, the
+home-network/nas-Pi link).
+
+---
+
 ## 2026-07-12 — Fix wall gap from the corner rounding (rounded cavity)
 
 **Bug:** with `CORNER_R`=12 > `WALL`=3, the outer corner fillet ate through the thin wall

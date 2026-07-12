@@ -80,7 +80,18 @@ Complements `power-distribution.md`, `enclosure-sintering.md` and the log.
   glue from inside, wire all to +5 V/GND (always on). Do not buy generic 12 V pre-wired
   LEDs (too dim on 5 V). If they turn out too bright, dim them later with a series
   resistor or a small inline trimmer — no board or firmware change (decision: keep plain,
-  always-on LEDs; PWM/PCA9685/addressable control was considered and skipped).
+  always-on LEDs; PWM/PCA9685/addressable control was considered and skipped). Now **3
+  LEDs** — the front (+Y) tower face holds the radar instead.
+- **Radar LD2410B** (35×7 mm) mounts **inside the bottom LED tower**, facing **forward and
+  down** through the front tower face (the front LED was dropped for it). It sees through
+  the wall (damping accepted); cable runs up into the cavity to `J_RADAR` (now 4-pin, no
+  OUT). It is no longer on the bottom face.
+- **Microphone**: USB mic on the **Pi 5 only** — no acoustic port in the enclosure.
+- **USB speaker** for audio out (a small USB speaker, or a cheap USB soundcard + mini
+  speaker) on the borg-pi5, powered off a Pi USB port (small draw, fits the 5 V budget).
+  Plays a wav on events (detection / greeting).
+- **Camera lens hole** is **conical** (12 mm inside → 20 mm outside) so a wide-FOV Camera
+  Module 3 is not vignetted by the wall.
 - **SDR antenna**: a cheap **telescopic SMA whip** (extends to ~30 cm+, wideband when
   length-tuned) is the best budget "covers a lot" antenna. For one specific band (e.g.
   ADS-B 1090 MHz) a tuned antenna beats a whip.

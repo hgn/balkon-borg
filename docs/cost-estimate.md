@@ -12,7 +12,7 @@ Pi/camera are bought new are the big swing items.
 | **Compute** | Pi 5 (8 GB) 80, Active Cooler 6, microSD 64 GB 10 | **96** |
 | **Light** | Athom WLED High-Power 18, SK6812 RGBW panel 344 px 35, opal diffuser 10, aluminium backing plate 10 | **73** |
 | **ESP / sensing / controls** | ESP32-DevKitC 9, LD2410B 4, BME280 (genuine Bosch) 8, 4× illuminated buttons 16, EC11 encoder 3, 4× indicator LEDs 8 | **48** |
-| **Reception** | RTL-SDR V3 32, USB microphone 10, antenna + RG316 pigtail 13 | **55** |
+| **Reception + audio** | RTL-SDR V3 32, USB microphone 10, antenna + RG316 pigtail 13, USB speaker 8 | **63** |
 | **Power** | Mean Well LRS-150-5 28, XT60 3, 2× Wago 221 3, fuses + holders 5, wire/ferrules 8 | **47** |
 | **Carrier PCB** | Aisler fab (3 pcs) 40, THT parts (R/C/Q/JST/sockets/polyfuse) 15 | **55** |
 | **Enclosure** | SLS/PA12 black, 2 halves (~822 cm³, 508×151×140 bounding box) | **150–250** |
