@@ -188,3 +188,35 @@ Skills · 21 skills · 2.6k tokens
 The bulk (the "Messages" slice) is the working transcript: CAD builds and OpenCascade
 booleans, KiCad/pcbnew scripting, Freerouting runs, DRC reports and render round-trips.
 
+### Who did what
+
+The honest split: **the author has no background in hardware design, electronics,
+schematics or PCB layout** — this project would simply not exist without Claude. The
+human side was defining the **use cases and requirements** and stepping in only where
+it was unavoidable (a few KiCad steps). The actual engineering — the parametric
+enclosure, the schematic and board, the routing, the firmware, the DfAM and signal-flow
+reviews — was done by **Claude (mainly Fable 5, with Opus 4.8)**.
+
+### Token usage and cost
+
+Measured with [`ccusage`](https://github.com/ryoppippi/ccusage) over three working days
+(10–12 Jul 2026, Opus 4.8):
+
+| Day | Input | Output | Cache write | Cache read | Total tokens | Cost |
+|---|--:|--:|--:|--:|--:|--:|
+| 2026-07-10 | 9,200 | 625,879 | 2,536,382 | 103,796,715 | 106,968,176 | $92.96 |
+| 2026-07-11 | 28,183 | 671,930 | 2,860,378 | 203,925,544 | 207,486,035 | $147.51 |
+| 2026-07-12 | 21,093 | 560,556 | 5,245,511 | 188,015,314 | 193,842,474 | $160.58 |
+| **Total** | **58,476** | **1,858,365** | **10,642,271** | **495,737,573** | **≈508 M** | **$401.05** |
+
+So a complete, fabrication-ready hardware package — SLS enclosure, routed carrier board,
+firmware and docs — for **about $401** (≈370 €) of model usage. Roughly half a billion
+tokens, most of it cache reads (re-reading the growing repo and transcript each turn),
+which is why the token count is huge but the cost is not.
+
+For scale: a freelance hardware developer taking on the same scope (enclosure CAD,
+schematic + board layout + routing, firmware, and the write-up) would realistically
+spend a few weeks — in the low-to-mid **five figures in euros**. The point is not that
+Claude is "cheaper by X"; it is that a person with zero hardware background got to a
+buildable design at all.
+
