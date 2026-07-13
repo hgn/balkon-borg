@@ -158,12 +158,12 @@ WiFi repeater → cable → Fritz!Box → nas-Pi5 (see [network](docs/network.md
 - **Recognition performance** — without an NPU, FPS/stream limited; possibly a lighter model or a later Hailo retrofit.
 - **Humidity/condensation** — mind the downward ventilation and possibly pressure equalisation so nothing collects.
 
-## 10 · Built with Claude (Opus / Fable)
+## 10 · Built with Claude (Fable 5)
 
 The complete hardware design in this repo — the parametric CadQuery enclosure, the
 SKiDL → KiCad → Freerouting carrier board, the ESPHome firmware, the MQTT/Podman
 plumbing and the docs — was generated in collaboration with Anthropic's **Claude**
-(Opus 4.x and **Fable 5**), driving the CAD, PCB, render and review tooling directly.
+**Fable 5**, driving the CAD, PCB, render and review tooling directly.
 For the curious, a `/context` snapshot from one of the working sessions:
 
 ```text
@@ -195,12 +195,13 @@ schematics or PCB layout** — this project would simply not exist without Claud
 human side was defining the **use cases and requirements** and stepping in only where
 it was unavoidable (a few KiCad steps). The actual engineering — the parametric
 enclosure, the schematic and board, the routing, the firmware, the DfAM and signal-flow
-reviews — was done by **Claude (mainly Fable 5, with Opus 4.8)**.
+reviews — was done by **Claude (Fable 5)**.
 
 ### Token usage and cost
 
 Measured with [`ccusage`](https://github.com/ryoppippi/ccusage) over three working days
-(10–12 Jul 2026, Opus 4.8):
+(10–12 Jul 2026, Fable 5 — ccusage tags the sessions `opus-4-8`, an app-side model-label
+quirk; the work ran on Fable 5):
 
 | Day | Input | Output | Cache write | Cache read | Total tokens | Cost |
 |---|--:|--:|--:|--:|--:|--:|
