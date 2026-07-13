@@ -1,10 +1,8 @@
 # Wiring and connector plan
 
 Terminal assignment for the ESP32 carrier board and the 5 V distribution, plus the
-**connector placement plan** (open point in README §8.1). The board itself is done and
-routed; this file decides where the JST connectors should sit so the cables reach their
-targets cleanly. Nothing here is applied to `pcb/place-board.py` yet — it is the plan to
-execute when the connector positions are frozen for the next board revision.
+**connector placement** (was open point README §8.1). This layout is **applied** in
+`pcb/place-board.py` and the board is routed and DRC-clean against it.
 
 ## Board orientation in the enclosure
 
@@ -30,24 +28,23 @@ Fix the orientation so the KiCad axes map like this (long edge horizontal, it ha
 | `J_ENC`   | rotary encoder | **+X end wall**, y 56–92, z≈91 |
 | `J_BTN1..4` | 4 illuminated buttons | **+X end wall**, 2×2 at y (56,92) × z (29,61) |
 
-## Connector placement plan
+## Connector placement (applied)
 
-The routed board currently groups `J_PWR/J_RADAR/J_BME` on one long edge and
-`J_ENC/J_BTN` on the other. That works, but two groups then face away from their
-targets. Recommended placement for the next revision:
+- **Down edge (KiCad y≈8, the enclosure floor side):** `J_PWR` + `F1`, then `J_RADAR`
+  and `J_BME`. Radar and BME cables drop straight to the tower/floor; the 5 V feed
+  enters low near the gland.
+- **Right short edge (KiCad x≈132, nearest the +X end wall):** `J_ENC` + `J_BTN1..4`,
+  stacked, each button's NPN driver just inboard. The five cables run straight sideways
+  to the end wall instead of looping around.
+- ESP headers sit left of centre; decoupling by the 3V3 pin; the 15 series/driver
+  resistors in three rows in the free band below the ESP.
 
-- **Down edge (KiCad y=0, becomes the enclosure floor side):** `J_RADAR`, `J_BME`,
-  `J_PWR`. Radar and BME cables drop straight down to the tower/floor; the 5 V feed
-  enters low near the gland. Short, no crossing over the board face.
-- **Right short edge (KiCad x=150, nearest the +X end wall):** `J_ENC` + `J_BTN1..4`.
-  The five button/encoder cables then run straight sideways to the end wall instead of
-  looping around from a long edge. 92 mm of edge holds five JST-XH 4-pin easily.
-- Keep the JST entry direction pointing **off the board** (connectors on the very edge,
-  latch outward) so a plugged cable does not sit over the DevKit or the resistors.
+The JST connectors are vertical (cable exits +Z, toward the open front), so placement
+(not rotation) sets the cable length; each group sits nearest its target edge.
 
 **Assumption to confirm:** the 5 V cable gland location. If it enters on the +X end wall
-(next to the buttons) rather than the rear, move `J_PWR` to the right short edge with the
-button group instead of the down edge.
+(next to the buttons) rather than the rear/floor, move `J_PWR` to the right edge with the
+button group.
 
 ## Terminal assignment (ESP32-DevKitC-V4)
 

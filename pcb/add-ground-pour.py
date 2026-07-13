@@ -30,9 +30,9 @@ BOARD = HERE / "balkon-borg-carrier.kicad_pcb"
 W, H = 150.0, 92.0        # board outline (must match place-board.py)
 EDGE_INSET = 0.5          # pour pulled in from the board edge (mm)
 # Antenna keep-out: the DevKit's PCB antenna sits at its top end, above the two
-# header columns (placed at x=58/83, y=21). Keep the pour clear of that top strip
+# header columns (placed at x=44/69, y=18). Keep the pour clear of that top strip
 # so the plane does not detune it.
-ANT_KEEPOUT = (56.0, 0.0, 88.0, 20.0)   # x0, y0, x1, y1 (mm)
+ANT_KEEPOUT = (40.0, 0.0, 74.0, 16.0)   # x0, y0, x1, y1 (mm)
 
 
 def mm(v: float) -> int:
@@ -72,15 +72,18 @@ def add_pours() -> None:
         z.AddPolygon(poly(rect))
         b.Add(z)
 
-    # ESP header GND pins are already tied to the plane by routed GND tracks; the
-    # dense header fan-out pinches the pour around the top pad into a sliver, so a
-    # thermal spoke there trips a starved-thermal island error. Drop the zone
-    # connection on these (socketed, no hand-soldering) pads.
+    # Every GND pad is already tied to the plane by a routed GND track (Freerouting
+    # runs before the pour exists). In this dense THT layout the extra thermal spokes
+    # only pinch the pour into small isolated islands (starved-thermal DRC errors), so
+    # drop the zone connection on all GND pads except J_PWR. The plane still merges with
+    # the GND tracks, and hand-soldering is easier without a heat-sinking plane on the
+    # pad. J_PWR keeps a solid plane tie for the 5 V return current.
     for fp in b.GetFootprints():
-        if fp.GetReference() in ("J2", "J3"):
-            for pad in fp.Pads():
-                if pad.GetNetname() == "GND":
-                    pad.SetLocalZoneConnection(pcbnew.ZONE_CONNECTION_NONE)
+        if fp.GetReference() == "J_PWR":
+            continue
+        for pad in fp.Pads():
+            if pad.GetNetname() == "GND":
+                pad.SetLocalZoneConnection(pcbnew.ZONE_CONNECTION_NONE)
 
     pcbnew.SaveBoard(str(BOARD), b)
 

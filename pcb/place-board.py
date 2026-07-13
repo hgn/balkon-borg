@@ -63,29 +63,41 @@ def main() -> int:
         fp.SetPosition(pcbnew.VECTOR2I(mm(x), mm(y)))
         fp.SetOrientationDegrees(rot)
 
-    # ESP32-DevKitC: two vertical 1x19 header columns, side by side.
-    place("J2", 58, 21)
-    place("J3", 58 + ESP_ROW, 21)
+    # Connector placement follows docs/wiring.md so cables reach their targets with
+    # the shortest run: button/encoder connectors on the right edge (toward the +X end
+    # wall), radar/BME/power on the down edge (toward the floor tower/BME/gland).
 
-    # Top edge: power + sensors.
-    place("J_PWR", 24, 9)
-    place("F1", 42, 9)
-    place("J_RADAR", 105, 9)
-    place("J_BME", 128, 9)
-    place("C1", 128, 22)
-    place("C2", 128, 30)
+    # ESP32-DevKitC-V4 (official, 25.4 mm row spacing): two vertical 1x19 headers, left
+    # of centre so the right edge is free for the button/encoder connectors.
+    place("J2", 44, 18)
+    place("J3", 44 + ESP_ROW, 18)
 
-    # Bottom edge: encoder + buttons, LED driver above each button.
-    place("J_ENC", 24, 82)
-    for i, x in enumerate((50, 74, 98, 122)):
-        place(f"J_BTN{i + 1}", x, 82)
-        place(f"Q{i + 1}", x, 73)
+    # Down edge (enclosure floor side): 5 V in behind F1, then radar + BME whose cables
+    # drop straight to the tower and the floor opening.
+    place("J_PWR", 16, 8)
+    place("F1", 30, 8)
+    place("J_RADAR", 88, 8)
+    place("J_BME", 108, 8)
 
-    # Resistors: two vertical columns flanking the ESP headers.
-    for i in range(8):
-        place(f"R{i + 1}", 40, 21 + i * 6)
-    for i in range(7):                       # 15 resistors total (R1..R15)
-        place(f"R{i + 9}", 100, 21 + i * 6)
+    # 3V3 decoupling by the ESP 3V3 pin (top of J2).
+    place("C1", 76, 18)
+    place("C2", 76, 27)
+
+    # Right short edge (toward the +X end wall): encoder + 4 buttons stacked; each
+    # button's NPN driver just inboard of its connector.
+    place("J_ENC", 132, 18, 90)
+    for i, y in enumerate((32, 46, 60, 74)):
+        place(f"J_BTN{i + 1}", 132, y, 90)
+        place(f"Q{i + 1}", 118, y)
+
+    # Series/driver resistors (15): three tidy rows in the free band below the ESP.
+    # Values are assigned by the netlist; positions only avoid overlap, Freerouting
+    # makes the connections.
+    rows_y = (70, 80, 88)
+    cols_x = (48, 62, 76, 90, 104)
+    slots = [(x, y) for y in rows_y for x in cols_x]
+    for i, (x, y) in enumerate(slots):
+        place(f"R{i + 1}", x, y)
 
     # Board outline (closed rectangle) on Edge.Cuts.
     rect = pcbnew.PCB_SHAPE(b)
@@ -103,11 +115,11 @@ def main() -> int:
         fp.SetPosition(pcbnew.VECTOR2I(mm(x), mm(y)))
         b.Add(fp)
 
-    # "HagiOne" silkscreen, top centre.
+    # "HagiOne" silkscreen, in the clear strip left of the ESP.
     t = pcbnew.PCB_TEXT(b)
     t.SetText("HagiOne")
     t.SetLayer(pcbnew.F_SilkS)
-    t.SetPosition(pcbnew.VECTOR2I(mm(75), mm(15)))
+    t.SetPosition(pcbnew.VECTOR2I(mm(22), mm(46)))
     t.SetTextSize(pcbnew.VECTOR2I(mm(3), mm(3)))
     t.SetTextThickness(mm(0.5))
     b.Add(t)

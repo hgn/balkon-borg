@@ -87,8 +87,10 @@ JST-XH crimp housing; buttons with a pigtail or self-crimped.
 
 1. **DevKitC row spacing** — board = Espressif ESP32-DevKitC-V4. KiCad has **no**
    DevKitC footprint → two `PinSocket_1x19_P2.54mm` at **25.4 mm (1 inch)** row spacing
-   (`ESP_ROW`), the official DevKitC-V4 value (RESOLVED). A caliper check on the real
-   module is still wise, since clones vary.
+   (`ESP_ROW`), the official DevKitC-V4 value (RESOLVED). **Buy the official Espressif
+   board** (e.g. reichelt "ESP32-WROOM-32E development board" #341303, or DigiKey
+   ESP32-DEVKITC-32E) — **not** a 0.9-inch (22.86 mm) clone, whose narrower row spacing
+   will not seat in these headers. Row spacing is confirmed 25.4 mm for the official V4.
 2. **Button-LED voltage** — model = 12 mm metal, illuminated, **5 V** ring LED. When
    ordering pick the 5 V variant (not 12/24 V); then the NPN driver needs no extra
    resistor.
@@ -128,14 +130,14 @@ pins avoided, power netclass (1.0 mm) is sized well above the ~1 A load. Before 
   ESP header GND pins bond straight to the plane through their routed tracks.
 - ✅ **ESP antenna keep-out** — a no-copper-pour rule area sits under the DevKit's antenna
   end (both layers) so the plane does not detune it.
-- ✅ **Fully routed + DRC-clean** — 231 tracks / 3 vias, 0 unconnected, 0 DRC violations
-  against the Aisler minimums.
+- ✅ **Fully routed + DRC-clean** — 293 tracks / 5 vias, 0 unconnected, 0 DRC violations
+  against the Aisler minimums (incl. silkscreen: 0 warnings).
 - 🟡 **MCAD collision check** — `make -C pcb step` exports the board STEP; drop it into the
   CadQuery enclosure and confirm connectors/tall parts fit the carrier bay (8 mm standoffs,
   ~100 mm clear to the LED panel — expected OK). This still needs a human eye.
-- 🟡 **Connector entry vs cable exits** — J_RADAR → tower (bottom-front), J_BTN → end wall,
-  J_BME → bottom; freeze the JST positions/entry direction to match the routing before the
-  final board revision.
+- ✅ **Connector entry vs cable exits** — JST positions now follow the cable targets
+  (see [`../../docs/wiring.md`](../../docs/wiring.md)): button/encoder on the right edge
+  (toward the +X end wall), radar/BME/power on the down edge (toward the floor).
 - 🟢 **Production data** — Gerber + drill via `gen-outputs.py` → Aisler. Hand-soldered THT,
   so no CPL/POS needed; the BOM table above is the assembly list.
 
