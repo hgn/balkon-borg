@@ -87,9 +87,12 @@ Complements `power-distribution.md`, `enclosure-sintering.md` and the log.
   was dropped for it). Cable runs up into the cavity to `J_RADAR` (now 4-pin, no OUT). It
   is no longer on the bottom face.
 - **Microphone**: USB mic on the **Pi 5 only** — no acoustic port in the enclosure.
-- **USB speaker** for audio out (a small USB speaker, or a cheap USB soundcard + mini
-  speaker) on the borg-pi5, powered off a Pi USB port (small draw, fits the 5 V budget).
-  Plays a wav on events (detection / greeting).
+- **Audio out**: USB sound card (C-Media, e.g. DELOCK 61645) on a Pi 5 USB port →
+  **PAM8403** mini class-D amp → **Visaton BF 45** speaker. The Pi 5 has no analogue out,
+  so the USB card is required (plug-and-play via `snd_usb_audio`; make it the default in
+  ALSA). The amp takes 5 V/GND off the **borg-pi5 5 V branch** (same reference as the
+  sound card → no ground-loop hum), not a USB port. Plays a wav on events (detection /
+  greeting). Nothing on the carrier board changes. See [`power-distribution.md`](power-distribution.md).
 - **Camera lens hole** is **conical** (12 mm inside → 20 mm outside) so a wide-FOV Camera
   Module 3 is not vignetted by the wall.
 - **SDR antenna**: a cheap **telescopic SMA whip** (extends to ~30 cm+, wideband when

@@ -89,7 +89,7 @@ for rating in [`docs/ideas.md`](docs/ideas.md) — an idea pool, not committed s
 - **Sensor/control front panel:** ESP32 (ESPHome) with LD2410B (UART), BME280 (I²C), 4 buttons + encoder (GPIO).
 - **Light:** Athom high-power WLED controller + SK6812 RGBW-WW compact panel (8 rows × 43 = 344 px) on a 3 mm aluminium plate, opal acrylic diffuser.
 - **Reception:** RTL-SDR V3 (ADS-B 1090 MHz, optional LoRa RX), USB microphone (on the Pi 5). The LD2410B radar points **forward** (in the LED tower), toward the terrace.
-- **Audio out:** a small **USB speaker** (or a cheap USB soundcard + mini speaker) on the borg-pi5 — plays a short wav on events (detection, greeting).
+- **Audio out:** USB sound card (C-Media, e.g. DELOCK 61645) + a **PAM8403** mini class-D amp + a **Visaton BF 45** broadband speaker on the borg-pi5 — plays a short wav on events (detection, greeting). The Pi 5 has no analogue output, hence the USB card; amp powered off the Pi's 5 V branch (see [power](docs/power-distribution.md)).
 - **Power:** Mean Well LRS-150F-5 (5 V/22 A) in its own V-0 enclosure, fused branches.
 - **Enclosure:** 3D print in SLS/PA12 (black), 2 parts (build-volume split with dowel pins); aluminium plate = front + heatsink.
 - **nas-Pi5 (existing, minor role):** a separate, **always-on** Raspberry Pi 5 wired to the Fritz!Box. Only the **remote-access point** (reach the unit from outside) and occasional **image/data storage** — not the hub (see [network](docs/network.md)).
