@@ -31,6 +31,22 @@ by `make render`):
 
 ![Carrier board](docs/img/pcb-top.png)
 
+### Wiring
+
+The cable harness from the carrier board's JST connectors to the external components,
+shown two ways. Both are **generated from the netlist** (see
+[`docs/img/SOURCES.md`](docs/img/SOURCES.md) for exactly what each image derives from):
+
+Schematic harness (pinout + wire colours), rendered by **WireViz** from
+[`pcb/wiring-harness.yaml`](pcb/wiring-harness.yaml):
+
+![Wiring harness](docs/img/wiring-harness.png)
+
+The same connections on the board render (callouts placed by
+[`pcb/annotate-board.py`](pcb/annotate-board.py) from the connector positions):
+
+![Board with cable callouts](docs/img/board-annotated.png)
+
 ---
 
 ## Documentation

@@ -1,0 +1,115 @@
+# Wiring harness: carrier-board JST connectors -> external components.
+#
+# SOURCE OF TRUTH: pcb/gen-netlist.py (pin order per connector) and
+# pcb/docs/board-spec.md (connector table). Wire colours are a suggested,
+# consistent convention (5V=red, 3V3=orange, GND=black), not prescribed by
+# the netlist. Render with `make -C pcb harness` (WireViz -> SVG + 300 dpi PNG).
+
+connectors:
+  J_PWR:
+    type: JST-XH 2p · carrier
+    pinlabels: [5V, GND]
+  PSU:
+    type: 5V distribution (Wago)
+    pinlabels: [5V, GND]
+
+  J_RADAR:
+    type: JST-XH 4p · carrier
+    pinlabels: [5V, GND, RADAR_RX, RADAR_TX]
+  LD2410B:
+    type: presence radar
+    pinlabels: [VCC, GND, RX, TX]
+
+  J_BME:
+    type: JST-XH 4p · carrier
+    pinlabels: [3V3, GND, SCL, SDA]
+  BME280:
+    type: T/H/P sensor
+    pinlabels: [VCC, GND, SCL, SDA]
+
+  J_ENC:
+    type: JST-XH 4p · carrier
+    pinlabels: [A, B, SW, GND]
+  ENC:
+    type: EC11 encoder
+    pinlabels: [A, B, SW, GND]
+
+  J_BTN1:
+    type: JST-XH 4p · carrier
+    pinlabels: [SW, GND, 5V, LED-K]
+  BTN1:
+    type: button 1 (lit)
+    pinlabels: [SW, COM, LED+, LED-]
+
+  J_BTN2:
+    type: JST-XH 4p · carrier
+    pinlabels: [SW, GND, 5V, LED-K]
+  BTN2:
+    type: button 2 (lit)
+    pinlabels: [SW, COM, LED+, LED-]
+
+  J_BTN3:
+    type: JST-XH 4p · carrier
+    pinlabels: [SW, GND, 5V, LED-K]
+  BTN3:
+    type: button 3 (lit)
+    pinlabels: [SW, COM, LED+, LED-]
+
+  J_BTN4:
+    type: JST-XH 4p · carrier
+    pinlabels: [SW, GND, 5V, LED-K]
+  BTN4:
+    type: button 4 (lit)
+    pinlabels: [SW, COM, LED+, LED-]
+
+cables:
+  W_PWR:
+    colors: [RD, BK]
+  W_RADAR:
+    colors: [RD, BK, GN, YE]
+  W_BME:
+    colors: [OG, BK, WH, GN]
+  W_ENC:
+    colors: [GN, YE, BU, BK]
+  W_BTN1:
+    colors: [GN, BK, RD, WH]
+  W_BTN2:
+    colors: [GN, BK, RD, WH]
+  W_BTN3:
+    colors: [GN, BK, RD, WH]
+  W_BTN4:
+    colors: [GN, BK, RD, WH]
+
+connections:
+  -
+    - J_PWR: [1-2]
+    - W_PWR: [1-2]
+    - PSU: [1-2]
+  -
+    - J_RADAR: [1-4]
+    - W_RADAR: [1-4]
+    - LD2410B: [1-4]
+  -
+    - J_BME: [1-4]
+    - W_BME: [1-4]
+    - BME280: [1-4]
+  -
+    - J_ENC: [1-4]
+    - W_ENC: [1-4]
+    - ENC: [1-4]
+  -
+    - J_BTN1: [1-4]
+    - W_BTN1: [1-4]
+    - BTN1: [1-4]
+  -
+    - J_BTN2: [1-4]
+    - W_BTN2: [1-4]
+    - BTN2: [1-4]
+  -
+    - J_BTN3: [1-4]
+    - W_BTN3: [1-4]
+    - BTN3: [1-4]
+  -
+    - J_BTN4: [1-4]
+    - W_BTN4: [1-4]
+    - BTN4: [1-4]
