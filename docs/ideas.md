@@ -82,3 +82,16 @@ over MQTT.
 | 68 | Play | Gesture DJ: hand movement steers colour/effect live | camera, WLED | |
 | 69 | Play | Mood voice command ("make it cosy") → warm scene + soft music | mic, WLED, speaker | |
 | 70 | Play | Wave highscore / visitor counter: how many people waved/passed today | camera, WLED | |
+| 71 | SDR | **Meteor detector**: listen to the Graves space radar (143.05 MHz); a meteor's ionised trail reflects the ping (meteor scatter) → matrix renders a shooting star | SDR, WLED | **high** |
+| 72 | Security | **Acoustic sonar**: speaker emits a near-ultrasonic sweep (18–20 kHz), mic measures the room echo; a large body (intruder) changes the signature → alarm. Fallback if camera/radar are blinded | mic, speaker | |
+| 73 | SDR | **TPMS sniffer**: read passing cars' tyre-pressure sensors (433/315 MHz, rtl_433) → gag on the matrix ("that Audi is at 1.8 bar") | SDR, WLED | |
+| 74 | Camera | **Digital shadow (anti-glare)**: camera finds the faces at the table, matrix dims exactly the pixels that would shine in their eyes, keeps the rest bright | camera, WLED | |
+| 75 | Camera | **Pacifist pigeon/cat turret**: Frigate detects pigeons/foreign cats → strobe + a short raptor/dog sound → they leave, no water needed | camera, speaker, WLED | |
+| 76 | Camera | **Captain's log**: button/encoder-hold starts record mode (matrix red), speak a note → saved to nas-Pi + Whisper STT → text into Nextcloud/Obsidian | camera, mic, encoder, nas-Pi | |
+| 77 | Radar | **Breath pacer**: radar reads breathing micro-movements, matrix pulses with your breath then slowly slows it → you follow it (relaxation/biofeedback) | radar, WLED, speaker | |
+| 78 | Ambient | **Telepresence "ghost"**: a partner's phone status/location drives a single softly glowing pixel wandering the matrix — passive "I'm here", no message or sound | app, WLED | |
+| 79 | Ambient | **Urban pulse**: mic measures the city's background noise, matrix translates it into a slow organic shimmer — "breathes" faster when busy, calm late at night | mic, WLED | |
+| 80 | Camera | **Flashlight spotlight**: hold your lit phone toward the camera, matrix throws a focused spotlight where you are and follows you like a stage follow-spot | camera, WLED | |
+| 81 | Play | **Konami code / easter eggs**: a secret button/encoder sequence unlocks a hidden mode, light program, or inside-joke audio | encoder, buttons, WLED, speaker | |
+| 82 | Env | **Invisible warning**: matrix off, but on frost (<2 °C) or heat (>35 °C) + radar sees someone approaching the door → 2 s ice-blue / deep-red flash, then off | BME, radar, WLED | |
+| 83 | Meta | **Tricorder / diagnostics**: encoder press → matrix shows CPU load, WiFi/MQTT status, live radar distance, audio level — hardware debug without the phone or SSH | all sensors, WLED | |
