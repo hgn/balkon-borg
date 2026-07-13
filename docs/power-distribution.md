@@ -44,6 +44,11 @@ Fuses as **inline blade-fuse holders** (automotive mini) at the junction, on the
   8 A keeps current and heat in check.
 - **Common GND** for everything (the WLED data line needs a GND reference to the
   panel).
+- **Audio amp (PAM8403, ~0.3 A):** tap 5 V/GND from the **borg-pi5 branch**, not a
+  separate run — same reference as the USB sound card feeding it, so no ground loop or
+  hum on the speaker line. It sits well under the 5 A fuse; no extra fuse needed. Keep
+  the analogue audio lead (sound card → amp) short. **Nothing on the carrier board
+  changes** — the whole audio chain lives on the Pi side + this branch.
 
 ## Distribution parts list
 
@@ -52,3 +57,12 @@ Fuses as **inline blade-fuse holders** (automotive mini) at the junction, on the
 - 1× inline blade-fuse holder + 10 A mini fuse (LED)
 - 1× inline blade-fuse holder + 5 A mini fuse (borg-pi5)
 - wire 2.5 / 1.5 / 0.5 mm², ferrules
+
+## Audio output chain (Pi side, not the carrier board)
+
+- USB sound adapter (C-Media, e.g. DELOCK 61645) on a Pi 5 **USB 2.0** port — plug-and-
+  play via `snd_usb_audio`; make it the default with `snd-usb-audio index=0` in
+  `/etc/modprobe.d/alsa-base.conf` (or an `~/.asoundrc`).
+- Mini class-D amp (PAM8403, 2×3 W): 5 V/GND off the borg-pi5 branch, L/R + GND in from
+  the sound card's headphone jack, output to the speaker.
+- Speaker: Visaton BF 45 (4 Ω, 45 mm). Passive, no supply of its own.
