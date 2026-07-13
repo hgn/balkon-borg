@@ -111,7 +111,7 @@ for rating in [`docs/ideas.md`](docs/ideas.md) — an idea pool, not committed s
 - **Reception:** RTL-SDR V3 (ADS-B 1090 MHz, optional LoRa RX), USB microphone (on the Pi 5). The LD2410B radar points **forward** (in the LED tower), toward the terrace.
 - **Audio out:** USB sound card (C-Media, e.g. DELOCK 61645) + a **PAM8403** mini class-D amp + a **Visaton BF 45** broadband speaker on the borg-pi5 — plays a short wav on events (detection, greeting). The Pi 5 has no analogue output, hence the USB card; amp powered off the Pi's 5 V branch (see [power](docs/power-distribution.md)).
 - **Power:** Mean Well LRS-150F-5 (5 V/22 A) in its own V-0 enclosure, fused branches.
-- **Enclosure:** 3D print in SLS/PA12 (black), 2 parts (build-volume split with dowel pins); aluminium plate = front + heatsink.
+- **Enclosure:** 3D print in SLS/PA12 (black), **one piece** (508 mm long — needs a large-bed SLS service, e.g. Materialise 630×330×550); aluminium plate = front + heatsink.
 - **nas-Pi5 (existing, minor role):** a separate, **always-on** Raspberry Pi 5 wired to the Fritz!Box. Only the **remote-access point** (reach the unit from outside) and occasional **image/data storage** — not the hub (see [network](docs/network.md)).
 
 ## 5 · Architecture and data flow
@@ -143,7 +143,7 @@ WiFi repeater → cable → Fritz!Box → nas-Pi5 (see [network](docs/network.md
 
 **Mechanical / manufacturing**
 - **3D print in SLS/PA12**, black-dyed (no supports, no layer lines, production look). See `docs/enclosure-sintering.md`.
-- Parts larger than the build volume → **split** (X=0) with 4 mm dowel pins; STEP to the print service (German first: PRINCORE / Reents3D / 3D-Druckdienstleister.de).
+- Printed **in one piece** on a large-bed SLS service (508 mm fits e.g. Materialise 630×330×550 or Shapeways 650×350×550); STEP to the print service (German first: PRINCORE / Reents3D / 3D-Druckdienstleister.de).
 - Radar sees through a **2 mm membrane**; camera/mic cut-outs integrated.
 
 **Network**
@@ -173,7 +173,7 @@ WiFi repeater → cable → Fritz!Box → nas-Pi5 (see [network](docs/network.md
 3. **Real board measurement** → adjust the mounting-boss positions in `balkon_borg.py` (CadQuery).
 4. **WLED config** — 2D 43×8 serpentine, ABL at 8 A, presets/scenes + button mapping.
 5. **PSU** — EEPROM `PSU_MAX_CURRENT=5000`, trim the output to 5.15 V.
-6. **Fit test** — print a corner/brow (insert and diffuser-rebate fit) before the big halves.
+6. **Fit test** — print a corner/brow (insert and diffuser-rebate fit) before the big one-piece print.
 
 ## 9 · Key risks
 
@@ -231,12 +231,13 @@ quirk; the work ran on Fable 5):
 | 2026-07-10 | 9,200 | 625,879 | 2,536,382 | 103,796,715 | 106,968,176 | $92.96 |
 | 2026-07-11 | 28,183 | 671,930 | 2,860,378 | 203,925,544 | 207,486,035 | $147.51 |
 | 2026-07-12 | 21,093 | 560,556 | 5,245,511 | 188,015,314 | 193,842,474 | $160.58 |
-| **Total** | **58,476** | **1,858,365** | **10,642,271** | **495,737,573** | **≈508 M** | **$401.05** |
+| 2026-07-13 | 13,406 | 428,986 | 3,808,720 | 115,205,441 | 119,456,553 | $106.48 |
+| **Total** | **71,882** | **2,287,351** | **14,450,991** | **610,943,014** | **≈628 M** | **$507.53** |
 
 So a complete, fabrication-ready hardware package — SLS enclosure, routed carrier board,
-firmware and docs — for **about $401** (≈370 €) of model usage. Roughly half a billion
-tokens, most of it cache reads (re-reading the growing repo and transcript each turn),
-which is why the token count is huge but the cost is not.
+firmware, a build manual and docs — for **about $508** (≈470 €) of model usage over four
+days. Over 600 million tokens, most of it cache reads (re-reading the growing repo and
+transcript each turn), which is why the token count is huge but the cost is not.
 
 For scale: a freelance hardware developer taking on the same scope (enclosure CAD,
 schematic + board layout + routing, firmware, and the write-up) would realistically

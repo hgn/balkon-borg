@@ -58,18 +58,17 @@ Complements `power-distribution.md`, `enclosure-sintering.md` and the log.
   supports, clearance 0.4-0.5 mm, avoid blind cavities (powder escape), black-dyed
   PA12 for the professional matte look.
 - Print the **fit test** first (one corner with an insert boss, diffuser rebate,
-  button hole) before the full halves.
+  button hole) before the full one-piece print.
 
 ## Hardware checklist (easy to forget)
 
 - **Ceiling anchors** to match the ceiling material (**4× M5** through the ears, they
   carry everything). The ear hole is a through-hole with a counterbore, so the M5 head
   seats flat under the ear; any standard M5 head (≤11 mm) fits. A washer helps.
-- **Heat-set inserts**: **M2.5** ×~8 (Pi + carrier 4 + WLED), **M3** ×**3** (seam clamps:
-  2 rear + 1 front).
-- **Screws**: **M2.5** (Pi/carrier/WLED — the carrier PCB holes are M2.5/2.7 mm), **M3** ×3
-  (seam), **M5** ×4 (ceiling).
-- **Dowel pins 4 mm** (split alignment).
+- **Heat-set inserts**: **M2.5** ×~8 (Pi + carrier 4 + WLED). (No M3 seam inserts any
+  more — the enclosure is one piece.)
+- **Screws**: **M2.5** (Pi/carrier/WLED — the carrier PCB holes are M2.5/2.7 mm),
+  **M5** ×4 (ceiling).
 - **Panel nuts** for the 12 mm buttons (check the 3 mm wall is within their clamp
   range).
 - **Blade fuses** 10 A + 5 A + holders (see `power-distribution.md`).

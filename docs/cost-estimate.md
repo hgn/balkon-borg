@@ -15,17 +15,18 @@ Pi/camera are bought new are the big swing items.
 | **Reception + audio** | RTL-SDR V3 32, USB microphone 10, antenna + RG316 pigtail 13, USB sound card (DELOCK 61645) 6, class-D amp (PAM8403) 3, Visaton BF 45 speaker 16 | **80** |
 | **Power** | Mean Well LRS-150-5 28, XT60 3, 2× Wago 221 3, fuses + holders 5, wire/ferrules 8 | **47** |
 | **Carrier PCB** | Aisler fab (3 pcs) 40, THT parts (R/C/Q/JST/sockets/polyfuse) 15 | **55** |
-| **Enclosure** | SLS/PA12 black, 2 halves (~822 cm³, 508×151×140 bounding box) | **150–250** |
-| **Small parts** | heat-set inserts, screws M2.5/M3/M5, dowels, panel nuts, thermal pad, glue, insect mesh, zip ties | **25** |
+| **Enclosure** | SLS/PA12 black, **one piece** (~685 cm³, 508×151×140 bounding box) | **150–250** |
+| **Small parts** | heat-set inserts, screws M2.5/M5, panel nuts, thermal pad, glue, insect mesh, zip ties | **25** |
 
 **Total ≈ 570–770 €, realistically ~620–670 € mid.**
 
 ## Cost drivers
 
-- **Enclosure SLS** is the largest single item and the biggest unknown: ~100 € at
-  JLC3DP (China) vs. ~250–300 € at a German service. The 51 cm length drives it. Pull a
-  real instant quote (JLC3DP / Craftcloud) before trusting a number — the STL is
-  `docs/img/enclosure.stl` / `cad/build/*.step`.
+- **Enclosure SLS** is the largest single item and the biggest unknown. Printed **in one
+  piece**, so it needs a **large-bed** service (≥510 mm): the 51 cm length rules out the
+  cheap small-bed shops (JLC3DP ~400 mm) and points at Materialise / Shapeways / a large
+  German industrial SLS house (~250–300 €+). Pull a real instant quote (Craftcloud bundles
+  many) before trusting a number — the STL is `docs/img/enclosure.stl` / `cad/build/*.step`.
 - **borg-pi5** (~96 € with cooler + SD) is the second chunk. The older README budget
   (~455 €) excluded the dedicated Pi and assumed cheap FDM printing; SLS + Pi are the
   uplift.
