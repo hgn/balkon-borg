@@ -80,6 +80,9 @@ runs off a shared 5 V feed and an MQTT/WiFi bus. The goal is a build that looks
 | U8 | Passive radio listening (optional) | LoRa/Meshtastic **RX** over the SDR (no active transmit node) |
 | U9 | Audio feedback | small **USB speaker** on the borg-pi5 → plays a short clip / says hello when something is detected |
 
+More use-case ideas (radar zones, SDR reception, sensor combinations, …) are collected
+for rating in [`docs/ideas.md`](docs/ideas.md) — an idea pool, not committed scope.
+
 ## 4 · System components (current state)
 
 - **Central compute (borg-pi5):** Raspberry Pi 5 (8 GB) + Active Cooler, microSD in the enclosure — **the hub the project is about**: recording (camera/audio/SDR), local inference (Frigate, readsb/tar1090, BirdNET-Go), and the **MQTT broker (Mosquitto), dashboards and app**. Powered on **only when needed**, not 24/7.
