@@ -1,0 +1,352 @@
+% ===== English content body =====
+\begin{titlepage}\centering
+\vspace*{4mm}
+{\displayfont\bfseries\fontsize{40}{44}\selectfont Balkon\,Borg}\\[3mm]
+{\displayfont\LARGE Assembly manual — hardware}\\[1mm]
+{\large\color{soft} from the parts to the finished device}\\[9mm]
+\dekocover{cover.png}{Cover: the finished device under the balcony}\\[7mm]
+\includegraphics[width=0.6\textwidth]{enclosure.png}\\[8mm]
+\begin{tcolorbox}[width=0.86\textwidth,colback=cfun,colframe=ink,arc=4pt]\centering
+This manual goes in order: solder, wire up, install, mount. None of it is hard if you take
+it step by step. Take your time and work through the chapters in sequence.
+\end{tcolorbox}
+\vfill
+{\footnotesize\color{soft}Technical images from the CAD/PCB of the \texttt{balkon-borg} repo
+(not drawn) · as of \today}
+\end{titlepage}
+
+\section*{Before you start}
+This manual covers the full \textbf{hardware build}: populate the board, make up the
+cables, everything into the enclosure, wire it, mount it on the ceiling. The software
+(flashing the ESP, setting up the Pi) is deliberately not included. Set aside a calm
+afternoon, with a break between soldering and wiring.
+
+\begin{achtung}
+The \textbf{230\,V power supply stays outside} in its own housing. Only \textbf{5\,V} goes
+into the printed enclosure. Work on the 230\,V part only when it is disconnected from mains.
+\end{achtung}
+\begin{warum}
+Plastic (PA12) and mains voltage do not mix: no defined fire rating, no creepage distances.
+So the PSU sits separately and the printed enclosure carries low voltage only. The enclosure
+is also printed \textbf{in one piece} — there are no halves to join.
+\end{warum}
+
+\tableofcontents
+
+% ---------------- Parts list ----------------
+\clearpage
+\section{Parts list}
+\dekopikto{p-tools.png}{parts}
+\begin{ziel}
+Have everything complete and pre-sorted before you start. Quantities are per \emph{one}
+device. Authoritative reference: \texttt{pcb/docs/board-spec.md} (board) and
+\texttt{docs/cost-estimate.md} (whole device).
+\end{ziel}
+
+\textbf{On the board (to solder):}\par
+\rowcolors{2}{rowb}{white}
+\begin{tabular}{clp{88mm}}
+\toprule
+\textbf{\#} & \textbf{Part} & \textbf{Description} \\ \midrule
+1 & ESP32-DevKitC-V4 & official Espressif board, WROOM-32E, 38-pin, \textbf{25.4\,mm} row spacing (not a 0.9" clone) \\
+2 & female header 1×19 & 2.54\,mm, for the ESP (socketed) \\
+4 & transistor BC337 & NPN, TO-92, drives the button LEDs \\
+2 & resistor 220\,$\Omega$ & series resistor, radar UART \\
+7 & resistor 100\,$\Omega$ & series resistor, encoder + buttons \\
+4 & resistor 1\,k$\Omega$ & transistor base resistor \\
+2 & resistor 4.7\,k$\Omega$ & I²C pull-ups (optional / DNP, often on the BME breakout) \\
+1 & electrolytic 10\,\textmu F & 3V3 decoupling (\textbf{polarised}) \\
+1 & capacitor 100\,nF & 3V3 decoupling (non-polarised) \\
+1 & polyfuse ~2\,A & resettable 5\,V input fuse \\
+1 & JST-XH header 2p & \texttt{J\_PWR} (5\,V input) \\
+7 & JST-XH header 4p & \texttt{J\_RADAR}, \texttt{J\_BME}, \texttt{J\_ENC}, \texttt{J\_BTN1--4} \\
+\bottomrule
+\end{tabular}
+
+\textbf{External modules:}\par
+\rowcolors{2}{rowb}{white}
+\begin{tabular}{clp{88mm}}
+\toprule
+\textbf{\#} & \textbf{Module} & \textbf{Description} \\ \midrule
+1 & Raspberry Pi 5 (8\,GB) & + Active Cooler + microSD — the central compute unit \\
+1 & LD2410B & 24-GHz presence radar (UART), also senses a still-seated person \\
+1 & BME280 & genuine Bosch sensor: temperature / humidity / pressure (I²C) \\
+1 & EC11 encoder & rotary encoder with push-button (brightness) \\
+4 & 12\,mm button & illuminated, stainless, \textbf{5\,V} ring LED \\
+1 & WLED controller & Athom high-power (pre-flashed) \\
+1 & SK6812 RGBW-WW & panel 8×43 = 344 px, on an aluminium plate + opal diffuser \\
+1 & RTL-SDR V3 & + telescopic SMA antenna (ADS-B, optional LoRa) \\
+1 & USB microphone & on the Pi (BirdNET) \\
+1 & audio chain & USB sound card (DELOCK 61645) + PAM8403 amp + Visaton BF\,45 \\
+1 & Camera Module 3 & on the Pi's CSI port \\
+1 & Mean Well LRS-150-5 & 5\,V/22\,A PSU, \textbf{external} in its own housing \\
+\bottomrule
+\end{tabular}
+
+\textbf{Small parts / mechanical:}\par
+\rowcolors{2}{rowb}{white}
+\begin{tabular}{clp{88mm}}
+\toprule
+\textbf{\#} & \textbf{Part} & \textbf{Description} \\ \midrule
+~8 & threaded insert M2.5 & heat-set (Pi, carrier board, WLED holder) \\
+-- & screws M2.5 / M5 & M2.5 inside, M5 ×4 for the ceiling ears \\
+1 & XT60 socket & 5\,V feed-in in the rear wall \\
+2 & Wago 221 (5-way) & 5\,V+ and GND star distribution \\
+-- & fuses + holders & inline 10\,A (LED), 5\,A (Pi) \\
+-- & wire + ferrules & 2.5 / 1.5 / 0.5\,mm² \\
+-- & JST-XH crimp set & contacts + housings for the sensor/control cables \\
+-- & misc & panel nuts, thermal pad, glue, insect mesh, zip ties \\
+\bottomrule
+\end{tabular}
+
+\begin{schmunzel}
+Sort the resistors by value into little dishes right away. Telling four values apart on the
+tape later costs more nerves than the rest of the build.
+\end{schmunzel}
+
+% ---------------- Tools ----------------
+\clearpage
+\section{Tools}
+\dekopikto{p-solder.png}{tools}
+\begin{itemize}[leftmargin=8mm,itemsep=2pt]
+  \item \faBolt\ temperature-controlled soldering iron (fine tip) + solder, desoldering braid
+  \item \faCut\ side cutter, wire stripper, \textbf{JST-XH crimping tool}
+  \item \faScrewdriver\ small Phillips screwdriver, tweezers
+  \item \faFire\ soldering iron or hot air for the \textbf{threaded inserts}
+  \item \faSearch\ multimeter (continuity) for the final visual check
+\end{itemize}
+\begin{tipp}
+A 30-euro temperature-controlled iron is plenty (~330\,°C for lead-free solder). The JST
+crimping tool is the only special tool and saves the most time.
+\end{tipp}
+
+% ---------------- A Board ----------------
+\clearpage
+\section{Populate the board (soldering)}
+\dekopikto{p-solder.png}{solder}
+\begin{ziel}
+The empty board becomes the fully populated carrier with the ESP32 seated on it. Populate
+\textbf{low to tall}, so everything sits flat whenever you flip the board over.
+\end{ziel}
+\begin{schritte}
+  \item \textbf{15 resistors} (R1–R15): insert all, bend the legs slightly, then solder in
+        one pass and trim the ends. Resistors are non-polarised — either way round.
+  \item \textbf{4 transistors} BC337 (Q1–Q4) — \emph{mind the orientation} (see caution box).
+  \item \textbf{Capacitors}: C1 (10\,\textmu F electrolytic, \textbf{polarised} — the minus
+        stripe goes to the GND side) and C2 (100\,nF, non-polarised).
+  \item \textbf{Polyfuse F1} (the 5\,V input fuse).
+  \item \textbf{8 JST-XH headers}: \texttt{J\_PWR} (2p) plus \texttt{J\_RADAR},
+        \texttt{J\_BME}, \texttt{J\_ENC}, \texttt{J\_BTN1--4} (4p each).
+  \item \textbf{2 female headers} (1×19) for the ESP — align them straight before soldering.
+  \item \textbf{Seat the ESP32-DevKitC-V4}.
+\end{schritte}
+\bild{pcb-top.png}{0.82\textwidth}{The populated board with part designators (source: KiCad render).}
+\begin{achtung}
+BC337: the \textbf{flat face} of the transistor must face the silkscreen marking on the
+board. The wrong way round, the button LEDs never switch. Look first, then solder. And put
+the electrolytic C1 in the right way — the minus stripe points away from the 3V3 marking.
+\end{achtung}
+\begin{tipp}
+Female headers like to tilt. Seat the ESP on them \emph{before} soldering, square everything
+up, then solder just one outer pin each and correct before you solder the rest.
+\end{tipp}
+\begin{ergebnis}
+A fully populated, DRC-clean carrier board with the ESP32 seated.
+\end{ergebnis}
+
+% ---------------- B Cables ----------------
+\clearpage
+\section{Make up the cables (crimping)}
+\dekopikto{p-crimp.png}{crimp}
+\begin{ziel}
+All connecting cables from the board to sensors, controls and power — with the right pinout
+and wire colour. \textbf{Note:} the JST cables are \emph{crimped}, not soldered. You only
+solder where a module has bare pads instead of a connector.
+\end{ziel}
+\begin{schritte}
+  \item Measure cable lengths roughly (generous; there is room in the enclosure).
+  \item Strip ~3\,mm and \textbf{crimp the JST-XH contacts} (crimping tool).
+  \item Push the contacts into the housing until they click home.
+  \item Keep wire colours consistent: \ader{wRD}{5\,V} \quad \ader{wBK}{GND} \quad
+        \ader{wOG}{3.3\,V} \quad \ader{wGN}{signal} \quad \ader{wYE}{signal} \quad
+        \ader{wBU}{signal} \quad \ader{wWH}{signal}.
+\end{schritte}
+\bild{wiring-harness.png}{0.78\textwidth}{The full cable harness: which wire to which pin, with colours (source: netlist → WireViz).}
+\begin{warum}
+Consistent wire colours (red = 5\,V, black = GND) are not decoration: they stop you from
+swapping plus and minus when you plug things together — the most common and most annoying
+mistake, and hardly possible with a colour code.
+\end{warum}
+
+% ---------------- C Sensors + tables ----------------
+\clearpage
+\section{Connect sensors \& controls}
+\dekopikto{p-connect.png}{connect}
+\begin{ziel}
+Every cable gets its module — wire by wire. Below, each connector lists exactly which pin
+goes over which wire colour to which module pin.
+\end{ziel}
+
+\bild{board-annotated.png}{0.86\textwidth}{Which connector goes to which module (board render with callouts).}
+
+\textbf{Example as a diagram — radar (\texttt{J\_RADAR} → LD2410B):}
+\begin{center}\begin{tikzpicture}
+  \node[wpin,fill=ink,text=white] at (0,0.6) {J\_RADAR};
+  \node[wpin,fill=ink,text=white] at (7,0.6) {LD2410B};
+  \wire{1}{1 · 5V}{wRD}{VCC}
+  \wire{2}{2 · GND}{wBK}{GND}
+  \wire{3}{3 · RX-sig.}{wGN}{RX}
+  \wire{4}{4 · TX-sig.}{wYE}{TX}
+\end{tikzpicture}\end{center}
+
+\textbf{All connector pinouts (board pin — wire — module pin):}\par
+\rowcolors{2}{rowb}{white}
+\begin{tabular}{llll}
+\toprule
+\textbf{Connector} & \textbf{Board pin} & \textbf{Wire} & \textbf{Module pin} \\ \midrule
+\texttt{J\_RADAR} & 1 · 5V & \ader{wRD}{} & LD2410B VCC \\
+ & 2 · GND & \ader{wBK}{} & GND \\
+ & 3 · RX-signal & \ader{wGN}{} & RX \\
+ & 4 · TX-signal & \ader{wYE}{} & TX \\
+\texttt{J\_BME} & 1 · 3V3 & \ader{wOG}{} & BME280 VCC \\
+ & 2 · GND & \ader{wBK}{} & GND \\
+ & 3 · SCL & \ader{wWH}{} & SCL \\
+ & 4 · SDA & \ader{wGN}{} & SDA \\
+\texttt{J\_ENC} & 1 · A & \ader{wGN}{} & EC11 A \\
+ & 2 · B & \ader{wYE}{} & B \\
+ & 3 · SW & \ader{wBU}{} & push-button \\
+ & 4 · GND & \ader{wBK}{} & GND \\
+\texttt{J\_BTN1--4} & 1 · SW & \ader{wGN}{} & button switch \\
+ & 2 · GND & \ader{wBK}{} & switch COM \\
+ & 3 · 5V & \ader{wRD}{} & LED\,+ (anode) \\
+ & 4 · LED-K & \ader{wWH}{} & LED\,-- (cathode) \\
+\texttt{J\_PWR} & 1 · 5V & \ader{wRD}{} & PSU 5\,V (Wago) \\
+ & 2 · GND & \ader{wBK}{} & PSU GND (Wago) \\
+\bottomrule
+\end{tabular}
+\begin{tipp}
+Buy the \textbf{5\,V variant} of the button ring LED — then the driver on the board needs
+no extra resistor. If a module has bare solder pads instead of a connector (some radar/BME
+breakouts), solder the wire there directly — same order and colour as in the table.
+\end{tipp}
+\begin{ergebnis}
+All four sensor/control modules are correctly wired to their cables.
+\end{ergebnis}
+
+% ---------------- D Inserts ----------------
+\clearpage
+\section{Prepare the enclosure: threaded inserts}
+\dekopikto{p-insert.png}{set inserts}
+\begin{ziel}
+The heat-set threaded inserts (\textbf{M2.5} only) sit at the mounting points, so the Pi,
+board and WLED holder screw down cleanly and repeatably.
+\end{ziel}
+\begin{schritte}
+  \item Set the \textbf{M2.5 inserts} for Pi 5, carrier board and WLED holder (~8 of them).
+  \item The \textbf{ceiling ears} have M5 through-holes — no insert needed there.
+\end{schritte}
+\bild{half-left.png}{0.58\textwidth}{View of the one-piece enclosure (interior visible).}
+\begin{achtung}
+Sink the inserts with the soldering iron \textbf{straight and not too hot}. Set crooked,
+the thread pulls out later — slow and vertical is better.
+\end{achtung}
+\begin{ergebnis}
+Every mounting point has a solid M2.5 thread.
+\end{ergebnis}
+
+% ---------------- E Install ----------------
+\clearpage
+\section{Install the components}
+\dekopikto{p-install.png}{install}
+\begin{ziel}
+Every module sits in its place — on ~8\,mm standoffs, with plenty of room to the LED panel.
+\end{ziel}
+\begin{schritte}
+  \item Screw the \textbf{Raspberry Pi 5} onto the rear-wall bosses.
+  \item \textbf{Carrier board} into the right-hand bay on its M2.5 bosses (parts toward the front).
+  \item \textbf{LED panel + diffuser} on the aluminium plate at the front (which is also the heatsink).
+  \item \textbf{Tower LEDs + radar} into the downward tower.
+  \item \textbf{Camera} (conical hole), \textbf{microphone}, \textbf{audio} (USB sound card,
+        PAM8403 amp, Visaton speaker).
+  \item \textbf{RTL-SDR} on a \emph{USB-2} port, antenna to the SMA socket.
+\end{schritte}
+\begin{figure}[htbp]\centering
+  \includegraphics[width=0.47\textwidth]{view-inside.png}\hfill
+  \includegraphics[width=0.47\textwidth]{view-bottom.png}\par
+  {\footnotesize\color{soft}Interior (left) and underside with camera/tower opening (right).}
+\end{figure}
+\begin{warum}
+The SDR belongs on USB-2, not USB-3: USB-3 radiates right on 1090\,MHz and would jam the
+aircraft reception (ADS-B). Small move, big difference.
+\end{warum}
+\begin{ergebnis}
+A fully populated enclosure — just not wired yet.
+\end{ergebnis}
+
+% ---------------- F Wiring ----------------
+\clearpage
+\section{Power \& wiring}
+\dekopikto{p-wire.png}{wire up}
+\begin{ziel}
+The 5\,V star distribution is in place (with fuses), and every cable from the board to the
+sensors is plugged in.
+\end{ziel}
+\begin{schritte}
+  \item \textbf{XT60 socket} into the rear wall, 5\,V from the external PSU comes here.
+  \item \textbf{Wago blocks} for 5\,V+ and GND (common ground for everything).
+  \item \textbf{Fuses} inline: 10\,A (LED panel), 5\,A (Pi\,5), 2\,A (board, via its F1).
+  \item Branches with the right gauge: 2.5 / 1.5 / 0.5\,mm².
+  \item \textbf{Audio amp} tap 5\,V/GND off the \emph{Pi branch} (same reference → no hum).
+  \item Plug all \textbf{JST cables} board\,↔\,sensors — pinout per the table in chapter~5.
+\end{schritte}
+\begin{achtung}
+Before first power-up: \textbf{check polarity}. Applying 5\,V reversed kills the Pi and the
+board instantly. Red = 5\,V, black = GND, everywhere.
+\end{achtung}
+\begin{tipp}
+Keep the 5\,V line short and thick, especially to the LED panel — otherwise brightness drops
+at the far end of the strip. The long run belongs on the 230\,V side (to the external PSU).
+\end{tipp}
+\begin{ergebnis}
+A wired device with fused power and common ground.
+\end{ergebnis}
+
+% ---------------- G Mounting ----------------
+\clearpage
+\section{Ceiling mounting}
+\dekopikto{p-assemble.png}{mount}
+\begin{ziel}
+The \textbf{one-piece} enclosure hangs securely under the balcony. There is no joining of
+halves — it is printed in one piece.
+\end{ziel}
+\begin{schritte}
+  \item Final \textbf{cable check}: nothing pinched, nothing kinked.
+  \item Screw the device to the ceiling from below through the \textbf{ceiling ears}
+        (M5, ×4) — a washer under each head helps.
+\end{schritte}
+\begin{warum}
+The four ears carry the entire weight. Use anchors matched to the ceiling material; when in
+doubt, go one size up.
+\end{warum}
+\begin{ergebnis}
+A closed, mounted Balkon\,Borg in its place.
+\end{ergebnis}
+
+% ---------------- H Check ----------------
+\clearpage
+\section{Visual check before power-up}
+\dekopikto{p-check.png}{check}
+\begin{ziel}
+Go over everything once before power is applied. The software is a separate chapter — this
+is hardware only.
+\end{ziel}
+\begin{schritte}
+  \item Polarity of all 5\,V connections checked (red/black)?
+  \item No solder bridges/shorts on the board (continuity tester)?
+  \item All JST connectors fully clicked home, pinout as in chapter~5?
+  \item Fuses (10/5\,A) in place?
+  \item The 230\,V PSU is outside and still \textbf{disconnected from mains}?
+\end{schritte}
+\begin{ergebnis}
+A built, checked device — ready for the software (separate manual).
+\end{ergebnis}

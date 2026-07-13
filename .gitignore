@@ -29,3 +29,7 @@ skidl.erc
 skidl.log
 *.rpt
 pcb/logs/
+
+# local secrets / scratch (do not commit)
+.openai-key
+.gemini-key

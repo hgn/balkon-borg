@@ -67,6 +67,9 @@ The same connections on the board render (callouts placed by
 - **Domains:** [`cad/`](cad/README.md) (enclosure) ·
   [`pcb/`](pcb/README.md) (carrier board) ·
   [`firmware/esphome/`](firmware/esphome/README.md) (ESP32)
+- **Bonus:** the full illustrated build manual as a PDF (parts list, soldering, wiring
+  with colour-coded connection tables) — [Deutsch](manual/manual-de.pdf) ·
+  [English](manual/manual-en.pdf)
 
 ---
 

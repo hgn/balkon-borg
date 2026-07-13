@@ -1,0 +1,82 @@
+% Shared preamble for manual-de.tex and manual-en.tex.
+% The language and all UI strings (box titles, labels) are set in the wrapper
+% BEFORE \input{preamble}, via \def\t... macros.
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setmainfont{Inter}
+\newfontfamily\displayfont{Inter Display}
+\usepackage[margin=20mm,headsep=8mm]{geometry}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[dvipsnames,table]{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{fontawesome5}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{positioning,fit,backgrounds,calc}
+\usepackage{scrlayer-scrpage}
+\graphicspath{{images/}{../docs/img/}}
+\setlength{\parindent}{0pt}\setlength{\parskip}{6pt}
+
+\definecolor{ink}{HTML}{23272E}
+\definecolor{accent}{HTML}{C0392B}
+\definecolor{soft}{HTML}{6B7280}
+\definecolor{cwarn}{HTML}{FBEAEA}\definecolor{cwhy}{HTML}{E8F0FB}
+\definecolor{ctip}{HTML}{EAF6EC}\definecolor{cfun}{HTML}{F3F1EA}
+\definecolor{cgoal}{HTML}{FDF3E3}\definecolor{cdone}{HTML}{EDF7ED}
+\definecolor{rowb}{HTML}{F4F5F7}
+% wire colours for the tables/TikZ
+\definecolor{wRD}{HTML}{C0392B}\definecolor{wBK}{HTML}{23272E}\definecolor{wOG}{HTML}{E67E22}
+\definecolor{wGN}{HTML}{27AE60}\definecolor{wYE}{HTML}{D4AC0D}\definecolor{wBU}{HTML}{2E6DB4}
+\definecolor{wWH}{HTML}{AAB0B6}
+
+\addtokomafont{disposition}{\displayfont}
+\addtokomafont{section}{\color{ink}\Large}
+\setkomafont{pagehead}{\normalfont\footnotesize\color{soft}}
+\setkomafont{pagenumber}{\footnotesize\color{soft}}
+\clearpairofpagestyles
+\ohead{\rightmark}\ofoot*{\pagemark}
+\ifoot*{\footnotesize\color{soft}\tfooter}
+
+\newtcolorbox{achtung}{colback=cwarn,colframe=accent,boxrule=1pt,arc=3pt,
+  fonttitle=\bfseries\displayfont,title={\faExclamationTriangle\ \ \tAchtung}}
+\newtcolorbox{warum}{colback=cwhy,colframe=blue!55!black,boxrule=1pt,arc=3pt,
+  fonttitle=\bfseries\displayfont,title={\faQuestionCircle\ \ \tWarum}}
+\newtcolorbox{tipp}{colback=ctip,colframe=green!45!black,boxrule=1pt,arc=3pt,
+  fonttitle=\bfseries\displayfont,title={\faLightbulb\ \ \tTipp}}
+\newtcolorbox{schmunzel}{colback=cfun,colframe=ink,boxrule=0.6pt,arc=3pt,
+  fonttitle=\bfseries\displayfont,title={\faCoffee\ \ \tNebenbei}}
+\newtcolorbox{ziel}{colback=cgoal,colframe=orange!70!black,boxrule=1pt,arc=3pt,
+  fonttitle=\bfseries\displayfont,title={\faBullseye\ \ \tZiel}}
+\newtcolorbox{ergebnis}{colback=cdone,colframe=green!50!black,boxrule=1pt,arc=3pt,
+  fonttitle=\bfseries\displayfont,title={\faCheckCircle\ \ \tErgebnis}}
+
+\newlist{schritte}{enumerate}{1}
+\setlist[schritte]{label=\textbf{\color{accent}(\arabic*)},leftmargin=10mm,itemsep=5pt}
+
+\newcommand{\bild}[3]{\begin{figure}[htbp]\centering
+  \includegraphics[width=#2]{#1}\par{\footnotesize\color{soft}#3}\end{figure}}
+
+\newcommand{\dekopikto}[2]{\begin{center}
+  \IfFileExists{images/#1}{\includegraphics[width=32mm]{images/#1}}{%
+  \setlength{\fboxsep}{7pt}\fcolorbox{soft}{cfun}{\parbox[c][26mm][c]{34mm}{\centering
+  \color{soft}{\LARGE\faImage}\\[5pt]{\scriptsize\itshape #2}\\[2pt]{\scriptsize\ttfamily #1}}}}
+  \end{center}}
+\newcommand{\dekocover}[2]{\IfFileExists{images/#1}{\includegraphics[width=0.9\textwidth]{images/#1}}{%
+  \setlength{\fboxsep}{10pt}\fcolorbox{soft}{cfun}{\parbox[c][46mm][c]{0.86\textwidth}{\centering
+  \color{soft}{\Huge\faImage}\\[8pt]{\itshape #2}\\[3pt]{\small\ttfamily images/#1}}}}}
+
+\tikzset{wpin/.style={draw=soft,rounded corners=1.5pt,fill=white,inner sep=2.5pt,
+  minimum width=20mm,font=\footnotesize}}
+
+% a coloured wire swatch for the connection tables: \ader{wRD}{5V}
+\newcommand{\ader}[2]{\tikz[baseline=-0.5ex]\draw[line width=2.6pt,#1](0,0)--(0.7,0);\ #2}
+
+% one connection row inside a "verbindung" tikzpicture (helper coordinates given)
+% \wire{row}{board pin}{colour}{component pin}
+\newcommand{\wire}[4]{%
+  \node[wpin,anchor=west]  (l#1) at (0, -0.62*#1) {#2};
+  \node[wpin,anchor=east]  (r#1) at (7, -0.62*#1) {#4};
+  \draw[line width=2.4pt,#3] (l#1.east) -- (r#1.west);}

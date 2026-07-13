@@ -1,0 +1,360 @@
+% ===== German content body =====
+\begin{titlepage}\centering
+\vspace*{4mm}
+{\displayfont\bfseries\fontsize{40}{44}\selectfont Balkon\,Borg}\\[3mm]
+{\displayfont\LARGE Aufbauanleitung — Hardware}\\[1mm]
+{\large\color{soft} von den Bauteilen bis zum fertigen Gerät}\\[9mm]
+\dekocover{cover.png}{Titelbild: das fertige Gerät unter dem Balkon}\\[7mm]
+\includegraphics[width=0.6\textwidth]{enclosure.png}\\[8mm]
+\begin{tcolorbox}[width=0.86\textwidth,colback=cfun,colframe=ink,arc=4pt]\centering
+Die Anleitung geht der Reihe nach vor: löten, verkabeln, einbauen, montieren. Nichts
+davon ist schwierig, wenn man es Schritt für Schritt macht. Lass dir Zeit und arbeite die
+Kapitel in ihrer Reihenfolge ab.
+\end{tcolorbox}
+\vfill
+{\footnotesize\color{soft}Technische Bilder aus dem CAD/PCB des \texttt{balkon-borg}-Repos
+(nicht gemalt) · Stand \today}
+\end{titlepage}
+
+\section*{Bevor du anfängst}
+Dieses Heft führt durch den kompletten \textbf{Hardware-Aufbau}: Platine bestücken, Kabel
+konfektionieren, alles ins Gehäuse, verdrahten, an die Decke. Die Software (ESP flashen,
+Pi einrichten) ist bewusst nicht enthalten. Plane für den Aufbau in Ruhe einen ruhigen
+Nachmittag ein — mit einer Pause zwischen Löten und Verdrahten.
+
+\begin{achtung}
+Das \textbf{230-V-Netzteil bleibt außen} in seinem eigenen Gehäuse. In das gedruckte
+Gehäuse kommen \textbf{nur 5\,V}. Am 230-V-Teil nur arbeiten, wenn es vom Netz getrennt ist.
+\end{achtung}
+\begin{warum}
+Kunststoff (PA12) und Netzspannung passen nicht zusammen: kein definierter Brandschutz,
+keine Kriechstrecken. Deshalb sitzt das Netzteil separat, und das gedruckte Gehäuse führt
+ausschließlich Kleinspannung. Das Gehäuse wird außerdem \textbf{in einem Stück} gedruckt —
+es gibt keine Hälften zum Zusammenfügen.
+\end{warum}
+
+\tableofcontents
+
+% ---------------- Teileliste ----------------
+\clearpage
+\section{Teileliste}
+\dekopikto{p-tools.png}{Teile}
+\begin{ziel}
+Vor dem Start alles vollständig da haben und vorsortieren. Die Zahlen sind Stückzahlen für
+\emph{ein} Gerät. Verbindliche Referenz: \texttt{pcb/docs/board-spec.md} (Platine) und
+\texttt{docs/cost-estimate.md} (Gesamtgerät).
+\end{ziel}
+
+\textbf{Auf der Platine (bestücken/löten):}\par
+\rowcolors{2}{rowb}{white}
+\begin{tabular}{clp{88mm}}
+\toprule
+\textbf{\#} & \textbf{Teil} & \textbf{Beschreibung} \\ \midrule
+1 & ESP32-DevKitC-V4 & offizielles Espressif-Board, WROOM-32E, 38-pin, \textbf{25,4\,mm} Reihenabstand (kein 0,9"-Klon) \\
+2 & Buchsenleiste 1×19 & 2,54\,mm, für den ESP (gesockelt) \\
+4 & Transistor BC337 & NPN, TO-92, Treiber für die Taster-LEDs \\
+2 & Widerstand 220\,$\Omega$ & Serienwiderstand Radar-UART \\
+7 & Widerstand 100\,$\Omega$ & Serienwiderstand Encoder + Taster \\
+4 & Widerstand 1\,k$\Omega$ & Basiswiderstand der Transistoren \\
+2 & Widerstand 4,7\,k$\Omega$ & I²C-Pull-ups (optional / DNP, oft am BME-Breakout) \\
+1 & Elko 10\,\textmu F & 3V3-Entkopplung (\textbf{gepolt}) \\
+1 & Kondensator 100\,nF & 3V3-Entkopplung (ungepolt) \\
+1 & Polyfuse ~2\,A & rücksetzbare 5-V-Sicherung am Eingang \\
+1 & JST-XH Stiftleiste 2p & \texttt{J\_PWR} (5-V-Eingang) \\
+7 & JST-XH Stiftleiste 4p & \texttt{J\_RADAR}, \texttt{J\_BME}, \texttt{J\_ENC}, \texttt{J\_BTN1--4} \\
+\bottomrule
+\end{tabular}
+
+\textbf{Externe Baugruppen:}\par
+\rowcolors{2}{rowb}{white}
+\begin{tabular}{clp{88mm}}
+\toprule
+\textbf{\#} & \textbf{Baugruppe} & \textbf{Beschreibung} \\ \midrule
+1 & Raspberry Pi 5 (8\,GB) & + Active Cooler + microSD — die zentrale Recheneinheit \\
+1 & LD2410B & 24-GHz-Präsenzradar (UART), erkennt auch stillsitzende Personen \\
+1 & BME280 & echter Bosch-Sensor: Temperatur / Luftfeuchte / Luftdruck (I²C) \\
+1 & EC11-Encoder & Dreh-Encoder mit Taster (Helligkeit) \\
+4 & Taster 12\,mm & beleuchtet, Edelstahl, \textbf{5-V}-Ring-LED \\
+1 & WLED-Controller & Athom High-Power (vorgeflasht) \\
+1 & SK6812 RGBW-WW & Panel 8×43 = 344 px, auf Alu-Platte + Opal-Diffusor \\
+1 & RTL-SDR V3 & + Teleskop-SMA-Antenne (ADS-B, optional LoRa) \\
+1 & USB-Mikrofon & am Pi (BirdNET) \\
+1 & Audio-Kette & USB-Soundkarte (DELOCK 61645) + PAM8403-Verstärker + Visaton BF\,45 \\
+1 & Kamera Modul 3 & am CSI-Port des Pi \\
+1 & Mean Well LRS-150-5 & 5\,V/22\,A Netzteil, \textbf{extern} in eigenem Gehäuse \\
+\bottomrule
+\end{tabular}
+
+\textbf{Kleinteile / Mechanik:}\par
+\rowcolors{2}{rowb}{white}
+\begin{tabular}{clp{88mm}}
+\toprule
+\textbf{\#} & \textbf{Teil} & \textbf{Beschreibung} \\ \midrule
+~8 & Gewindeeinsatz M2.5 & Heat-Set (Pi, Trägerplatine, WLED-Halterung) \\
+-- & Schrauben M2.5 / M5 & M2.5 innen, M5 ×4 für die Deckenohren \\
+1 & XT60-Buchse & 5-V-Einspeisung in der Rückwand \\
+2 & Wago 221 (5-fach) & 5\,V+ und GND Sternverteilung \\
+-- & Sicherungen + Halter & inline 10\,A (LED), 5\,A (Pi) \\
+-- & Kabel + Aderendhülsen & 2,5 / 1,5 / 0,5\,mm² \\
+-- & JST-XH Crimp-Set & Kontakte + Gehäuse für die Sensor-/Bedienkabel \\
+-- & Diverses & Panel-Muttern, Thermal-Pad, Kleber, Insektengitter, Kabelbinder \\
+\bottomrule
+\end{tabular}
+
+\begin{schmunzel}
+Sortier die Widerstände gleich nach Wert in kleine Schälchen. Vier verschiedene Werte
+später am Bauteilgurt zu unterscheiden, kostet mehr Nerven als der ganze Rest.
+\end{schmunzel}
+
+% ---------------- Werkzeug ----------------
+\clearpage
+\section{Werkzeug}
+\dekopikto{p-solder.png}{Werkzeug}
+\begin{itemize}[leftmargin=8mm,itemsep=2pt]
+  \item \faBolt\ temperaturgeregelter Lötkolben (feine Spitze) + Lötzinn, Entlötlitze
+  \item \faCut\ Seitenschneider, Abisolierzange, \textbf{JST-XH-Crimpzange}
+  \item \faScrewdriver\ kleiner Kreuzschlitz-Schraubendreher, Pinzette
+  \item \faFire\ Lötkolben oder Heißluft für die \textbf{Gewindeeinsätze}
+  \item \faSearch\ Multimeter (Durchgangsprüfer) für den Sicht-Check am Ende
+\end{itemize}
+\begin{tipp}
+Ein 30-Euro-Lötkolben mit Temperaturregelung reicht völlig (~330\,°C für bleifreies Zinn).
+Die JST-Crimpzange ist die einzige Spezialzange und spart am meisten Zeit.
+\end{tipp}
+
+% ---------------- A Platine ----------------
+\clearpage
+\section{Platine bestücken (löten)}
+\dekopikto{p-solder.png}{löten}
+\begin{ziel}
+Aus der leeren Platine wird die fertig bestückte Trägerplatine mit aufgestecktem ESP32.
+Bestückt wird \textbf{von flach nach hoch}, damit beim Umdrehen immer alles plan aufliegt.
+\end{ziel}
+\begin{schritte}
+  \item \textbf{15 Widerstände} (R1–R15) einsetzen: alle stecken, Beinchen leicht umbiegen,
+        dann in einem Durchgang verlöten und die Enden kürzen. Widerstände sind ungepolt —
+        egal herum.
+  \item \textbf{4 Transistoren} BC337 (Q1–Q4) einsetzen — \emph{auf die Orientierung achten}
+        (siehe Achtung-Box).
+  \item \textbf{Kondensatoren}: C1 (10\,\textmu F Elko, \textbf{gepolt} — der Minus-Streifen
+        gehört auf die GND-Seite) und C2 (100\,nF, ungepolt).
+  \item \textbf{Polyfuse F1} einlöten (die 5-V-Sicherung am Eingang).
+  \item \textbf{8 JST-XH-Stiftleisten} einlöten: \texttt{J\_PWR} (2p) sowie \texttt{J\_RADAR},
+        \texttt{J\_BME}, \texttt{J\_ENC}, \texttt{J\_BTN1--4} (je 4p).
+  \item \textbf{2 Buchsenleisten} (1×19) für den ESP — vor dem Verlöten gerade ausrichten.
+  \item \textbf{ESP32-DevKitC-V4 aufstecken}.
+\end{schritte}
+\bild{pcb-top.png}{0.82\textwidth}{Die bestückte Platine mit Bauteil-Bezeichnern (Quelle: KiCad-Render).}
+\begin{achtung}
+BC337: die \textbf{flache Seite} des Transistors muss zur Markierung auf der Platine
+(Silk) zeigen. Falsch herum schalten die Taster-LEDs nie. Erst schauen, dann löten. Und:
+den Elko C1 richtig herum — der Minus-Streifen zeigt weg von der 3V3-Markierung.
+\end{achtung}
+\begin{tipp}
+Buchsenleisten kippen gern schief. Steck den ESP \emph{vor} dem Verlöten kurz auf, richte
+alles rechtwinklig aus, löte dann zuerst nur je einen Pin außen und korrigiere, bevor du
+den Rest lötest.
+\end{tipp}
+\begin{ergebnis}
+Eine vollständig bestückte, DRC-saubere Trägerplatine mit sitzendem ESP32.
+\end{ergebnis}
+
+% ---------------- B Kabel ----------------
+\clearpage
+\section{Kabel konfektionieren (crimpen)}
+\dekopikto{p-crimp.png}{crimpen}
+\begin{ziel}
+Alle Verbindungskabel von der Platine zu Sensoren, Bedienteilen und Stromversorgung — mit
+der richtigen Pinbelegung und Aderfarbe. \textbf{Wichtig:} die JST-Kabel werden
+\emph{gecrimpt}, nicht gelötet. Gelötet wird nur, wo ein Bauteil offene Pads statt eines
+Steckers hat.
+\end{ziel}
+\begin{schritte}
+  \item Kabellängen grob abmessen (großzügig, im Gehäuse ist Platz).
+  \item Adern ~3\,mm abisolieren und die \textbf{JST-XH-Kontakte crimpen} (Crimpzange).
+  \item Kontakte ins Steckergehäuse schieben, bis sie hörbar einrasten.
+  \item Aderfarbe konsequent: \ader{wRD}{5\,V} \quad \ader{wBK}{GND} \quad
+        \ader{wOG}{3,3\,V} \quad \ader{wGN}{Signal} \quad \ader{wYE}{Signal} \quad
+        \ader{wBU}{Signal} \quad \ader{wWH}{Signal}.
+\end{schritte}
+\bild{wiring-harness.png}{0.78\textwidth}{Der komplette Kabelbaum: welches Kabel an welchen Pin, mit Aderfarben (Quelle: Netzliste → WireViz).}
+\begin{warum}
+Konsequente Aderfarben (rot = 5\,V, schwarz = GND) sind kein Selbstzweck: sie verhindern,
+dass du beim Zusammenstecken Plus und Minus vertauschst — der häufigste und ärgerlichste
+Fehler, mit Farbcode kaum möglich.
+\end{warum}
+
+% ---------------- C Sensoren + Verbindungstabellen ----------------
+\clearpage
+\section{Sensoren \& Bedienteile anschließen}
+\dekopikto{p-connect.png}{anstecken}
+\begin{ziel}
+Jedes Kabel bekommt sein Bauteil — Ader für Ader. Unten steht für jeden Stecker genau,
+welcher Pin über welche Aderfarbe an welchen Bauteil-Pin geht.
+\end{ziel}
+
+\bild{board-annotated.png}{0.86\textwidth}{Welcher Stecker zu welchem Bauteil führt (Board-Render mit Callouts).}
+
+\textbf{Beispiel als Schema — Radar (\texttt{J\_RADAR} → LD2410B):}
+\begin{center}\begin{tikzpicture}
+  \node[wpin,fill=ink,text=white] at (0,0.6) {J\_RADAR};
+  \node[wpin,fill=ink,text=white] at (7,0.6) {LD2410B};
+  \wire{1}{1 · 5V}{wRD}{VCC}
+  \wire{2}{2 · GND}{wBK}{GND}
+  \wire{3}{3 · RX-Sig.}{wGN}{RX}
+  \wire{4}{4 · TX-Sig.}{wYE}{TX}
+\end{tikzpicture}\end{center}
+
+\textbf{Alle Steckerbelegungen (Board-Pin — Ader — Bauteil-Pin):}\par
+\rowcolors{2}{rowb}{white}
+\begin{tabular}{llll}
+\toprule
+\textbf{Stecker} & \textbf{Board-Pin} & \textbf{Ader} & \textbf{Bauteil-Pin} \\ \midrule
+\texttt{J\_RADAR} & 1 · 5V & \ader{wRD}{} & LD2410B VCC \\
+ & 2 · GND & \ader{wBK}{} & GND \\
+ & 3 · RX-Signal & \ader{wGN}{} & RX \\
+ & 4 · TX-Signal & \ader{wYE}{} & TX \\
+\texttt{J\_BME} & 1 · 3V3 & \ader{wOG}{} & BME280 VCC \\
+ & 2 · GND & \ader{wBK}{} & GND \\
+ & 3 · SCL & \ader{wWH}{} & SCL \\
+ & 4 · SDA & \ader{wGN}{} & SDA \\
+\texttt{J\_ENC} & 1 · A & \ader{wGN}{} & EC11 A \\
+ & 2 · B & \ader{wYE}{} & B \\
+ & 3 · SW & \ader{wBU}{} & Taster \\
+ & 4 · GND & \ader{wBK}{} & GND \\
+\texttt{J\_BTN1--4} & 1 · SW & \ader{wGN}{} & Taster-Schalter \\
+ & 2 · GND & \ader{wBK}{} & Schalter-COM \\
+ & 3 · 5V & \ader{wRD}{} & LED\,+ (Anode) \\
+ & 4 · LED-K & \ader{wWH}{} & LED\,-- (Kathode) \\
+\texttt{J\_PWR} & 1 · 5V & \ader{wRD}{} & Netzteil 5\,V (Wago) \\
+ & 2 · GND & \ader{wBK}{} & Netzteil GND (Wago) \\
+\bottomrule
+\end{tabular}
+\begin{tipp}
+Kauf für die Taster die \textbf{5-V-Variante} der Ring-LED — dann braucht der Treiber auf
+der Platine keinen Extra-Widerstand. Hat ein Bauteil offene Lötpads statt eines Steckers
+(manche Radar-/BME-Breakouts), löte die Ader dort direkt an — Reihenfolge und Farbe bleiben
+gleich wie in der Tabelle.
+\end{tipp}
+\begin{ergebnis}
+Alle vier Sensor-/Bedien-Baugruppen hängen korrekt belegt an ihren Kabeln.
+\end{ergebnis}
+
+% ---------------- D Inserts ----------------
+\clearpage
+\section{Gehäuse vorbereiten: Gewindeeinsätze}
+\dekopikto{p-insert.png}{Insert setzen}
+\begin{ziel}
+Die Heat-Set-Gewindeeinsätze (nur \textbf{M2.5}) sitzen an den Montagepunkten, damit sich
+Pi, Platine und WLED-Halterung sauber und mehrfach verschrauben lassen.
+\end{ziel}
+\begin{schritte}
+  \item \textbf{M2.5-Einsätze} für Pi 5, Trägerplatine und WLED-Halterung setzen (~8 Stück).
+  \item Die \textbf{Deckenohren} haben M5-Durchgangslöcher — die brauchen keinen Einsatz.
+\end{schritte}
+\bild{half-left.png}{0.58\textwidth}{Ansicht des einteiligen Gehäuses (Innenraum sichtbar).}
+\begin{achtung}
+Einsätze mit dem Lötkolben \textbf{gerade und nicht zu heiß} einsenken. Schief eingesetzt
+reißt später das Gewinde aus — lieber langsam und senkrecht.
+\end{achtung}
+\begin{ergebnis}
+Alle Montagepunkte haben feste M2.5-Gewinde.
+\end{ergebnis}
+
+% ---------------- E Einbau ----------------
+\clearpage
+\section{Komponenten einbauen}
+\dekopikto{p-install.png}{einbauen}
+\begin{ziel}
+Alle Baugruppen sitzen an ihrem Platz — auf ~8\,mm Abstandshaltern, mit reichlich Luft zum
+LED-Panel.
+\end{ziel}
+\begin{schritte}
+  \item \textbf{Raspberry Pi 5} an die Rückwand-Bosse schrauben.
+  \item \textbf{Trägerplatine} in die rechte Bucht auf ihre M2.5-Bosse (Bauteile zur Front).
+  \item \textbf{LED-Panel + Diffusor} vorn auf die Aluplatte (die zugleich Kühlkörper ist).
+  \item \textbf{Turm-LEDs + Radar} in den nach unten ragenden Turm.
+  \item \textbf{Kamera} (konisches Loch), \textbf{Mikrofon}, \textbf{Audio} (USB-Soundkarte,
+        PAM8403-Verstärker, Visaton-Lautsprecher).
+  \item \textbf{RTL-SDR} an einen \emph{USB-2}-Port, Antenne an die SMA-Buchse.
+\end{schritte}
+\begin{figure}[htbp]\centering
+  \includegraphics[width=0.47\textwidth]{view-inside.png}\hfill
+  \includegraphics[width=0.47\textwidth]{view-bottom.png}\par
+  {\footnotesize\color{soft}Innenraum (links) und Unterseite mit Kamera-/Turmöffnung (rechts).}
+\end{figure}
+\begin{warum}
+Der SDR gehört an USB-2, nicht USB-3: USB-3 strahlt genau auf 1090\,MHz und würde den
+Flugzeug-Empfang (ADS-B) stören. Kleiner Handgriff, großer Unterschied.
+\end{warum}
+\begin{ergebnis}
+Ein voll bestücktes Gehäuse — nur noch nicht verdrahtet.
+\end{ergebnis}
+
+% ---------------- F Verdrahtung ----------------
+\clearpage
+\section{Stromversorgung \& Verdrahtung}
+\dekopikto{p-wire.png}{verdrahten}
+\begin{ziel}
+Die 5-V-Sternverteilung steht (mit Sicherungen), und alle Kabel von der Platine zu den
+Sensoren sind gesteckt.
+\end{ziel}
+\begin{schritte}
+  \item \textbf{XT60-Buchse} in die Rückwand, 5\,V vom externen Netzteil hierher.
+  \item \textbf{Wago-Verteiler} für 5\,V+ und GND (gemeinsame Masse für alles).
+  \item \textbf{Sicherungen} inline: 10\,A (LED-Panel), 5\,A (Pi\,5), 2\,A (Platine über deren F1).
+  \item Zweige mit passendem Querschnitt: 2,5 / 1,5 / 0,5\,mm².
+  \item \textbf{Audio-Verstärker} 5\,V/GND vom \emph{Pi-Zweig} abgreifen (gleiche Masse → kein Brummen).
+  \item Alle \textbf{JST-Kabel} Platine\,↔\,Sensoren stecken — Belegung nach der Tabelle in Kapitel~5.
+\end{schritte}
+\begin{achtung}
+Vor dem ersten Einschalten: \textbf{Polung prüfen}. 5\,V verpolt anzulegen killt Pi und
+Platine sofort. Rot = 5\,V, Schwarz = GND, überall.
+\end{achtung}
+\begin{tipp}
+Halt die 5-V-Leitung kurz und dick, besonders zum LED-Panel — sonst fällt am Strangende die
+Helligkeit ab. Das lange Kabel gehört auf die 230-V-Seite (zum externen Netzteil).
+\end{tipp}
+\begin{ergebnis}
+Ein verdrahtetes Gerät mit abgesicherter Stromversorgung und gemeinsamer Masse.
+\end{ergebnis}
+
+% ---------------- G Montage (kein Zusammenbau mehr) ----------------
+\clearpage
+\section{Deckenmontage}
+\dekopikto{p-assemble.png}{montieren}
+\begin{ziel}
+Das \textbf{einteilige} Gehäuse hängt sicher unter dem Balkon. Ein Zusammenfügen von
+Hälften entfällt — das Gehäuse ist in einem Stück gedruckt.
+\end{ziel}
+\begin{schritte}
+  \item Letzter \textbf{Kabel-Check}: nichts eingeklemmt, nichts geknickt.
+  \item Das Gerät über die \textbf{Deckenohren} (M5, ×4) von unten an die Decke schrauben —
+        eine Unterlegscheibe unter jedem Kopf hilft.
+\end{schritte}
+\begin{warum}
+Die vier Ohren tragen das gesamte Gewicht. Nimm Dübel/Anker passend zum Deckenmaterial;
+im Zweifel eine Nummer größer.
+\end{warum}
+\begin{ergebnis}
+Ein geschlossenes, montiertes Balkon-Borg an seinem Platz.
+\end{ergebnis}
+
+% ---------------- H Check ----------------
+\clearpage
+\section{Sicht-Check vor dem Einschalten}
+\dekopikto{p-check.png}{prüfen}
+\begin{ziel}
+Einmal alles durchgehen, bevor Strom drauf kommt. Die Software ist ein eigenes Kapitel —
+hier geht es nur um die Hardware.
+\end{ziel}
+\begin{schritte}
+  \item Polung aller 5-V-Anschlüsse geprüft (rot/schwarz)?
+  \item Keine Lötbrücken/Kurzschlüsse an der Platine (Durchgangsprüfer)?
+  \item Alle JST-Stecker vollständig eingerastet, Belegung wie in Kapitel~5?
+  \item Sicherungen (10/5\,A) an ihrem Platz?
+  \item Das 230-V-Netzteil ist außen und noch \textbf{vom Netz getrennt}?
+\end{schritte}
+\begin{ergebnis}
+Ein aufgebautes, geprüftes Gerät — bereit für die Software (anderes Heft).
+\end{ergebnis}
