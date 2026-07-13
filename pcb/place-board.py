@@ -115,14 +115,19 @@ def main() -> int:
         fp.SetPosition(pcbnew.VECTOR2I(mm(x), mm(y)))
         b.Add(fp)
 
-    # "HagiOne" silkscreen, in the clear strip left of the ESP.
-    t = pcbnew.PCB_TEXT(b)
-    t.SetText("HagiOne")
-    t.SetLayer(pcbnew.F_SilkS)
-    t.SetPosition(pcbnew.VECTOR2I(mm(22), mm(46)))
-    t.SetTextSize(pcbnew.VECTOR2I(mm(3), mm(3)))
-    t.SetTextThickness(mm(0.5))
-    b.Add(t)
+    # Brand silkscreen in the clear strip left of the ESP: "Balkon Borg" with a smaller
+    # "by HagiOne" underneath.
+    def silk(text: str, x: float, y: float, size: float, thick: float) -> None:
+        t = pcbnew.PCB_TEXT(b)
+        t.SetText(text)
+        t.SetLayer(pcbnew.F_SilkS)
+        t.SetPosition(pcbnew.VECTOR2I(mm(x), mm(y)))
+        t.SetTextSize(pcbnew.VECTOR2I(mm(size), mm(size)))
+        t.SetTextThickness(mm(thick))
+        b.Add(t)
+
+    silk("Balkon Borg", 22, 44, 2.5, 0.4)
+    silk("by HagiOne", 22, 50, 1.5, 0.25)
 
     # Power netclass: wide (1.0 mm) traces for +5V/+5V_IN/GND so they carry the
     # current and F1 (2 A) actually protects them (a thin trace would fuse first).
