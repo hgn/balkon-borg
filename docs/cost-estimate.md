@@ -15,18 +15,19 @@ Pi/camera are bought new are the big swing items.
 | **Reception + audio** | RTL-SDR V3 32, USB microphone 10, antenna + RG316 pigtail 13, USB sound card (DELOCK 61645) 6, class-D amp (PAM8403) 3, Visaton BF 45 speaker 16 | **80** |
 | **Power** | Mean Well LRS-150-5 28, XT60 3, 2× Wago 221 3, fuses + holders 5, wire/ferrules 8 | **47** |
 | **Carrier PCB** | Aisler fab (3 pcs) 40, THT parts (R/C/Q/JST/sockets/polyfuse) 15 | **55** |
-| **Enclosure** | SLS/PA12 black, **one piece** (~685 cm³, 508×151×140 bounding box) | **150–250** |
+| **Enclosure** | SLS/PA12 black, **two halves** (~697 cm³) at JLC3DP + shipping/import | **250–300** |
 | **Small parts** | heat-set inserts, screws M2.5/M5, panel nuts, thermal pad, glue, insect mesh, zip ties | **25** |
 
-**Total ≈ 570–770 €, realistically ~620–670 € mid.**
+**Total ≈ 670–725 €, realistically ~700 € mid.**
 
 ## Cost drivers
 
-- **Enclosure SLS** is the largest single item and the biggest unknown. Printed **in one
-  piece**, so it needs a **large-bed** service (≥510 mm): the 51 cm length rules out the
-  cheap small-bed shops (JLC3DP ~400 mm) and points at Materialise / Shapeways / a large
-  German industrial SLS house (~250–300 €+). Pull a real instant quote (Craftcloud bundles
-  many) before trusting a number — the STL is `docs/img/enclosure.stl` / `cad/build/*.step`.
+- **Enclosure SLS** is the largest single item. It is **split into two halves** (each
+  ~254 mm) so it fits a standard SLS bed: printed at JLC3DP in **3201PA-F black** (~92 €
+  per half), landed roughly **250–300 €** with shipping and German import VAT plus the
+  small plastics duty. A one-piece 508 mm print would have needed a large-bed EU house
+  (Sculpteo / Xometry / Materialise) at ~700–1000 €, so the split is what keeps the
+  enclosure affordable. STLs: `cad/build/balkon-borg-left.stl` / `-right.stl`.
 - **borg-pi5** (~96 € with cooler + SD) is the second chunk. The older README budget
   (~455 €) excluded the dedicated Pi and assumed cheap FDM printing; SLS + Pi are the
   uplift.

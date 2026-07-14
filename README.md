@@ -1,6 +1,6 @@
 # Balkon-Borg
 
-## Autonomous edge node for terrace intelligence
+## Assimilating vision, audio, and the radio spectrum - balcony intelligence
 
 *Note: 'Balkon' is German for balcony. Alternatively, call it the ÜberBorg, as it hangs
 "über" (over/above) you.*
@@ -127,7 +127,7 @@ for rating in [`docs/ideas.md`](docs/ideas.md), an idea pool, not committed scop
 - **Reception:** RTL-SDR V3 (ADS-B 1090 MHz, optional LoRa RX), USB microphone (on the Pi 5). The LD2410B radar points **forward** (in the LED tower), toward the terrace.
 - **Audio out:** USB sound card (C-Media, e.g. DELOCK 61645) + a **PAM8403** mini class-D amp + a **Visaton BF 45** broadband speaker on the borg-pi5, plays a short wav on events (detection, greeting). The Pi 5 has no analogue output, hence the USB card; amp powered off the Pi's 5 V branch (see [power](docs/power-distribution.md)).
 - **Power:** Mean Well LRS-150F-5 (5 V/22 A) in its own V-0 enclosure, fused branches.
-- **Enclosure:** 3D print in SLS/PA12 (black), **one piece** (508 mm long, needs a large-bed SLS service, e.g. Materialise 630×330×550); aluminium plate = front + heatsink.
+- **Enclosure:** 3D print in SLS/PA12 (black), **two halves** split at X=0 (each ~254 mm, fits a standard SLS bed such as JLC3DP), bolted with internal M3 seam clamps and 4 mm dowel pins; aluminium plate = front + heatsink.
 - **nas-Pi5 (existing, minor role):** a separate, **always-on** Raspberry Pi 5 wired to the Fritz!Box. Only the **remote-access point** (reach the unit from outside) and occasional **image/data storage**, not the hub (see [network](docs/network.md)).
 
 ## 5 · Architecture and data flow
@@ -159,7 +159,7 @@ WiFi repeater → cable → Fritz!Box → nas-Pi5 (see [network](docs/network.md
 
 **Mechanical / manufacturing**
 - **3D print in SLS/PA12**, black-dyed (no supports, no layer lines, production look). See `docs/enclosure-sintering.md`.
-- Printed **in one piece** on a large-bed SLS service (508 mm fits e.g. Materialise 630×330×550 or Shapeways 650×350×550); STEP to the print service (German first: PRINCORE / Reents3D / 3D-Druckdienstleister.de).
+- Printed as **two halves** (each ~254 mm, fits a standard SLS bed) and bolted together with M3 seam clamps and 4 mm dowel pins; black PA12 (e.g. JLC3DP 3201PA-F). Splitting keeps it off the expensive large-bed services.
 - Radar sees through a **2 mm membrane**; camera/mic cut-outs integrated.
 
 **Network**
@@ -189,7 +189,7 @@ WiFi repeater → cable → Fritz!Box → nas-Pi5 (see [network](docs/network.md
 3. **Real board measurement** → adjust the mounting-boss positions in `balkon_borg.py` (CadQuery).
 4. **WLED config**: 2D 43×8 serpentine, ABL at 8 A, presets/scenes + button mapping.
 5. **PSU**: EEPROM `PSU_MAX_CURRENT=5000`, trim the output to 5.15 V.
-6. **Fit test**: print a corner/brow (insert and diffuser-rebate fit) before the big one-piece print.
+6. **Fit test**: print a corner/brow (insert and diffuser-rebate fit) before the two-half print.
 
 ## 9 · Key risks
 

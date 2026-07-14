@@ -18,8 +18,9 @@ Faces and their jobs:
                 screwed up into the ceiling from below.
     +/-X ends : raised slogans.
 
-The Pi 5 and the sensor carrier hang from the rear inner wall on bosses. Printed
-as a single piece on a large SLS bed (no split, no dowel seam).
+The Pi 5 and the sensor carrier hang from the rear inner wall on bosses. Split at
+X=0 into two halves for the print bed, aligned by 4 mm dowel pins in posts and
+bolted with the internal M3 seam clamps.
 
 Dimensions are datasheet-derived with generous clearances (see PARAMETERS). The
 LED panel size is an assumption (10 mm pitch) and drives the overall size.
@@ -419,9 +420,41 @@ def build_body() -> cq.Workplane:
         body = body.cut(_cyl(INSERT_M25, BOSS_H + 2 * EPS,
                              cq.Vector(x, WALL - EPS, z), cq.Vector(0, 1, 0)))
 
-    # Printed as a SINGLE part on a large SLS bed (508 mm long fits e.g. Materialise
-    # 630x330x550), so the X=0 seam is gone entirely: no seam clamps, no dowel posts.
-    # Only these internal seam features are removed; every outer dimension is unchanged.
+    # Seam clamps: blocks straddling X=0 on the rear wall, clearance on the -X half
+    # and an M3 insert on the +X half, so the two halves bolt together (driven from
+    # the open front during assembly). Dowel posts still handle alignment.
+    for z in SEAM_Z:
+        body = body.union(cq.Solid.makeBox(
+            SEAM_BLOCK_L, POST_DEPTH, SEAM_BLOCK_H,
+            cq.Vector(-SEAM_BLOCK_L / 2, WALL, z - SEAM_BLOCK_H / 2)))
+        body = body.union(_foot(SEAM_BLOCK_L, SEAM_BLOCK_H, (0, WALL, z), (0, 1, 0)))
+        yc = WALL + POST_DEPTH / 2
+        body = body.cut(_cyl(CLR_M3, SEAM_BLOCK_L / 2 + EPS,       # -X clearance
+                             cq.Vector(-SEAM_BLOCK_L / 2 - EPS, yc, z), cq.Vector(1, 0, 0)))
+        body = body.cut(_cyl(INSERT_M3, SEAM_BLOCK_L / 2 + EPS,    # +X insert
+                             cq.Vector(0, yc, z), cq.Vector(1, 0, 0)))
+
+    # C2 fix: one more seam clamp near the open front, on the bottom inner wall, so the
+    # deep (148 mm) front edges of the two halves are pulled together, not left free.
+    body = body.union(cq.Solid.makeBox(
+        SEAM_BLOCK_L, POST_DEPTH, SEAM_BLOCK_H,
+        cq.Vector(-SEAM_BLOCK_L / 2, FRONT_SEAM_Y - POST_DEPTH / 2, WALL)))
+    body = body.union(_foot(SEAM_BLOCK_L, POST_DEPTH, (0, FRONT_SEAM_Y, WALL), (0, 0, 1)))
+    fzc = WALL + SEAM_BLOCK_H / 2
+    body = body.cut(_cyl(CLR_M3, SEAM_BLOCK_L / 2 + EPS,           # -X clearance
+                         cq.Vector(-SEAM_BLOCK_L / 2 - EPS, FRONT_SEAM_Y, fzc), cq.Vector(1, 0, 0)))
+    body = body.cut(_cyl(INSERT_M3, SEAM_BLOCK_L / 2 + EPS,        # +X insert
+                         cq.Vector(0, FRONT_SEAM_Y, fzc), cq.Vector(1, 0, 0)))
+
+    # Dowel posts straddling the split, top and bottom, on the rear inner wall.
+    for z in (OUT_Z - BORDER, BORDER):
+        body = body.union(cq.Solid.makeBox(
+            POST_L, POST_DEPTH, POST_H,
+            cq.Vector(-POST_L / 2, WALL, z - POST_H / 2)))
+        body = body.union(_foot(POST_L, POST_H, (0, WALL, z), (0, 1, 0)))
+        body = body.cut(_cyl(DOWEL_D + TOL, POST_L + 2 * EPS,
+                             cq.Vector(-POST_L / 2 - EPS, WALL + POST_DEPTH / 2, z),
+                             cq.Vector(1, 0, 0)))
 
     # 4 buttons as a 2x2 rectangle in the -X end wall, encoder above the top-right.
     xw = -OUT_W / 2 - EPS
@@ -632,13 +665,23 @@ def build_body() -> cq.Workplane:
     return body
 
 
+def split_halves(body: cq.Workplane) -> tuple[cq.Workplane, cq.Workplane]:
+    big = (OUT_W + 2 * EAR_L, 2 * (OUT_Y + EAR_L), 2 * OUT_Z)
+    left = cq.Solid.makeBox(*big, cq.Vector(-(OUT_W + 2 * EAR_L), -(OUT_Y + EAR_L), -OUT_Z / 2))
+    right = cq.Solid.makeBox(*big, cq.Vector(0, -(OUT_Y + EAR_L), -OUT_Z / 2))
+    return body.intersect(left), body.intersect(right)
+
+
 def main() -> int:
     BUILD.mkdir(exist_ok=True)
     body = build_body()
-    # Single part — printed in one piece on a large SLS bed (no X=0 split).
-    cq.exporters.export(body, str(BUILD / "balkon-borg-body.step"))
-    cq.exporters.export(body, str(BUILD / "balkon-borg-body.stl"))
-    print("wrote balkon-borg-body.step / .stl")
+    left, right = split_halves(body)
+    for name, shape in {"balkon-borg-body": body,
+                        "balkon-borg-left": left,
+                        "balkon-borg-right": right}.items():
+        cq.exporters.export(shape, str(BUILD / f"{name}.step"))
+        cq.exporters.export(shape, str(BUILD / f"{name}.stl"))
+        print(f"wrote {name}.step / .stl")
     print(f"outer size (W x D x H): {OUT_W:.0f} x {OUT_Y:.0f} x {OUT_Z:.0f} mm")
     return 0
 
