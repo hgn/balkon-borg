@@ -142,6 +142,15 @@ CAM_LENS_Z = -20.0           # lens centre height (below the bottom, mid of the 
 CAM_LENS_D = 9.0             # inner lens hole
 CAM_CHAMFER_D = 14.0         # outer lens opening (widens outward; clears the mount holes)
 CAM_HOLE_DX, CAM_HOLE_DY = 14.4, 12.5   # board mount-hole pattern around the lens
+
+# Speaker: Visaton BF 45, a round fullrange (45 mm cutout, ~26 mm deep, 17 mm voice coil).
+# Glued to the inside of the bottom wall firing DOWN; a round hex-packed hole grille in the
+# floor lets the sound out to the terrace. Sits between the camera box and the -X end (the
+# right-hand end seen from the front). Pre-mirror X (mirrors to -X with the camera).
+SPK_POS = (180.0, 74.0)      # (x, y) pre-mirror, on the bottom face
+SPK_GRILLE_D = 44.0          # grille field diameter (matches the BF 45 cone/cutout)
+SPK_HOLE_D = 3.5             # grille hole diameter
+SPK_HOLE_PITCH = 6.0         # hex-packing pitch
 RADAR_MEMBRANE = 2.0                     # thinned wall the LD2410B sees through
 RADAR_AREA = 26.0
 RADAR_POS = (140.0, 49.0)
@@ -436,6 +445,30 @@ def _camera_pod(body: cq.Workplane) -> cq.Workplane:
     return body
 
 
+def _speaker_grille(body: cq.Workplane) -> cq.Workplane:
+    """Round hex-packed hole grille in the bottom wall for a down-firing BF 45 speaker."""
+    cx, cy = SPK_POS
+    R = SPK_GRILLE_D / 2.0
+    rlim = R - SPK_HOLE_D / 2.0            # keep whole holes inside the field
+    pitch = SPK_HOLE_PITCH
+    dv = pitch * math.sqrt(3) / 2.0
+    cuts: list[cq.Solid] = []
+    v, row = -R, 0
+    while v <= R + EPS:
+        off = pitch / 2.0 if row % 2 else 0.0
+        u = -R + off
+        while u <= R + EPS:
+            if u * u + v * v <= rlim * rlim:
+                cuts.append(_cyl(SPK_HOLE_D, WALL + 2 * EPS,
+                                 cq.Vector(cx + u, cy + v, -EPS), cq.Vector(0, 0, 1)))
+            u += pitch
+        v += dv
+        row += 1
+    if cuts:
+        body = body.cut(cq.Compound.makeCompound(cuts))
+    return body
+
+
 def build_body() -> cq.Workplane:
     body = (cq.Workplane("XY")
             .box(OUT_W, OUT_Y, OUT_Z, centered=(True, False, False))
@@ -571,6 +604,8 @@ def build_body() -> cq.Workplane:
     # clears the front panel; looks forward + slightly down. The radar moved to the LED
     # tower and the microphone to the Pi 5 (USB), so the bottom face has no other openings.
     body = _camera_pod(body)
+    # Speaker grille (BF 45, down-firing), on the bottom between the camera box and -X end.
+    body = _speaker_grille(body)
 
     def _boss_z(x: float, y: float, h: float, hole: float) -> None:
         nonlocal body

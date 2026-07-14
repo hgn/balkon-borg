@@ -95,6 +95,11 @@ Complements `power-distribution.md`, `enclosure-sintering.md` and the log.
   ALSA). The amp takes 5 V/GND off the **borg-pi5 5 V branch** (same reference as the
   sound card → no ground-loop hum), not a USB port. Plays a wav on events (detection /
   greeting). Nothing on the carrier board changes. See [`power-distribution.md`](power-distribution.md).
+  The **BF 45 is round** (45 mm cutout, ~26 mm deep, 17 mm voice coil); glue it to the inside
+  of the bottom wall firing **down**, over the **round hole grille** (~44 mm field, `SPK_*`) in
+  the floor. The grille sits on the bottom between the camera box and the -X end (the right-hand
+  end seen from the front); `SPK_POS` moves it. Optional: a shallow recessed seat can be added
+  to locate/glue the frame.
 - **Camera looks FORWARD, not down.** It sits in a **downward-hanging box** (+X side, near
   the Pi), like a second LED tower, **set back** so nothing protrudes past the front face and
   the diffuser panel still slides into the front rebate. The box is **open at the top** into
