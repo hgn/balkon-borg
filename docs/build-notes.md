@@ -96,18 +96,17 @@ Complements `power-distribution.md`, `enclosure-sintering.md` and the log.
   sound card → no ground-loop hum), not a USB port. Plays a wav on events (detection /
   greeting). Nothing on the carrier board changes. See [`power-distribution.md`](power-distribution.md).
 - **Camera looks FORWARD, not down.** It sits in a **downward-hanging box** (+X side, near
-  the Pi), like a second LED tower, **set back in the rear quarter** of the depth so nothing
-  protrudes past the front face and the diffuser panel still slides into the front rebate.
-  The box is **open at the top** into the cavity: fit the camera from the ceiling opening
-  and route the CSI up to the Pi. A **tilted mounting plate** (~12° below horizontal, d2.2
-  screw holes) holds the board so it looks near-forward, a touch down (the terrace/table is
-  farther away and lower). The lens sits behind a short **barrel perpendicular to the view
-  axis**, so the opening is a clean round hole (a tilted bore straight through the wall came
-  out ragged); it widens outward (12 → 20 mm) so the wide FOV is not clipped. The tilt is
-  **~24°**: enough that the top of the frame clears the enclosure's own front underside
-  (Camera Module 3 Wide, ~±33° vertical, set-back box). Lower `CAM_TILT_DOWN` for a narrower
-  lens; `CAM_BOX_POS` moves it fore/aft. Earlier the camera looked straight down through the
-  bottom face, which only saw the floor under the unit (fixed 2026-07-14).
+  the Pi), like a second LED tower, **set back** so nothing protrudes past the front face and
+  the diffuser panel still slides into the front rebate. The box is **open at the top** into
+  the cavity: fit the camera from the ceiling opening and route the CSI up to the Pi. The
+  **whole front wall is a flat plane tilted ~24°** (perpendicular to the view axis): the
+  board **presses flat against its inside**, held by four d2.2 screws, and the lens goes
+  through a **clean round hole** (~14 mm, widening outward) bored straight through the wall.
+  The ~24° tilt makes the top of the frame clear the enclosure's own front underside (Camera
+  Module 3 Wide, ~±33° vertical, set-back box). Lower `CAM_TILT_DOWN` for a narrower lens;
+  `CAM_CX` / `CAM_LENS_Y` / `CAM_LENS_Z` place it. Earlier tries (straight-down bottom hole,
+  then a forward pod, then a vertical-wall box with a tilted lens) are superseded; the ragged
+  opening came from boring a tilted axis through a straight wall, fixed by tilting the wall.
 - **SDR antenna**: a cheap **telescopic SMA whip** (extends to ~30 cm+, wideband when
   length-tuned) is the best budget "covers a lot" antenna. For one specific band (e.g.
   ADS-B 1090 MHz) a tuned antenna beats a whip.

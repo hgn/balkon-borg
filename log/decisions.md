@@ -45,10 +45,14 @@ sticks out the front.
 **Consequences:** the CSI run is ~150-180 mm; the measured Camera Module 3 cable is ~240 mm,
 which reaches (the old 200 mm mini note is dropped). Tilt is **24°**, set so the FOV top edge
 (Camera Module 3 Wide, ~±33° vertical) clears the enclosure's own front underside: verified
-the top ray crosses z=0 only beyond the front face, so the housing stays out of frame. The
-lens sits behind a **barrel perpendicular to the view axis** for a clean round opening (a
-tilted bore through the wall was ragged). `CAM_BOX_POS` / `CAM_TILT_DOWN` tune it. Also moved
-the underside "HagiOne" wordmark 30 mm to the other side so it clears the camera box. **The
+the top ray crosses z=0 only beyond the front face, so the housing stays out of frame.
+Final form of the opening: the **whole front wall is a flat plane tilted 24°** (perpendicular
+to the view axis), the board **presses flat against its inside** (four d2.2 screws) and the
+lens hole is bored straight through it, so the opening is a clean circle (verified r 5.9-6.0
+at the bore, mount holes r1.1). Earlier a barrel on a straight wall, and before that a tilted
+lens in a straight wall, both gave a ragged/absent opening; tilting the wall itself fixed it.
+The box was also widened another 10 mm. `CAM_CX` / `CAM_LENS_Y/Z` / `CAM_TILT_DOWN` tune it.
+Also moved the underside "HagiOne" wordmark 30 mm to the other side so it clears the box. **The
 JLC enclosure order (2026-07-14, still in file review) carries the OLD down-camera STLs and
 must be updated with the regenerated `-left`/`-right` STLs before it goes to production.**
 
