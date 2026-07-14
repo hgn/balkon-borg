@@ -14,21 +14,29 @@ Pi/camera are bought new are the big swing items.
 | **ESP / sensing / controls** | ESP32-DevKitC 9, LD2410B 4, BME280 (genuine Bosch) 8, 4× illuminated buttons 16, EC11 encoder 3, 4× indicator LEDs 8 | **48** |
 | **Reception + audio** | RTL-SDR V3 32, USB microphone 10, antenna + RG316 pigtail 13, USB sound card (DELOCK 61645) 6, class-D amp (PAM8403) 3, Visaton BF 45 speaker 16 | **80** |
 | **Power** | Mean Well LRS-150-5 28, XT60 3, 2× Wago 221 3, fuses + holders 5, wire/ferrules 8 | **47** |
-| **Carrier PCB** | Aisler fab (3 pcs) 40, THT parts (R/C/Q/JST/sockets/polyfuse) 15 | **55** |
-| **Enclosure** | SLS/PA12 black, **two halves** (~697 cm³) at JLC3DP + shipping/import | **250–300** |
+| **Carrier PCB** | Aisler Beautiful Boards (3 pcs, incl. VAT) **47**, THT parts (R/C/Q/JST/sockets/polyfuse) 15 | **62** |
+| **Enclosure** | SLS/PA12 black, **two halves** at JLC3DP: goods 192 $ + shipping 88 $ = 280 $ (~260 €), landed with German import VAT + duty | **330–345** |
 | **Small parts** | heat-set inserts, screws M2.5/M5, panel nuts, thermal pad, glue, insect mesh, zip ties | **25** |
 
-**Total ≈ 670–725 €, realistically ~700 € mid.**
+**Total ≈ 760–775 €, realistically ~765 € mid** (both PCB and enclosure now ordered,
+so those two rows are actuals, not estimates).
 
 ## Cost drivers
 
 - **Enclosure SLS** is the largest single item. It is **split into two halves** (each
-  ~254 mm) so it fits a standard SLS bed: printed at JLC3DP in **3201PA-F black** (~92 €
-  per half), landed roughly **250–300 €** with shipping and German import VAT plus the
-  small plastics duty. A one-piece 508 mm print would have needed a large-bed EU house
-  (Sculpteo / Xometry / Materialise) at ~700–1000 €, so the split is what keeps the
-  enclosure affordable. STLs: `cad/build/balkon-borg-left.stl` / `-right.stl`.
-- **borg-pi5** (~96 € with cooler + SD) is the second chunk. The older README budget
+  ~254 mm) so it fits a standard SLS bed. Ordered at JLC3DP in **3201PA-F black** on
+  2026-07-14: right half 105.03 $, left half 87.46 $ (goods 192.49 $) plus 87.86 $
+  shipping = **280.35 $ order total** (~260 € at ~1.08 $/€). Landed cost is higher
+  again, because the shipment is over the 150 € threshold: German import VAT (19 %) and
+  a small plastics duty (~6.5 %) are collected by the carrier on delivery, plus a
+  handling fee, so budget **~330–345 € landed**. The steep part was shipping (88 $), not
+  the print. A one-piece 508 mm print would have needed a large-bed EU house (Sculpteo /
+  Xometry / Materialise) at ~700–1000 €, so the split still saves a lot. STLs:
+  `cad/build/balkon-borg-left.stl` / `-right.stl`.
+- **Carrier PCB** came in at **47.17 € for 3 boards** (Aisler Beautiful Boards, 2-layer,
+  1.6 mm, HASL lead-free, 35 µm, incl. 19 % VAT). Only one board is populated; the other
+  two are spares. THT parts (~15 €) and the ESP32-DevKitC (~9 €) are bought separately.
+- **borg-pi5** (~96 € with cooler + SD) is the next chunk. The older README budget
   (~455 €) excluded the dedicated Pi and assumed cheap FDM printing; SLS + Pi are the
   uplift.
 

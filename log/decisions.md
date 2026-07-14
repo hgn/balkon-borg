@@ -18,6 +18,30 @@ log what is already in the code/YAML.
 
 ---
 
+## 2026-07-14 — Carrier PCB and enclosure ordered (actual costs)
+
+**Context:** both physical parts were ordered on the same day, replacing the earlier
+cost guesses with real numbers.
+
+**Decision:** carrier PCB at **Aisler** (Beautiful Boards, 2-layer, 1.6 mm, HASL
+lead-free, 35 µm, green, 3 pcs) = **47.17 € incl. VAT**. Enclosure at **JLC3DP** as two
+halves in **SLS 3201PA-F black**: goods 192.49 $ (right 105.03, left 87.46) + shipping
+87.86 $ = **280.35 $ order total** (~260 €), landed **~330–345 €** after German import
+VAT + ~6.5 % plastics duty + carrier handling (shipment is over the 150 € threshold).
+
+**Rationale:** bare board + hand soldering keeps the PCB cheap; the two-half split keeps
+the enclosure on JLC's normal SLS bed instead of a 700–1000 € EU large-bed house. All
+Aisler config choices (HASL, 35 µm, 1.6 mm) are adequate for an all-THT low-current board.
+
+**Rejected:** Aisler "Amazing Assembly" (SMT+THT populated) as too expensive for a
+mostly-THT board; the earlier ~250–300 € enclosure estimate proved low, mainly because
+JLC shipping alone was 88 $.
+
+**Consequences:** project total is now ~765 € (was ~700 € estimate). Aisler pre-order
+review flagged only two non-blocking hints (uneven copper distribution; no assembly data
+from Gerbers) — both expected and accepted, no re-spin. Verify pipeline passed 5/5 before
+ordering. Costs recorded in `docs/cost-estimate.md`.
+
 ## 2026-07-12 — Ceiling service/vent opening
 
 **Context:** the front LED panel gets glued on, so once assembled there is no way back
