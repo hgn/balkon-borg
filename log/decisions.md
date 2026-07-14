@@ -24,24 +24,30 @@ log what is already in the code/YAML.
 camera had only a straight-down hole in the bottom face. Down-only sees just the floor
 under the unit, not the terrace scene, which is what Frigate needs.
 
-**Decision:** the camera moves into a small **pod on the front-bottom edge**, +X side,
-below the light window and near the Pi. The pod face is tilted **~12° below horizontal**
-(near-forward, slight down-look) because the scene/table is farther away. The front wall
-is **thin (1.5 mm)** with a conical lens hole widening 12 -> 20 mm, so the wide FOV is not
-clipped; four d2.2 bosses hold the board, the pod is open at the back for the board and
-CSI. Implemented as `_camera_pod()` in `cad/balkon_borg.py`; the old bottom camera cut is
-removed. Verified: both halves still watertight single solids, pod on the camera/Pi half.
+**Decision:** the camera moves into a **downward-hanging box** (like a second LED tower),
++X side near the Pi, **open at the top** into the cavity and **set back in the rear quarter**
+of the depth. A **tilted mounting plate (~12° below horizontal**, d2.2 screw holes) holds
+the board so it looks near-forward, a touch down (scene is farther away and lower). The
+thin (1.5 mm) front wall has a conical lens hole widening 12 -> 20 mm so the wide FOV is
+not clipped. Implemented as `_camera_pod()`; the old bottom camera cut is removed. Verified:
+both halves watertight single solids, box on the camera/Pi half, no forward protrusion.
 
-**Rationale:** the front (+Y) face is entirely the LED light window (~13 mm border all
-round), so no camera fits flush there; a forward-and-down pod at the bottom edge is the
-only forward-facing real estate, and it mirrors how the radar sits in the LED tower.
-Near-horizontal (not 30°) per the user: the terrace is at a distance. Thin wall + small
-protrusion so the FOV is not restricted.
+**First attempt / rejected:** a pod protruding forward past the front face. Rejected because
+(a) it blocked the diffuser panel sliding into the front rebate, (b) it was open at the back
+instead of the top, so the camera could not be fitted from the ceiling opening. Redesigned
+per the user: open top, set back, roomier (~1 cm each way), no forward protrusion.
 
-**Consequences:** the CSI run grows to ~150-180 mm; the measured Camera Module 3 cable is
-~240 mm, which reaches (the old 200 mm mini note is dropped). **The JLC enclosure order
-(2026-07-14, still in file review) carries the OLD down-camera STLs and must be updated
-with the regenerated `-left`/`-right` STLs before it goes to production.**
+**Rationale:** the front (+Y) face is entirely the LED light window (~13 mm border), so no
+camera fits flush there; a downward box that hangs below the enclosure has a clear forward
+view over the terrace, mirroring the radar in the LED tower. The box hangs, so nothing
+sticks out the front.
+
+**Consequences:** the CSI run is ~150-180 mm; the measured Camera Module 3 cable is ~240 mm,
+which reaches (the old 200 mm mini note is dropped). Because the box is set back, the top
+~10-15 deg of the frame sees the enclosure underside; the forward-and-down view is clear.
+`CAM_BOX_POS` / `CAM_TILT_DOWN` tune the trade-off. **The JLC enclosure order (2026-07-14,
+still in file review) carries the OLD down-camera STLs and must be updated with the
+regenerated `-left`/`-right` STLs before it goes to production.**
 
 ## 2026-07-14 — Carrier PCB and enclosure ordered (actual costs)
 

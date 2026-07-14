@@ -95,14 +95,18 @@ Complements `power-distribution.md`, `enclosure-sintering.md` and the log.
   ALSA). The amp takes 5 V/GND off the **borg-pi5 5 V branch** (same reference as the
   sound card → no ground-loop hum), not a USB port. Plays a wav on events (detection /
   greeting). Nothing on the carrier board changes. See [`power-distribution.md`](power-distribution.md).
-- **Camera looks FORWARD, not down.** It sits in a small **pod on the front-bottom edge**
-  (+X side, near the Pi), below the light window. The pod face is tilted ~12° below
-  horizontal: near-forward, a touch down, because the terrace/table is farther away, not
-  directly beneath. The front wall is thin (1.5 mm) with a **conical lens hole** (12 mm
-  inside → 20 mm outside) that widens outward, so the wide FOV is not clipped. Four bosses
-  (M2/self-tap, d2.2) hold the board from inside; the pod is open at the back so the board
-  drops in and the CSI cable routes up to the Pi. Earlier the camera looked straight down
-  through the bottom face, which only saw the floor under the unit (fixed 2026-07-14).
+- **Camera looks FORWARD, not down.** It sits in a **downward-hanging box** (+X side, near
+  the Pi), like a second LED tower, **set back in the rear quarter** of the depth so nothing
+  protrudes past the front face and the diffuser panel still slides into the front rebate.
+  The box is **open at the top** into the cavity: fit the camera from the ceiling opening
+  and route the CSI up to the Pi. A **tilted mounting plate** (~12° below horizontal, d2.2
+  screw holes) holds the board so it looks near-forward, a touch down (the terrace/table is
+  farther away and lower). The thin (1.5 mm) front wall has a **conical lens hole** (12 mm
+  inside → 20 mm outside) widening outward so the wide FOV is not clipped. Note: because the
+  box is set back, the top ~10-15° of the frame sees the enclosure's own front underside;
+  the forward-and-down view (the scene) is clear. `CAM_BOX_POS` / `CAM_TILT_DOWN` tune the
+  trade-off. Earlier the camera looked straight down through the bottom face, which only saw
+  the floor under the unit (fixed 2026-07-14).
 - **SDR antenna**: a cheap **telescopic SMA whip** (extends to ~30 cm+, wideband when
   length-tuned) is the best budget "covers a lot" antenna. For one specific band (e.g.
   ADS-B 1090 MHz) a tuned antenna beats a whip.
