@@ -13,13 +13,16 @@ editor and lay the board out.
     python gen-netlist.py   ->   balkon-borg-carrier.net
 """
 
+import argparse
 import os
+import sys
 from pathlib import Path
 
 os.environ.setdefault("KICAD9_SYMBOL_DIR", "/usr/share/kicad/symbols")
 os.environ.setdefault("KICAD9_FOOTPRINT_DIR", "/usr/share/kicad/footprints")
 
-from skidl import KICAD9, Net, Part, generate_netlist, set_default_tool  # noqa: E402
+from skidl import ERC, KICAD9, Net, Part, generate_netlist, set_default_tool  # noqa: E402
+from skidl.logger import erc_logger  # noqa: E402
 
 set_default_tool(KICAD9)
 
@@ -126,6 +129,22 @@ for i in range(4):
     rb[2] += btn_led[i]                                  # base driven from GPIO
     gnd += q["E"]
 
-out = Path(__file__).parent / "balkon-borg-carrier.net"
-generate_netlist(file_=str(out))
-print(f"wrote {out}")
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser(description="Generate the carrier netlist.")
+    ap.add_argument("--strict", action="store_true",
+                    help="run ERC and exit non-zero if it reports any error")
+    args = ap.parse_args()
+
+    ERC()
+    errors = erc_logger.error.count + erc_logger.bare_error.count
+    warnings = erc_logger.warning.count + erc_logger.bare_warning.count
+    print(f"ERC: {errors} error(s), {warnings} warning(s) "
+          "(unconnected ESP header pins are expected warnings)", file=sys.stderr)
+
+    out = Path(__file__).parent / "balkon-borg-carrier.net"
+    generate_netlist(file_=str(out))
+    print(f"wrote {out}")
+
+    if args.strict and errors:
+        print(f"ERC failed with {errors} error(s)", file=sys.stderr)
+        raise SystemExit(1)

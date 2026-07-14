@@ -7,11 +7,14 @@ KENV := KICAD9_SYMBOL_DIR=/usr/share/kicad/symbols \
 
 SYSPY := /usr/bin/python3       # KiCad pcbnew module lives in the system python
 WIREVIZ := ../.venv/bin/wireviz
-.PHONY: all netlist pour outputs step harness clean
+.PHONY: all netlist verify pour outputs step harness clean
 all: outputs                   ## generate fabrication outputs from the committed board
 
 netlist:                       ## regenerate the KiCad netlist (then re-import in KiCad)
 	$(KENV) $(PY) gen-netlist.py
+
+verify:                        ## automated pre-order check: ERC, DRC, netlist<->board, spec, outputs
+	$(SYSPY) verify.py
 
 pour:                          ## add the GND pour + antenna keep-out (3 separate phases)
 	$(SYSPY) add-ground-pour.py --pours

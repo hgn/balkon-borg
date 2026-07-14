@@ -3,3 +3,7 @@ wiring-harness.gv
 wiring-harness.png
 wiring-harness.svg
 board-annotated.png
+
+# crash dumps from headless pcbnew runs, python caches
+core.*
+__pycache__/
