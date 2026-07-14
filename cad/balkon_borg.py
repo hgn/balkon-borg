@@ -18,8 +18,8 @@ Faces and their jobs:
                 screwed up into the ceiling from below.
     +/-X ends : raised slogans.
 
-The Pi 5 and the sensor carrier hang from the rear inner wall on bosses. Split at
-X=0 into two halves for the print bed, aligned by 4 mm dowel pins in posts.
+The Pi 5 and the sensor carrier hang from the rear inner wall on bosses. Printed
+as a single piece on a large SLS bed (no split, no dowel seam).
 
 Dimensions are datasheet-derived with generous clearances (see PARAMETERS). The
 LED panel size is an assumption (10 mm pitch) and drives the overall size.
@@ -48,7 +48,7 @@ PANEL_W = PANEL_COLS * PANEL_PITCH            # 430 (X)
 PANEL_H = PANEL_ROWS * PANEL_PITCH            # 80  (Z)
 
 BORDER = 15.0            # frame around the front light window
-WALL = 3.0              # ASA wall thickness
+WALL = 3.0              # PA12 (SLS) wall thickness
 DEPTH = 145.0           # internal depth front-to-back (Y); +50 mm over the original
                         # 95 gives generous room and ~55 mm WLED-to-LED clearance
 

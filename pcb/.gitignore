@@ -1,0 +1,5 @@
+# WireViz byproducts (the harness target copies the final PNG/SVG into docs/img/)
+wiring-harness.gv
+wiring-harness.png
+wiring-harness.svg
+board-annotated.png
