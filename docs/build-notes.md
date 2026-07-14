@@ -101,12 +101,13 @@ Complements `power-distribution.md`, `enclosure-sintering.md` and the log.
   The box is **open at the top** into the cavity: fit the camera from the ceiling opening
   and route the CSI up to the Pi. A **tilted mounting plate** (~12° below horizontal, d2.2
   screw holes) holds the board so it looks near-forward, a touch down (the terrace/table is
-  farther away and lower). The thin (1.5 mm) front wall has a **conical lens hole** (12 mm
-  inside → 20 mm outside) widening outward so the wide FOV is not clipped. Note: because the
-  box is set back, the top ~10-15° of the frame sees the enclosure's own front underside;
-  the forward-and-down view (the scene) is clear. `CAM_BOX_POS` / `CAM_TILT_DOWN` tune the
-  trade-off. Earlier the camera looked straight down through the bottom face, which only saw
-  the floor under the unit (fixed 2026-07-14).
+  farther away and lower). The lens sits behind a short **barrel perpendicular to the view
+  axis**, so the opening is a clean round hole (a tilted bore straight through the wall came
+  out ragged); it widens outward (12 → 20 mm) so the wide FOV is not clipped. The tilt is
+  **~24°**: enough that the top of the frame clears the enclosure's own front underside
+  (Camera Module 3 Wide, ~±33° vertical, set-back box). Lower `CAM_TILT_DOWN` for a narrower
+  lens; `CAM_BOX_POS` moves it fore/aft. Earlier the camera looked straight down through the
+  bottom face, which only saw the floor under the unit (fixed 2026-07-14).
 - **SDR antenna**: a cheap **telescopic SMA whip** (extends to ~30 cm+, wideband when
   length-tuned) is the best budget "covers a lot" antenna. For one specific band (e.g.
   ADS-B 1090 MHz) a tuned antenna beats a whip.

@@ -133,7 +133,10 @@ CAM_LENS_D = 12.0             # inner lens hole (camera side)
 CAM_CHAMFER_D = 20.0         # outer lens opening: the hole widens outward so a wide-FOV
                              # lens is not clipped by the (thin) front wall
 CAM_HOLE_DX, CAM_HOLE_DY = 14.4, 12.5   # board mount-hole pattern (bosses flank the lens)
-CAM_TILT_DOWN = 12.0         # deg below horizontal: near-forward, a touch down
+CAM_TILT_DOWN = 24.0         # deg below horizontal. Enough that the FOV top edge clears
+                             # the enclosure's own front underside (Camera Module 3 Wide,
+                             # ~±33 deg vertical, set-back box): otherwise the housing is
+                             # in the top of the frame. Lower this for a narrower lens.
 CAM_BOX_POS = (75.0, 45.0)   # (x, y) pre-mirror: +X/Pi side, rear quarter of the depth
 CAM_BOX_W = 44.0             # box width  (X)  — ~1 cm roomier than before
 CAM_BOX_D = 40.0             # box depth  (Y)
@@ -165,7 +168,8 @@ TEXT_BOTTOM = "Balkon Borg"     # -Z bottom brand plate (faces the terrace below
 BOTTOM_SIZE = 48.0              # doubled; big Balkon Borg on the underside
 BOTTOM_HG_SIZE = 18.0           # small HagiOne beside it
 BB_POS = (25.0, 98.0)          # Balkon Borg centre (x, y), shifted right to clear the tower
-HG_POS = (25.0, 60.0)          # small HagiOne below it
+HG_POS = (-5.0, 60.0)          # small HagiOne, shifted 30 mm toward the other side (away
+                               # from the camera box) so it clears it on the underside
 
 EPS = 0.1
 TOL = 0.5               # SLS/PA12 clearance for fits (holes, pocket, dowels) — mid of
@@ -423,12 +427,16 @@ def _camera_pod(body: cq.Workplane) -> cq.Workplane:
             h = cq.Solid.makeCylinder(2.2 / 2, plate_t + 2 * EPS,
                                       cq.Vector(bx, -gap - plate_t - EPS, bz), cq.Vector(0, 1, 0))
             body = body.cut(place(h))
-    # Conical lens hole through the thin front wall: small on the camera side, widening
-    # outward (anti-vignette) so the wide FOV clears the wall.
-    lens = cq.Solid.makeCone(
-        CAM_LENS_D / 2, CAM_CHAMFER_D / 2, CAM_WIN_WALL + 2 * EPS,
-        cq.Vector(0, -CAM_WIN_WALL - EPS, 0), cq.Vector(0, 1, 0))
-    body = body.cut(place(lens))
+    # Clean circular "eye": a short barrel perpendicular to the view axis, so the opening
+    # is a clean round hole (a tilted bore straight through the vertical wall came out
+    # ragged). The barrel protrudes a few mm (still far behind the front face); a cone is
+    # bored through it, narrow inside and widening to the flat outer face (anti-vignette).
+    barrel = cq.Solid.makeCylinder(CAM_CHAMFER_D / 2 + 2.5, 6.0,
+                                   cq.Vector(0, -3.0, 0), cq.Vector(0, 1, 0))
+    body = body.union(place(barrel))
+    bore = cq.Solid.makeCone(CAM_LENS_D / 2, CAM_CHAMFER_D / 2, 14.0,
+                             cq.Vector(0, -11.0, 0), cq.Vector(0, 1, 0))
+    body = body.cut(place(bore))
     return body
 
 

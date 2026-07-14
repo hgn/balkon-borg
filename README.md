@@ -160,7 +160,7 @@ WiFi repeater → cable → Fritz!Box → nas-Pi5 (see [network](docs/network.md
 **Mechanical / manufacturing**
 - **3D print in SLS/PA12**, black-dyed (no supports, no layer lines, production look). See `docs/enclosure-sintering.md`.
 - Printed as **two halves** (each ~254 mm, fits a standard SLS bed) and bolted together with M3 seam clamps and 4 mm dowel pins; black PA12 (e.g. JLC3DP 3201PA-F). Splitting keeps it off the expensive large-bed services.
-- Radar sits in the LED tower (forward view); the **camera looks forward** to the terrace from a downward-hanging box (open at the top, set back, tilted ~12° down), not straight down.
+- Radar sits in the LED tower (forward view); the **camera looks forward** to the terrace from a downward-hanging box (open at the top, set back, tilted ~24° down so the housing stays out of frame), not straight down.
 
 **Network**
 - WiFi + MQTT as the bus; **Ethernet optional** (only makes the video stream more bulletproof).
