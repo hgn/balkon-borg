@@ -39,6 +39,11 @@ by `make render`):
 
 [![Enclosure](docs/img/enclosure.png)](docs/img/enclosure.stl)
 
+All sides of the current enclosure model, regenerated from the CAD with
+`make -C cad views` (shaded views montaged by ImageMagick):
+
+![Enclosure from all sides](docs/img/overview.png)
+
 ![Carrier board](docs/img/pcb-top.png)
 
 ### Wiring
