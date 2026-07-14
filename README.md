@@ -26,6 +26,8 @@ A smart, local sensor-and-effector node for the balcony, tied into the home netw
 
 Raspberry Pi 5 ("borg-pi5") and a low-solder ESP32 front panel, off one shared 5 V feed.
 
+<p align="center"><img src="docs/img/balkon-borg.png" alt="Balkon-Borg logo" width="420"></p>
+
 ---
 
 ## Preview
