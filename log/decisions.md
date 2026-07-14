@@ -18,6 +18,31 @@ log what is already in the code/YAML.
 
 ---
 
+## 2026-07-14 — Camera looks forward, not down (front-bottom pod)
+
+**Context:** noticed late (after the enclosure STLs had already gone to JLC) that the
+camera had only a straight-down hole in the bottom face. Down-only sees just the floor
+under the unit, not the terrace scene, which is what Frigate needs.
+
+**Decision:** the camera moves into a small **pod on the front-bottom edge**, +X side,
+below the light window and near the Pi. The pod face is tilted **~12° below horizontal**
+(near-forward, slight down-look) because the scene/table is farther away. The front wall
+is **thin (1.5 mm)** with a conical lens hole widening 12 -> 20 mm, so the wide FOV is not
+clipped; four d2.2 bosses hold the board, the pod is open at the back for the board and
+CSI. Implemented as `_camera_pod()` in `cad/balkon_borg.py`; the old bottom camera cut is
+removed. Verified: both halves still watertight single solids, pod on the camera/Pi half.
+
+**Rationale:** the front (+Y) face is entirely the LED light window (~13 mm border all
+round), so no camera fits flush there; a forward-and-down pod at the bottom edge is the
+only forward-facing real estate, and it mirrors how the radar sits in the LED tower.
+Near-horizontal (not 30°) per the user: the terrace is at a distance. Thin wall + small
+protrusion so the FOV is not restricted.
+
+**Consequences:** the CSI run grows to ~150-180 mm; the measured Camera Module 3 cable is
+~240 mm, which reaches (the old 200 mm mini note is dropped). **The JLC enclosure order
+(2026-07-14, still in file review) carries the OLD down-camera STLs and must be updated
+with the regenerated `-left`/`-right` STLs before it goes to production.**
+
 ## 2026-07-14 — Carrier PCB and enclosure ordered (actual costs)
 
 **Context:** both physical parts were ordered on the same day, replacing the earlier

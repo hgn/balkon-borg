@@ -74,7 +74,9 @@ Complements `power-distribution.md`, `enclosure-sintering.md` and the log.
   range).
 - **Blade fuses** 10 A + 5 A + holders (see `power-distribution.md`).
 - **XT60E-M** + mating plug, **Wago 221**, wire 2.5/1.5/0.5 mm².
-- **CSI cable:** the 200 mm standard-mini is enough; no longer cable needed.
+- **CSI cable:** the camera now sits in the front-bottom pod, so the cable runs from the
+  front to the rear-mounted Pi (~150-180 mm plus slack). The measured Camera Module 3
+  cable is ~240 mm, which reaches comfortably. Do not use the short 200 mm mini here.
 - **4 indicator LEDs** for the bottom LED tower: **LighthouseLEDs 5 mm, built-in resistor,
   5–15 V** (lights straight off 5 V), **four different cool colours**. Holes are 5.2 mm;
   glue from inside, wire all to +5 V/GND (always on). Do not buy generic 12 V pre-wired
@@ -93,8 +95,14 @@ Complements `power-distribution.md`, `enclosure-sintering.md` and the log.
   ALSA). The amp takes 5 V/GND off the **borg-pi5 5 V branch** (same reference as the
   sound card → no ground-loop hum), not a USB port. Plays a wav on events (detection /
   greeting). Nothing on the carrier board changes. See [`power-distribution.md`](power-distribution.md).
-- **Camera lens hole** is **conical** (12 mm inside → 20 mm outside) so a wide-FOV Camera
-  Module 3 is not vignetted by the wall.
+- **Camera looks FORWARD, not down.** It sits in a small **pod on the front-bottom edge**
+  (+X side, near the Pi), below the light window. The pod face is tilted ~12° below
+  horizontal: near-forward, a touch down, because the terrace/table is farther away, not
+  directly beneath. The front wall is thin (1.5 mm) with a **conical lens hole** (12 mm
+  inside → 20 mm outside) that widens outward, so the wide FOV is not clipped. Four bosses
+  (M2/self-tap, d2.2) hold the board from inside; the pod is open at the back so the board
+  drops in and the CSI cable routes up to the Pi. Earlier the camera looked straight down
+  through the bottom face, which only saw the floor under the unit (fixed 2026-07-14).
 - **SDR antenna**: a cheap **telescopic SMA whip** (extends to ~30 cm+, wideband when
   length-tuned) is the best budget "covers a lot" antenna. For one specific band (e.g.
   ADS-B 1090 MHz) a tuned antenna beats a whip.

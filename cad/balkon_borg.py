@@ -27,9 +27,11 @@ LED panel size is an assumption (10 mm pitch) and drives the overall size.
 
 Run: python balkon_borg.py   ->   writes STEP and STL into build/.
 
-TODO: front rebate/seat for the panel + diffuser, camera opening + mount (mind the
-short CSI cable to the rear-mounted Pi), radar membrane, ear gussets, bigger
-slogans once placement is agreed on the new geometry.
+The camera looks FORWARD (not down): it sits in a pod on the front-bottom edge, +X side,
+near the Pi (see _camera_pod). CSI reaches (measured cable ~240 mm).
+
+TODO: front rebate/seat for the panel + diffuser, ear gussets, bigger slogans once
+placement is agreed on the new geometry.
 """
 
 from __future__ import annotations
@@ -118,17 +120,28 @@ PWR_SCREW_D = 3.2
 PWR_SCREW_DZ = 14.0
 PWR_POS = (190.0, 30.0)
 
-# Sensor openings in the bottom (-Z) face (looking down at the terrace).
 # Camera Module 3 (standard) per official mechanical drawing: board 25 x 23.862,
-# holes d2.2, spacing ~14.4 x 12.5 (asymmetric). The lens-to-hole offset is not
-# clearly given in the drawing (RPi forum confirms), so the lens hole is oversized
-# and CAM_POS marks the hole-pattern centre; verify against the real part or glue.
-CAM_LENS_D = 12.0
-CAM_CHAMFER_D = 20.0   # M13: conical lens opening (12 mm inside -> 20 mm outside) so a
-                       # wide-FOV Camera Module 3 is not vignetted by the 3 mm wall
-CAM_HOLE_DX, CAM_HOLE_DY = 14.4, 12.5
-CAM_POS = (70.0, 45.0)
-CAM_BOSS_OD, CAM_BOSS_H = 6.0, 6.0
+# holes d2.2, spacing ~14.4 x 12.5 (asymmetric), lens roughly central. It must look
+# FORWARD to the terrace, only slightly down (the scene/table is farther away), NOT
+# straight down, so it lives in a small pod on the front-bottom edge, +X side, right
+# below the light window and near the Pi (short CSI). See _camera_pod().
+CAM_LENS_D = 12.0             # inner lens hole (camera side)
+CAM_CHAMFER_D = 20.0         # outer lens opening: the hole widens outward so a wide-FOV
+                             # lens is not clipped by the (thin) front wall
+CAM_HOLE_DX, CAM_HOLE_DY = 14.4, 12.5   # board mount-hole pattern (bosses flank the lens)
+CAM_TILT_DOWN = 12.0         # deg below horizontal: near-forward, a touch down
+CAM_POD_W, CAM_POD_H = 34.0, 30.0       # pod outer cross-section (X, Z)
+CAM_POD_DEPTH = 30.0         # pod length behind the lens face (overlaps the front wall)
+CAM_POD_OUT = 6.0            # how far the lens face protrudes past the front plane
+CAM_POD_WALL = 2.0           # pod side/top/bottom walls
+CAM_WIN_WALL = 1.5           # THIN front wall at the lens (unrestricted field of view)
+CAM_BOSS_OD, CAM_BOSS_STAND = 4.5, 3.0  # mount bosses standing off the inner front wall
+CAM_POD_POS = (75.0, -6.0)   # (x, z) lens centre, pre-mirror; below the window, +X side
+RADAR_MEMBRANE = 2.0                     # thinned wall the LD2410B sees through
+RADAR_AREA = 26.0
+RADAR_POS = (140.0, 49.0)
+MIC_D = 4.0
+MIC_POS = (205.0, 49.0)
 RADAR_MEMBRANE = 2.0                     # thinned wall the LD2410B sees through
 RADAR_AREA = 26.0
 RADAR_POS = (140.0, 49.0)
@@ -359,6 +372,58 @@ def _hex_grille(u_c: float, v_c: float, w: float, h: float, pitch: float,
     return cq.Compound.makeCompound(prisms)
 
 
+def _camera_pod(body: cq.Workplane) -> cq.Workplane:
+    """Forward-facing camera pod on the front-bottom edge (+X side, pre-mirror).
+
+    The Camera Module 3 must look FORWARD to the terrace, only slightly down (the scene
+    is farther away), so it sits in a small pod below the light window instead of in the
+    bottom face. Everything is built in a local frame whose +Y is the view direction,
+    then tilted CAM_TILT_DOWN below horizontal and moved to the front edge. The front
+    wall is thin (CAM_WIN_WALL) and the lens hole widens outward, so the wide field of
+    view is not clipped by the wall. The pod is hollow and open to the cavity at the
+    back, so the board drops in from inside and the CSI cable routes back to the Pi.
+    """
+    cx, cz = CAM_POD_POS
+    ay = OUT_Y + CAM_POD_OUT               # world Y of the lens face (protrudes forward)
+
+    def place(s: cq.Shape) -> cq.Shape:
+        # local (+Y = outward view) -> world: tilt down about X (negative angle drops the
+        # view direction toward -Z), then translate to the front-bottom anchor.
+        return s.rotate((0, 0, 0), (1, 0, 0), -CAM_TILT_DOWN).translate((cx, ay, cz))
+
+    hw, hh = CAM_POD_W / 2, CAM_POD_H / 2
+    iw, ih = hw - CAM_POD_WALL, hh - CAM_POD_WALL
+    # Solid pod block (local y from -DEPTH to 0), then hollow from behind leaving the thin
+    # front wall + side walls; the pocket runs past the block back so it opens to the cavity.
+    pod = cq.Solid.makeBox(CAM_POD_W, CAM_POD_DEPTH, CAM_POD_H,
+                           cq.Vector(-hw, -CAM_POD_DEPTH, -hh))
+    body = body.union(place(pod))
+    pdy = CAM_POD_DEPTH + EPS - CAM_WIN_WALL
+    pocket = cq.Solid.makeBox(2 * iw, pdy, 2 * ih,
+                              cq.Vector(-iw, -(CAM_POD_DEPTH + EPS), -ih))
+    body = body.cut(place(pocket))
+    # Four mount bosses standing off the inner front wall, flanking the lens, with a d2.2
+    # blind screw hole each (does not pierce the outer face).
+    for sxx in (-1, 1):
+        for szz in (-1, 1):
+            bx, bz = sxx * CAM_HOLE_DX / 2, szz * CAM_HOLE_DY / 2
+            boss = cq.Solid.makeCylinder(
+                CAM_BOSS_OD / 2, CAM_BOSS_STAND,
+                cq.Vector(bx, -(CAM_WIN_WALL + CAM_BOSS_STAND), bz), cq.Vector(0, 1, 0))
+            body = body.union(place(boss))
+            hole = cq.Solid.makeCylinder(
+                2.2 / 2, CAM_BOSS_STAND + 1.0,
+                cq.Vector(bx, -(CAM_WIN_WALL + CAM_BOSS_STAND) - EPS, bz), cq.Vector(0, 1, 0))
+            body = body.cut(place(hole))
+    # Conical lens hole through the thin front wall: small on the camera side, widening
+    # outward (anti-vignette) so the wide FOV clears the wall.
+    lens = cq.Solid.makeCone(
+        CAM_LENS_D / 2, CAM_CHAMFER_D / 2, CAM_WIN_WALL + 2 * EPS,
+        cq.Vector(0, -CAM_WIN_WALL - EPS, 0), cq.Vector(0, 1, 0))
+    body = body.cut(place(lens))
+    return body
+
+
 def build_body() -> cq.Workplane:
     body = (cq.Workplane("XY")
             .box(OUT_W, OUT_Y, OUT_Z, centered=(True, False, False))
@@ -490,17 +555,10 @@ def build_body() -> cq.Workplane:
                          cq.Vector(OUT_W / 2 - WALL - EPS, ANT_POS[0], ANT_POS[1]),
                          cq.Vector(1, 0, 0)))
 
-    # Bottom (-Z) sensor openings — camera only now: the radar moved to the LED tower
-    # (facing forward) and the microphone moved to the Pi 5 (USB), so no bottom mic port.
-    cx, cy = CAM_POS
-    body = body.cut(cq.Solid.makeCone(          # M13: conical lens hole (anti-vignette)
-        CAM_CHAMFER_D / 2, CAM_LENS_D / 2, WALL + 2 * EPS,
-        cq.Vector(cx, cy, -EPS), cq.Vector(0, 0, 1)))
-    for bx, by in _pattern(CAM_POS, CAM_HOLE_DX, CAM_HOLE_DY):
-        body = body.union(_cyl(CAM_BOSS_OD, CAM_BOSS_H,
-                               cq.Vector(bx, by, WALL), cq.Vector(0, 0, 1)))
-        body = body.cut(_cyl(2.2, CAM_BOSS_H + 2 * EPS,
-                             cq.Vector(bx, by, WALL - EPS), cq.Vector(0, 0, 1)))
+    # Camera: a forward-facing pod on the front-bottom edge (+X, near the Pi). The radar
+    # moved to the LED tower and the microphone to the Pi 5 (USB), so the bottom face has
+    # no sensor openings left; the camera looks forward to the terrace, not straight down.
+    body = _camera_pod(body)
 
     def _boss_z(x: float, y: float, h: float, hole: float) -> None:
         nonlocal body
