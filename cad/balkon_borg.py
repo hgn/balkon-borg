@@ -147,7 +147,7 @@ CAM_HOLE_DX, CAM_HOLE_DY = 14.4, 12.5   # board mount-hole pattern around the le
 # Glued to the inside of the bottom wall firing DOWN; a round hex-packed hole grille in the
 # floor lets the sound out to the terrace. Sits between the camera box and the -X end (the
 # right-hand end seen from the front). Pre-mirror X (mirrors to -X with the camera).
-SPK_POS = (180.0, 74.0)      # (x, y) pre-mirror, on the bottom face
+SPK_POS = (180.0, 25.0)      # (x, y) pre-mirror; y=25 keeps it clear of the bottom wordmark
 SPK_GRILLE_D = 44.0          # grille field diameter (matches the BF 45 cone/cutout)
 SPK_HOLE_D = 3.5             # grille hole diameter
 SPK_HOLE_PITCH = 6.0         # hex-packing pitch
