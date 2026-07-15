@@ -18,6 +18,20 @@ log what is already in the code/YAML.
 
 ---
 
+## 2026-07-15 — BME280 mount: drop-in cradle instead of fixed bosses
+
+**Context:** the two mounting bosses used `BME_HOLE_DX = 16` marked VERIFY — breakout
+boards differ in size and hole spacing by vendor, and no specific breakout is fixed yet.
+
+**Decision:** replace the bosses with a **generous drop-in cradle** (26 mm inner square,
+8 mm walls, open toward the carrier side for the cable) around the bottom vent grid; the
+board is tacked with hot glue. User: "einfach ein paar Millimeter mehr einplanen".
+
+**Rationale:** fits every common breakout (GY-BME280 mini through Adafruit/SparkFun
+sizes) without knowing the part in advance; no screws on a fingernail-sized board.
+**Rejected:** keeping spacing-specific bosses (wrong the moment a different breakout
+arrives); drilling on assembly day.
+
 ## 2026-07-15 — Pre-upload mechanical review: camera glue mount, radar slot, fixes
 
 **Context:** the JLC order (in file review) needs the regenerated two-half STLs. Before

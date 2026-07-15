@@ -245,9 +245,13 @@ LID_NOTCH_M = 6.0      # extra material kept around the WLED cradle inside the o
 LID_TONGUE_RIB = 5.0   # extra ceiling-wall thickness under the notch tongue (stiffen it)
 
 # BME280 ambient opening on the bottom face (radar lives in the LED tower, mic on the Pi).
+# Breakout boards differ in size and hole spacing by vendor, so no fixed bosses: a
+# generous drop-in cradle over the vent grid, open toward -Y (rear/carrier) for the
+# cable, the board tacked with hot glue. Fits everything up to BME_POCKET square.
 BME_POS = (-205.0, 49.0)            # (x, y) ambient opening + mount on the bottom
-BME_MESH_DX, BME_MESH_DY = 12.0, 12.0   # small vent grid to outside air
-BME_HOLE_DX = 16.0                  # BME280 breakout mount spacing (VERIFY)
+BME_POCKET = 26.0                   # cradle inner square
+BME_POCKET_H = 8.0                  # cradle wall height
+BME_POCKET_WALL = 3.0
 
 # Downward LED indicator tower on the bottom (-Z), left side, centred in depth. A
 # hollow 40x40 box protruding 30 mm down; 4 always-on LEDs glue in from inside and a
@@ -585,21 +589,22 @@ def build_body() -> cq.Workplane:
     # Speaker grille (BF 45, down-firing), on the bottom between the camera box and -X end.
     body = _speaker_grille(body)
 
-    def _boss_z(x: float, y: float, h: float, hole: float) -> None:
-        nonlocal body
-        body = body.union(_cyl(6.0, h, cq.Vector(x, y, WALL), cq.Vector(0, 0, 1)))
-        body = body.union(cq.Solid.makeCone(       # tapered foot into the bottom wall
-            3.0 + FOOT_W, 3.0, FOOT_H, cq.Vector(x, y, WALL), cq.Vector(0, 0, 1)))
-        body = body.cut(_cyl(hole, h + 2 * EPS, cq.Vector(x, y, WALL - EPS), cq.Vector(0, 0, 1)))
-
-    # BME280 ambient opening + mount on the bottom, so it reads OUTSIDE air.
+    # BME280 ambient opening + drop-in cradle on the bottom, so it reads OUTSIDE air.
     bx, by = BME_POS
     for gx in (-4.0, 0.0, 4.0):
         for gy in (-4.0, 0.0, 4.0):
             body = body.cut(_cyl(2.0, WALL + 2 * EPS,
                                  cq.Vector(bx + gx, by + gy, -EPS), cq.Vector(0, 0, 1)))
-    for s in (-1, 1):
-        _boss_z(bx + s * BME_HOLE_DX / 2, by, 6.0, 2.0)
+    bp, bw = BME_POCKET, BME_POCKET_WALL
+    bcr = cq.Solid.makeBox(
+        bp + 2 * bw, bp + 2 * bw, BME_POCKET_H,
+        cq.Vector(bx - bp / 2 - bw, by - bp / 2 - bw, WALL))
+    bcr = bcr.cut(cq.Solid.makeBox(
+        bp, bp, BME_POCKET_H + 2 * EPS, cq.Vector(bx - bp / 2, by - bp / 2, WALL - EPS)))
+    bcr = bcr.cut(cq.Solid.makeBox(       # open the cable side (-Y, toward the carrier)
+        bp, bw + 2 * EPS, BME_POCKET_H,
+        cq.Vector(bx - bp / 2, by - bp / 2 - bw - EPS, WALL)))
+    body = body.union(bcr)
 
     # Condensation drain in the bottom wall (clear spot).
     ddx, ddy = BOTTOM_DRAIN_POS

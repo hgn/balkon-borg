@@ -42,15 +42,20 @@ Complements `power-distribution.md`, `enclosure-sintering.md` and the log.
 
 ## BME280
 
-- Sits at the **bottom opening** (hole + grid in the CAD), so it reads outside air,
+- Sits at the **bottom opening** (3×3 hole grid in the CAD), so it reads outside air,
   not the warmed interior. Do not seal it in airtight.
+- Mount: a **drop-in cradle** (26 mm inner square, open toward the carrier side) around
+  the grid — breakout boards differ in size and hole spacing by vendor, so there are no
+  fixed bosses. Drop the board in and tack it with hot glue (glue the board edges, not
+  the sensor cell).
 
 ## Ventilation / insect protection
 
-- Intake: 2 mm slits in the rear wall, in the clear middle zone (no longer behind
-  the boards). Exhaust: high slits on the end walls (heat rises, the ceiling side is
-  closed). **2 mm keeps most insects out**; for mosquitoes glue a piece of fine mesh
-  on the inside.
+- Intake/exhaust: the **honeycomb grilles** in the rear wall and the +X end wall, the
+  bottom sensor openings, and the big **ceiling service opening** (warm air leaves
+  toward the concrete above). The hex openings are ~10 mm: they stop birds and big
+  bugs, not mosquitoes — glue fine mesh on the inside if that matters. The ceiling
+  opening is unscreened (there is border to attach a mesh or snap grille to).
 
 ## SLS printing (PA12)
 
