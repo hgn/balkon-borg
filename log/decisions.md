@@ -18,6 +18,23 @@ log what is already in the code/YAML.
 
 ---
 
+## 2026-07-15 — Enclosure re-ordered at JLC with the reviewed geometry
+
+**Context:** the 2026-07-14 JLC order carried the old down-camera STLs (see that entry's
+warning) and several defects the mechanical review then found and fixed.
+
+**Decision:** placed a fresh JLC3DP order (W2026071604138082, paid 2026-07-15) with the
+regenerated STEP halves — `balkon-borg-left.step` 97.80 $, `balkon-borg-right.step`
+109.90 $, goods 207.70 $ + shipping 88.31 $ = **296.01 $ order total** (~275 €, landed
+~350–365 € after import VAT/duty). SLS 3201PA-F black, 1× each, build time 4 days. This
+is the geometry with the forward camera pod (hot-glue mount), radar slot, moved rib,
+5.2 mm status LED holes, pod drain, reinforced nub frame with 1 mm play and the BME
+cradle — verified watertight with all point probes before upload.
+
+**Consequence:** the 2026-07-14 order (280.35 $, old geometry) is superseded and must be
+**cancelled before it enters production**. Goods price rose 192.49 → 207.70 $ with the
+added pod/frame volume (~15 $ for the review fixes — cheap insurance).
+
 ## 2026-07-15 — RTL-SDR V4 replaces the V3
 
 **Context:** a working RTL-SDR Blog V4 arrived and replaces the V3 in the plan.
@@ -179,6 +196,8 @@ The box was also widened another 10 mm. `CAM_CX` / `CAM_LENS_Y/Z` / `CAM_TILT_DO
 Also moved the underside "HagiOne" wordmark 30 mm to the other side so it clears the box. **The
 JLC enclosure order (2026-07-14, still in file review) carries the OLD down-camera STLs and
 must be updated with the regenerated `-left`/`-right` STLs before it goes to production.**
+*(Resolved 2026-07-15: superseded by the re-order W2026071604138082 with the reviewed
+geometry; the old order is to be cancelled — see the 2026-07-15 re-order entry.)*
 
 ## 2026-07-14 — Carrier PCB and enclosure ordered (actual costs)
 
