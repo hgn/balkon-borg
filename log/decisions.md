@@ -18,6 +18,26 @@ log what is already in the code/YAML.
 
 ---
 
+## 2026-07-15 — Camera is the standard Module 3, not the Wide
+
+**Context:** README and the pod's FOV analysis assumed the Camera Module 3 **Wide**; the
+camera actually bought is the **standard** variant (Amazon.de, 29.99 €, order
+028-2352290-1021124).
+
+**Decision:** keep the pod geometry and the 24° wall tilt unchanged — the standard lens
+works in the same mount, so nothing about the print changes.
+
+**Consequences (from the official standard drawing):** lens stack 6.98 mm above the board
+(block front at 3.875, vs 8.3/4.07 on the Wide), so the barrel ends ~0.6 mm proud of the
+outer face — still no vignetting. FOV is 66° x 41° (vs 102° x 67°): at 24° tilt the view
+spans 3.5–44.5° below horizontal, i.e. standing people are in frame from ~1 m out (heads
+sit below the lens), the terrace floor from ~2.5 m out (at ~2.5 m mount height), and the
+enclosure is trivially out of frame. The scene is narrower than planned; if a wider view
+is ever wanted, a Wide swaps in without any print change (same board and hole pattern;
+its top ray must stay ≤ ~11.8° above horizontal, which 24° tilt satisfies). Camera cost
+moved from "on hand" to an actual (30 €) in `docs/cost-estimate.md`; project total now
+~795 €.
+
 ## 2026-07-15 — BME280 mount: drop-in cradle instead of fixed bosses
 
 **Context:** the two mounting bosses used `BME_HOLE_DX = 16` marked VERIFY — breakout

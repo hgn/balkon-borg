@@ -9,7 +9,7 @@ A smart, local sensor-and-effector node for the balcony, tied into the home netw
 
 **Sensors**
 
-- Vision: camera (Raspberry Pi Camera Module 3 Wide; Frigate for person, animal and gesture recognition)
+- Vision: camera (Raspberry Pi Camera Module 3; Frigate for person, animal and gesture recognition)
 - Motion: radar (LD2410B; presence and motion detection)
 - Acoustics: USB microphone (BirdNET, noise-level monitoring, audio event classification)
 - Environment: sensor (BME280; temperature, humidity, pressure)

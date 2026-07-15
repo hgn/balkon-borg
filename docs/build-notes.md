@@ -112,12 +112,15 @@ Complements `power-distribution.md`, `enclosure-sintering.md` and the log.
   the diffuser panel still slides into the front rebate. The box is **open at the top** into
   the cavity: fit the camera from the ceiling opening and route the CSI up to the Pi. The
   **whole front wall is a flat plane tilted ~24°** (perpendicular to the view axis): the
-  **lens block presses flat against its inside**, the barrel (Ø6.95) passes through the
-  9 mm bore and ends ~1.7 mm proud outside (no vignetting); fix the module with **hot glue
+  **lens block presses flat against its inside**, the barrel (~Ø7) passes through the
+  9 mm bore and ends ~0.6 mm proud outside (no vignetting); fix the module with **hot glue
   at the board corners** (no screws — the real CM3 hole pattern is 21 × 12.5 mm and the
   lens stack holds the board itself ~4 mm off the wall, so screws would need standoffs).
-  The ~24° tilt makes the top of the frame clear the enclosure's own front underside (Camera
-  Module 3 Wide, ~±33° vertical, set-back box). Lower `CAM_TILT_DOWN` for a narrower lens;
+  The bought camera is the **standard** variant (41° vertical FOV): at the 24° tilt the
+  view spans 3.5–44.5° below horizontal — standing people are in frame from ~1 m out
+  (heads sit below the lens), the terrace floor from ~2.5 m out, and the enclosure itself
+  is trivially out of frame. Adjust `CAM_TILT_DOWN` to aim (a wider lens needs its top
+  ray ≤ ~11.8° above horizontal to keep the housing out of view);
   `CAM_CX` / `CAM_LENS_Y` / `CAM_LENS_Z` place it. Earlier tries (straight-down bottom hole,
   then a forward pod, then a vertical-wall box with a tilted lens) are superseded; the ragged
   opening came from boring a tilted axis through a straight wall, fixed by tilting the wall.

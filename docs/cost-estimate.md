@@ -14,12 +14,13 @@ Pi/camera are bought new are the big swing items.
 | **ESP / sensing / controls** | ESP32-DevKitC 9, LD2410B 4, BME280 (genuine Bosch) 8, 4× illuminated buttons 16, EC11 encoder 3, 4× indicator LEDs 8 | **48** |
 | **Reception + audio** | RTL-SDR V3 32, USB microphone 10, antenna + RG316 pigtail 13, USB sound card (DELOCK 61645) 6, class-D amp (PAM8403) 3, Visaton BF 45 speaker 16 | **80** |
 | **Power** | Mean Well LRS-150-5 28, XT60 3, 2× Wago 221 3, fuses + holders 5, wire/ferrules 8 | **47** |
+| **Camera** | Raspberry Pi Camera Module 3 (standard), Amazon 2026-07-15, actual | **30** |
 | **Carrier PCB** | Aisler Beautiful Boards (3 pcs, incl. VAT) **47**, THT parts (R/C/Q/JST/sockets/polyfuse) 15 | **62** |
 | **Enclosure** | SLS/PA12 black, **two halves** at JLC3DP: goods 192 $ + shipping 88 $ = 280 $ (~260 €), landed with German import VAT + duty | **330–345** |
-| **Small parts** | heat-set inserts, screws M2.5/M5, panel nuts, thermal pad, glue, insect mesh, zip ties | **25** |
+| **Small parts** | heat-set inserts, screws M2.5/M3/M5, dowel pins, panel nuts, thermal pad, glue, insect mesh, zip ties | **25** |
 
-**Total ≈ 760–775 €, realistically ~765 € mid** (both PCB and enclosure now ordered,
-so those two rows are actuals, not estimates).
+**Total ≈ 790–805 €, realistically ~795 € mid** (PCB, enclosure and camera are ordered
+actuals, not estimates).
 
 ## Cost drivers
 
@@ -42,7 +43,6 @@ so those two rows are actuals, not estimates).
 
 ## Not included
 
-- **Camera Module 3** (~25 € if bought new) — listed as already on hand.
 - **nas-Pi5** — a separate, pre-existing always-on Pi (remote access + occasional image storage).
 - Tools, shipping, and the external 230 V wiring to the socket.
 

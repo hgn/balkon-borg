@@ -117,19 +117,21 @@ PWR_SCREW_D = 3.2
 PWR_SCREW_DZ = 14.0
 PWR_POS = (190.0, 30.0)
 
-# Camera Module 3 Wide per the official mechanical drawing: board 25 x 23.862, the lens
-# stack protrudes 8.3 mm above the board (base plate to 2.75, lens block ~10.8 wide to
-# 4.07, barrel d6.95 to the tip at 8.3). It looks FORWARD to the terrace, slightly down,
-# hanging in a downward box (open at the top into the cavity), +X side near the Pi, set
-# back so it does NOT protrude past the front face. The whole FRONT WALL of the box is
-# TILTED (a flat plane perpendicular to the view axis). Mounting is HOT GLUE: the lens
-# block presses flat against the inside of that wall, the barrel passes through the bore
-# (~1.7 mm proud outside, so the wide FOV cannot vignette) and the board corners are
-# tacked with hot glue. No screw holes: the real hole pattern is 21.0 x 12.5 (holes 2.0
-# off the board edges, lens ON the top row), useless in a 2.5 mm wall without standoffs.
-CAM_TILT_DOWN = 24.0         # front-wall tilt below horizontal. Enough that the FOV top
-                             # edge clears the enclosure's own front underside (Camera
-                             # Module 3 Wide, ~±33 deg). Lower this for a narrower lens.
+# Camera Module 3 (STANDARD, the one bought) per the official mechanical drawing: board
+# 25 x 23.862, the lens stack protrudes 6.98 mm above the board (base plate to 2.75,
+# lens block to 3.875, barrel to the tip at 6.98). It looks FORWARD to the terrace,
+# slightly down, hanging in a downward box (open at the top into the cavity), +X side
+# near the Pi, set back so it does NOT protrude past the front face. The whole FRONT
+# WALL of the box is TILTED (a flat plane perpendicular to the view axis). Mounting is
+# HOT GLUE: the lens block presses flat against the inside of that wall, the barrel
+# passes through the bore (~0.6 mm proud outside, so nothing can vignette) and the board
+# corners are tacked with hot glue. No screw holes: the real hole pattern is 21.0 x 12.5
+# (holes 2.0 off the board edges, lens ON the top row), useless in a 2.5 mm wall without
+# standoffs.
+CAM_TILT_DOWN = 24.0         # front-wall tilt below horizontal. Standard lens: 41 deg
+                             # vertical FOV, so the view spans 3.5..44.5 deg below
+                             # horizontal (own housing trivially out of frame; the limit
+                             # for a wider lens is a top ray <= ~11.8 deg above horizon).
 CAM_CX = 75.0                # box centre X (pre-mirror; +X/Pi side, near the Pi)
 CAM_BOX_W = 54.0             # box width (X) — another 1 cm roomier
 CAM_BOX_BACK_Y = 22.0        # back wall (Y); the tilted front wall is derived from the lens
@@ -371,11 +373,11 @@ def _hex_grille(u_c: float, v_c: float, w: float, h: float, pitch: float,
 def _camera_pod(body: cq.Workplane) -> cq.Workplane:
     """Downward-hanging camera box (+X side, pre-mirror), open at the top, WEDGE front.
 
-    The Camera Module 3 Wide looks FORWARD to the terrace, slightly down. The box hangs
-    below the bottom wall like the LED tower, set back so nothing protrudes past the front
+    The Camera Module 3 looks FORWARD to the terrace, slightly down. The box hangs below
+    the bottom wall like the LED tower, set back so nothing protrudes past the front
     face. The whole FRONT WALL is a flat plane tilted CAM_TILT_DOWN (perpendicular to the
-    view axis): the lens BLOCK presses flat against its inside, the barrel (d6.95) passes
-    through the bore and ends ~1.7 mm proud of the outer face (no vignetting), and the
+    view axis): the lens BLOCK presses flat against its inside, the barrel (~d7) passes
+    through the bore and ends ~0.6 mm proud of the outer face (no vignetting), and the
     module is fixed with hot glue at the board corners. The box is OPEN AT THE TOP: the
     hollow runs up through the bottom wall into the cavity, so the camera is fitted from
     the ceiling opening and the CSI routes up to the Pi. A floor drain lets condensation
