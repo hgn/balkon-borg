@@ -39,7 +39,7 @@ Fuses as **inline blade-fuse holders** (automotive mini) at the junction, on the
 - **borg-pi5 wants 5.1-5.15 V** and draws inrush spikes; pick the 5 A fuse slow
   enough (automotive blade fuses are, by nature). See `build-notes.md` for the
   USB current / PD topic.
-- **LED feed:** with 344 RGBW LEDs, inject 5 V as close to the panel as possible
+- **LED feed:** with 200 RGBW LEDs, inject 5 V as close to the panel as possible
   (short thick wire), else brightness/colour drops at the strip end. WLED ABL at
   8 A keeps current and heat in check.
 - **Common GND** for everything (the WLED data line needs a GND reference to the

@@ -6,7 +6,7 @@ prioritise. **Nothing here changes the hardware design.** Fill the **Rate** colu
 U-numbers and get built.
 
 Hardware in play: camera (CSI, Frigate/vision on the Pi), mic + speaker (USB), RTL-SDR,
-LD2410B presence radar, BME280 (temp/humidity/pressure), WLED RGBW-WW 8×43 matrix,
+LD2410B presence radar, BME280 (temp/humidity/pressure), WLED RGBW-WW 8×25 matrix,
 4 buttons + encoder, button/indicator LEDs, the always-on nas-Pi and the phone app — all
 over MQTT.
 

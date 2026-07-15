@@ -1,6 +1,6 @@
 # Light scenarios
 
-Use cases for the WLED panel (SK6812 RGBW-WW, 8×43 2D matrix), driven by the radar
+Use cases for the WLED panel (SK6812 RGBW-WW, 8×25 2D matrix), driven by the radar
 presence, the four buttons + encoder, schedules, and MQTT. These seed the WLED presets and
 the ESP button mapping.
 
@@ -16,7 +16,7 @@ the ESP button mapping.
 | L8 | **Reading / task** | scene | bright neutral white | WLED preset (WW + balanced RGB, high brightness) |
 | L9 | **Notification pulse** | MQTT event (doorbell, timer, weather alert) | short colour pulse, then restore | borg-pi5 automation publishes to `wled/balkon/api` |
 | L10 | **Weather glance** | on demand / MQTT forecast | brief colour wash (blue = rain, …) | borg-pi5 maps forecast → colour, publishes to WLED |
-| L11 | **Scrolling text** | on demand | message / animation on the 8×43 matrix | WLED 2D text/effect preset |
+| L11 | **Scrolling text** | on demand | message / animation on the 8×25 matrix | WLED 2D text/effect preset |
 | L12 | **All off** | encoder push, or presence timeout | fade off | `wled/balkon "OFF"` |
 
 ## Notes

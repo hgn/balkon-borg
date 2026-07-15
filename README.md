@@ -113,7 +113,7 @@ runs off a shared 5 V feed and an MQTT/WiFi bus. The goal is a build that looks
 |---|---|---|
 | U1 | Light at the dining table, automatic in the evening | SK6812 RGBW panel (WLED) + LD2410B radar → soft fade-in on presence, warm-white channel |
 | U2 | Manual light control without a phone | 4× stainless buttons + rotary encoder (on/off, scenes, dimming, automation pause) |
-| U3 | Effect / party light | WLED 2D effects, strobe, scrolling text on the 8×43 matrix |
+| U3 | Effect / party light | WLED 2D effects, strobe, scrolling text on the 8×25 matrix |
 | U4 | Environment data | BME280 (temperature/humidity/pressure) → MQTT → dashboard |
 | U5 | Aircraft reception | RTL-SDR V3 + readsb/tar1090 (approach MUC, optional feed) |
 | U6 | Bird-call log | USB microphone → BirdNET → species statistics over the season |
@@ -128,7 +128,7 @@ for rating in [`docs/ideas.md`](docs/ideas.md), an idea pool, not committed scop
 
 - **Central compute (borg-pi5):** Raspberry Pi 5 (8 GB) + Active Cooler, microSD in the enclosure, **the hub the project is about**: recording (camera/audio/SDR), local inference (Frigate, readsb/tar1090, BirdNET-Go), and the **MQTT broker (Mosquitto), dashboards and app**. Powered on **only when needed**, not 24/7.
 - **Sensor/control front panel:** ESP32 (ESPHome) with LD2410B (UART), BME280 (I²C), 4 buttons + encoder (GPIO).
-- **Light:** Athom high-power WLED controller + SK6812 RGBW-WW compact panel (8 rows × 43 = 344 px) on a 3 mm aluminium plate, opal acrylic diffuser.
+- **Light:** Athom high-power WLED controller + SK6812 RGBW-WW light field: 8 rows of 60/m strip, 25 LEDs each = 200 px, on a 3 mm aluminium plate (438 × 88, bought cut to size), opal acrylic diffuser.
 - **Reception:** RTL-SDR V3 (ADS-B 1090 MHz, optional LoRa RX), USB microphone (on the Pi 5). The LD2410B radar points **forward** (in the LED tower), toward the terrace.
 - **Audio out:** USB sound card (C-Media, e.g. DELOCK 61645) + a **PAM8403** mini class-D amp + a **Visaton BF 45** broadband speaker on the borg-pi5, plays a short wav on events (detection, greeting). The Pi 5 has no analogue output, hence the USB card; amp powered off the Pi's 5 V branch (see [power](docs/power-distribution.md)).
 - **Power:** Mean Well LRS-150F-5 (5 V/22 A) in its own V-0 enclosure, fused branches.
@@ -192,7 +192,7 @@ WiFi repeater → cable → Fritz!Box → nas-Pi5 (see [network](docs/network.md
 1. **Terminal assignment**: concrete ESP32 GPIOs, I²C addresses (BME280), Wago plan of the 5 V distribution.
 2. **Podman quadlets**: Mosquitto, Frigate (CPU detector), readsb/tar1090, BirdNET-Go.
 3. **Real board measurement** → adjust the mounting-boss positions in `balkon_borg.py` (CadQuery).
-4. **WLED config**: 2D 43×8 serpentine, ABL at 8 A, presets/scenes + button mapping.
+4. **WLED config**: 2D 25×8 serpentine, ABL at 8 A, presets/scenes + button mapping.
 5. **PSU**: EEPROM `PSU_MAX_CURRENT=5000`, trim the output to 5.15 V.
 6. **Fit test**: print a corner/brow (insert and diffuser-rebate fit) before the two-half print.
 

@@ -18,6 +18,31 @@ log what is already in the code/YAML.
 
 ---
 
+## 2026-07-15 — LED panel build fixed: 60/m strips on a cut-to-order alu plate
+
+**Context:** the "SK6812 8×43 panel" (344 px, 10 mm pitch) existed only as an assumption;
+no such part is buyable, and the plate size 438×88 drove the "measure the real panel"
+open point. User: buy whatever fits the CAD best, from providers that cut to size.
+
+**Decision:** the light field is built from **SK6812 RGBW warm-white strip, 60 LEDs/m,
+IP30, white PCB** (BTF-Lighting, one 5 m reel): **8 rows of 25 LEDs = 200 px**, rows are
+the 10 mm-wide strips laid edge to edge (row pitch 10 mm), pixel field ~417 × 80 mm,
+serpentine wiring, 5 V injected at both ends. Carrier: **AlMg3 aluminium plate,
+3 mm, cut to order at exactly 438 × 88 mm** (German cut-to-size shops, e.g. Alufritze /
+Metallstore24 / Feld-Eitorf). The plate dimension is thus a purchase spec, no longer an
+assumption — the "measure the panel" open point is closed. Nub clearance raised to
+`NUB_CLR = 1.0` (sheet blanks are cut to ±1 mm, more than the 0.5 print TOL).
+
+**Rationale:** real 10 mm-pitch (100/m) SK6812 RGBW strip is effectively not buyable;
+144/m is a 12 mm-wide PCB (row grid will not fit the 80 mm field) and needlessly dense
+thermally; RGB flex matrix panels have no true warm white (violates the RGBW-WW
+decision). 60/m fills the window with margin, and the ABL headroom grows (200 px ≈ 16 A
+theoretical vs the 8 A cap). The 16.7 mm column vs 10 mm row pitch stretches 2D effects
+slightly; scrolling text still works.
+
+**Consequences:** WLED 2D config becomes 25×8 serpentine (README §8.4); docs updated
+from 344 px/8×43 to 200 px/8×25; light BOM row now strip 32 € + plate cut 12 €.
+
 ## 2026-07-15 — Camera is the standard Module 3, not the Wide
 
 **Context:** README and the pod's FOV analysis assumed the Camera Module 3 **Wide**; the

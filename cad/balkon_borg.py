@@ -43,7 +43,12 @@ import cadquery as cq
 
 # ---- PARAMETERS (mm) --------------------------------------------------------
 
-# LED panel (ASSUMPTION: SK6812 8x43 at 10 mm pitch). Drives the front size.
+# LED light field. The window/front is sized for a 430 x 80 mm field (historic plan:
+# 43 x 8 at 10 mm pitch). The REAL build is 8 rows of SK6812 RGBWW strip (60 LEDs/m,
+# 10 mm wide PCB, rows edge to edge), 25 LEDs per row = ~417 x 80 mm pixel field,
+# centred on an aluminium plate CUT TO ORDER at exactly PANEL_BOARD_W/H below - so the
+# plate dimension is a purchase spec, not an assumption. These anchors stay: they set
+# the window and the outer size of the (already ordered) enclosure.
 PANEL_COLS = 43
 PANEL_ROWS = 8
 PANEL_PITCH = 10.0
@@ -177,10 +182,12 @@ MIRROR = True          # full left/right (X) mirror: swaps the busy +X side (Pi/
                        # camera/radar/mic) with the quiet -X side (buttons, LED tower)
 
 # LED panel locating nubs on the frame back (panel glues between them).
-PANEL_BOARD_W = PANEL_W + 8.0          # 438, board slightly larger than pixels
+PANEL_BOARD_W = PANEL_W + 8.0          # 438: the alu plate, bought cut to this size
 PANEL_BOARD_H = PANEL_H + 8.0          # 88
 NUB = 4.0              # nub size
 NUB_H = 2.5            # nub protrusion into the cavity
+NUB_CLR = 1.0          # play around the plate: sheet blanks are cut to +/-1 mm, more
+                       # than the print TOL - the nubs only locate, the glue holds
 
 # ---- Review fixes (fasteners, serviceable front, vents, mounts) -------------
 INSERT_M25 = 3.4       # heat-set insert hole for M2.5 (Pi, carrier, front bezel)
@@ -484,8 +491,8 @@ def build_body() -> cq.Workplane:
     # locating nubs AND the diffuser rebate, so the nubs sit on solid frame back (not on
     # a cored edge) and no ~1 mm skin sliver is left between rebate floor and coring.
     fskin = RECESS + DIFF_T + 1.0
-    keep_w = PANEL_BOARD_W + 2 * TOL + 2 * NUB + 2.0
-    keep_h = PANEL_BOARD_H + 2 * TOL + 2 * NUB + 2.0
+    keep_w = PANEL_BOARD_W + 2 * NUB_CLR + 2 * NUB + 2.0
+    keep_h = PANEL_BOARD_H + 2 * NUB_CLR + 2 * NUB + 2.0
     core_outer = cq.Solid.makeBox(
         OUT_W - 2 * WALL, FRAME_D - fskin + EPS, OUT_Z - 2 * WALL,
         cq.Vector(-(OUT_W / 2 - WALL), OUT_Y - FRAME_D - EPS, WALL))
@@ -494,12 +501,12 @@ def build_body() -> cq.Workplane:
         cq.Vector(-keep_w / 2, OUT_Y - FRAME_D - EPS, (OUT_Z - keep_h) / 2))
     body = body.cut(core_outer.cut(core_keep))
 
-    # LED panel locating nubs at the board corners on the frame back.
+    # LED panel locating nubs at the plate corners on the frame back.
     zp = OUT_Z / 2
     for sx in (1, -1):
         for sz in (1, -1):
-            nx = sx * (PANEL_BOARD_W / 2 + TOL + NUB / 2)
-            nz = zp + sz * (PANEL_BOARD_H / 2 + TOL + NUB / 2)
+            nx = sx * (PANEL_BOARD_W / 2 + NUB_CLR + NUB / 2)
+            nz = zp + sz * (PANEL_BOARD_H / 2 + NUB_CLR + NUB / 2)
             body = body.union(cq.Solid.makeBox(
                 NUB, NUB_H, NUB,
                 cq.Vector(nx - NUB / 2, OUT_Y - FRAME_D - NUB_H, nz - NUB / 2)))
