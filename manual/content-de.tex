@@ -29,8 +29,9 @@ Gehäuse kommen \textbf{nur 5\,V}. Am 230-V-Teil nur arbeiten, wenn es vom Netz 
 \begin{warum}
 Kunststoff (PA12) und Netzspannung passen nicht zusammen: kein definierter Brandschutz,
 keine Kriechstrecken. Deshalb sitzt das Netzteil separat, und das gedruckte Gehäuse führt
-ausschließlich Kleinspannung. Das Gehäuse wird außerdem \textbf{in einem Stück} gedruckt —
-es gibt keine Hälften zum Zusammenfügen.
+ausschließlich Kleinspannung. Das Gehäuse kommt in \textbf{zwei Hälften} aus dem Drucker
+(Naht in der Mitte); beim Aufbau richten zwei 4-mm-Passstifte die Hälften aus und drei
+interne M3-Klemmen verschrauben sie.
 \end{warum}
 
 \tableofcontents
@@ -91,7 +92,9 @@ Vor dem Start alles vollständig da haben und vorsortieren. Die Zahlen sind Stü
 \toprule
 \textbf{\#} & \textbf{Teil} & \textbf{Beschreibung} \\ \midrule
 ~8 & Gewindeeinsatz M2.5 & Heat-Set (Pi, Trägerplatine, WLED-Halterung) \\
--- & Schrauben M2.5 / M5 & M2.5 innen, M5 ×4 für die Deckenohren \\
+3 & Gewindeeinsatz M3 & Heat-Set, Nahtklemmen der beiden Gehäusehälften \\
+2 & Passstift 4\,mm & richtet die Hälften an der Naht aus \\
+-- & Schrauben M2.5 / M3 / M5 & M2.5 innen, M3 ×3 Nahtklemmen, M5 ×4 Deckenohren \\
 1 & XT60-Buchse & 5-V-Einspeisung in der Rückwand \\
 2 & Wago 221 (5-fach) & 5\,V+ und GND Sternverteilung \\
 -- & Sicherungen + Halter & inline 10\,A (LED), 5\,A (Pi) \\
@@ -242,17 +245,27 @@ Alle vier Sensor-/Bedien-Baugruppen hängen korrekt belegt an ihren Kabeln.
 
 % ---------------- D Inserts ----------------
 \clearpage
-\section{Gehäuse vorbereiten: Gewindeeinsätze}
+\section{Gehäuse vorbereiten: Einsätze setzen, Hälften fügen}
 \dekopikto{p-insert.png}{Insert setzen}
 \begin{ziel}
-Die Heat-Set-Gewindeeinsätze (nur \textbf{M2.5}) sitzen an den Montagepunkten, damit sich
-Pi, Platine und WLED-Halterung sauber und mehrfach verschrauben lassen.
+Die Gewindeeinsätze sitzen, die beiden Gehäusehälften sind verschraubt — und das LED-Panel
+liegt schon im Gehäuse, denn nach dem Fügen passt es durch keine Öffnung mehr.
 \end{ziel}
 \begin{schritte}
   \item \textbf{M2.5-Einsätze} für Pi 5, Trägerplatine und WLED-Halterung setzen (~8 Stück).
-  \item Die \textbf{Deckenohren} haben M5-Durchgangslöcher — die brauchen keinen Einsatz.
+  \item \textbf{M3-Einsätze} in die drei Nahtklemmen einer Hälfte (2× Rückwand, 1× vorn
+        im Boden). Die \textbf{Deckenohren} haben M5-Durchgangslöcher — kein Einsatz nötig.
+  \item \textbf{4-mm-Passstifte} in die Dübelposten einer Hälfte (ein Tropfen Kleber hält sie).
+  \item \textbf{LED-Panel einlegen, dann fügen:} das Panel samt Aluplatte beim
+        Zusammenschieben der Hälften mittig einlegen und dabei etwa 2\,cm hinter der
+        Frontkante halten (dort kollidiert es weder mit der vorderen Nahtklemme noch mit
+        den Positioniernasen). Hälften auf die Stifte schieben und mit den drei
+        \textbf{M3-Schrauben} verschrauben — von der offenen Front aus, langer
+        Schraubendreher.
+  \item Das Panel danach \textbf{nach vorn} zwischen die vier Positioniernasen schieben
+        (verklebt wird es erst später, mit dem Diffusor).
 \end{schritte}
-\bild{half-left.png}{0.58\textwidth}{Ansicht des einteiligen Gehäuses (Innenraum sichtbar).}
+\bild{half-left.png}{0.58\textwidth}{Ansicht einer Gehäusehälfte (Innenraum sichtbar).}
 \begin{achtung}
 Einsätze mit dem Lötkolben \textbf{gerade und nicht zu heiß} einsenken. Schief eingesetzt
 reißt später das Gewinde aus — lieber langsam und senkrecht.
@@ -272,10 +285,16 @@ LED-Panel.
 \begin{schritte}
   \item \textbf{Raspberry Pi 5} an die Rückwand-Bosse schrauben.
   \item \textbf{Trägerplatine} in die rechte Bucht auf ihre M2.5-Bosse (Bauteile zur Front).
-  \item \textbf{LED-Panel + Diffusor} vorn auf die Aluplatte (die zugleich Kühlkörper ist).
-  \item \textbf{Turm-LEDs + Radar} in den nach unten ragenden Turm.
-  \item \textbf{Kamera} (konisches Loch), \textbf{Mikrofon}, \textbf{Audio} (USB-Soundkarte,
-        PAM8403-Verstärker, Visaton-Lautsprecher).
+  \item \textbf{LED-Panel} (liegt seit dem Fügen im Gehäuse, auf seiner Aluplatte als
+        Kühlkörper) vorn an den Rahmenrücken zwischen die Nasen kleben. Den
+        \textbf{Opal-Diffusor} erst ganz zum Schluss in den Falz kleben — danach ist der
+        Innenraum nur noch über die Deckenöffnung erreichbar.
+  \item \textbf{Turm-LEDs + Radar} in den nach unten ragenden Turm; das Radar von innen
+        über den 30×5,5-Schlitz kleben (Kleberaupe rundum — hält und dichtet gegen Insekten).
+  \item \textbf{Kamera} in die hängende Box: Objektivblock flach an die geneigte Frontwand,
+        Tubus durch die Bohrung, Platinenecken mit \textbf{Heißkleber} fixieren. Dazu
+        \textbf{Mikrofon} und \textbf{Audio} (USB-Soundkarte, PAM8403-Verstärker,
+        Visaton-Lautsprecher).
   \item \textbf{RTL-SDR} an einen \emph{USB-2}-Port, Antenne an die SMA-Buchse.
 \end{schritte}
 \begin{figure}[htbp]\centering
@@ -319,13 +338,13 @@ Helligkeit ab. Das lange Kabel gehört auf die 230-V-Seite (zum externen Netztei
 Ein verdrahtetes Gerät mit abgesicherter Stromversorgung und gemeinsamer Masse.
 \end{ergebnis}
 
-% ---------------- G Montage (kein Zusammenbau mehr) ----------------
+% ---------------- G Montage ----------------
 \clearpage
 \section{Deckenmontage}
 \dekopikto{p-assemble.png}{montieren}
 \begin{ziel}
-Das \textbf{einteilige} Gehäuse hängt sicher unter dem Balkon. Ein Zusammenfügen von
-Hälften entfällt — das Gehäuse ist in einem Stück gedruckt.
+Das Gehäuse hängt sicher unter dem Balkon. Die Hälften sind seit dem Vorbereiten
+verschraubt — hier geht es nur noch an die Decke.
 \end{ziel}
 \begin{schritte}
   \item Letzter \textbf{Kabel-Check}: nichts eingeklemmt, nichts geknickt.

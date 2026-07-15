@@ -36,11 +36,11 @@ materially superior under direct sun/weathering.)
 | Rule | Requirement | Status in the model |
 |---|---|---|
 | Wall thickness | ≥ 1 mm (structural 2.5-3) | 3 mm (`WALL`) ✓ |
-| Fit clearance | 0.4-0.6 mm | `TOL = 0.4` ✓ |
+| Fit clearance | 0.4-0.6 mm | `TOL = 0.5` ✓ |
 | Powder escape | avoid blind cavities, escape ≥ 3.5 mm | body open at the front ✓ |
 | Min. hole | ≥ 1.5 mm | smallest 2 mm ✓ |
 | Supports | none | not applicable (SLS) ✓ |
-| Split reason | build volume (not warpage) | split at X=0, halves ~230 mm |
+| Split reason | build volume (not warpage) | split at X=0, halves ~254 mm |
 
 Notes: blow out blind insert holes (bosses) **with compressed air** before pressing
 the insert. Set heat-set inserts (M2.5/M3) as usual.
@@ -49,7 +49,7 @@ the insert. Set heat-set inserts (M2.5/M3) as usual.
 
 | Part | Size (mm) | Count |
 |---|---|---|
-| `balkon-borg-left` / `-right` | ~230 × 122 × 110 each | 2 (enclosure halves) |
+| `balkon-borg-left` / `-right` | ~254 × 150 × 152 each (incl. ears/towers) | 2 (enclosure halves) |
 
 Both as **STEP** to the service (STL works too). Material **PA12 SLS**, colour
 **black** (dyed). The front stays open; the diffuser and LED panel are glued in at

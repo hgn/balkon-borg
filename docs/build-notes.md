@@ -85,9 +85,11 @@ Complements `power-distribution.md`, `enclosure-sintering.md` and the log.
   always-on LEDs; PWM/PCA9685/addressable control was considered and skipped). Now **3
   LEDs** — the front (+Y) tower face holds the radar instead.
 - **Radar LD2410B** (35×7 mm) mounts **inside the bottom LED tower**, facing **forward and
-  down** through an **18 mm window** (`RADAR_WIN_D`) in the front tower face (the front LED
-  was dropped for it). Cable runs up into the cavity to `J_RADAR` (now 4-pin, no OUT). It
-  is no longer on the bottom face.
+  down** through a **30 × 5.5 mm slot** (`RADAR_WIN_L/W`) in the front tower face (the front
+  LED was dropped for it). The slot exposes all three antenna patches; the board **glues
+  over it from inside** with a bead all round, which both holds the module and **seals the
+  tower against insects**. Cable runs up into the cavity to `J_RADAR` (now 4-pin, no OUT).
+  It is no longer on the bottom face.
 - **Microphone**: USB mic on the **Pi 5 only** — no acoustic port in the enclosure.
 - **Audio out**: USB sound card (C-Media, e.g. DELOCK 61645) on a Pi 5 USB port →
   **PAM8403** mini class-D amp → **Visaton BF 45** speaker. The Pi 5 has no analogue out,
@@ -105,8 +107,10 @@ Complements `power-distribution.md`, `enclosure-sintering.md` and the log.
   the diffuser panel still slides into the front rebate. The box is **open at the top** into
   the cavity: fit the camera from the ceiling opening and route the CSI up to the Pi. The
   **whole front wall is a flat plane tilted ~24°** (perpendicular to the view axis): the
-  board **presses flat against its inside**, held by four d2.2 screws, and the lens goes
-  through a **clean round hole** (~14 mm, widening outward) bored straight through the wall.
+  **lens block presses flat against its inside**, the barrel (Ø6.95) passes through the
+  9 mm bore and ends ~1.7 mm proud outside (no vignetting); fix the module with **hot glue
+  at the board corners** (no screws — the real CM3 hole pattern is 21 × 12.5 mm and the
+  lens stack holds the board itself ~4 mm off the wall, so screws would need standoffs).
   The ~24° tilt makes the top of the frame clear the enclosure's own front underside (Camera
   Module 3 Wide, ~±33° vertical, set-back box). Lower `CAM_TILT_DOWN` for a narrower lens;
   `CAM_CX` / `CAM_LENS_Y` / `CAM_LENS_Z` place it. Earlier tries (straight-down bottom hole,

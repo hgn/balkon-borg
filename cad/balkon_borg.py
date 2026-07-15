@@ -9,14 +9,16 @@ Orientation in this model:
     Y  = depth (front to back); +Y = front/terrace (OPEN light window),
          -Y = rear/house
 
-Faces and their jobs:
+Faces and their jobs (pre-mirror; MIRROR flips left/right):
     +Y front  : LED panel + diffuser in the open light window (light forward).
                 Stays text-free.
-    -Z bottom : buttons + encoder (reachable from below).
-    -Y rear   : status/effect LEDs (small holes), cable gland, ventilation.
+    -Z bottom : camera pod, LED indicator tower (with the radar), speaker
+                grille, BME opening, drains, big raised wordmarks.
+    -Y rear   : status LEDs, XT60 power inlet, honeycomb vents, wordmarks.
     +Z top    : ceiling side; lateral ears ("Nasen") with vertical screw holes,
-                screwed up into the ceiling from below.
-    +/-X ends : raised slogans.
+                screwed up into the ceiling from below; big service opening.
+    +X end    : honeycomb grille + SMA antenna hole (Pi/SDR side).
+    -X end    : 2x2 buttons + encoder.
 
 The Pi 5 and the sensor carrier hang from the rear inner wall on bosses. Split at
 X=0 into two halves for the print bed, aligned by 4 mm dowel pins in posts and
@@ -30,9 +32,6 @@ Run: python balkon_borg.py   ->   writes STEP and STL into build/.
 The camera looks FORWARD (not down): it hangs in a downward box (open at the top into the
 cavity), +X side near the Pi, set back in the rear quarter so nothing protrudes past the
 front face (see _camera_pod). CSI reaches (measured cable ~240 mm).
-
-TODO: front rebate/seat for the panel + diffuser, ear gussets, bigger slogans once
-placement is agreed on the new geometry.
 """
 
 from __future__ import annotations
@@ -105,13 +104,10 @@ BTN_COLS_Y = (56.0, 92.0)      # button depth columns (Y)
 BTN_ROWS_Z = (29.0, 61.0)      # button height rows (Z) — shifted 5 mm down
 ENC_Z = 91.0                   # encoder above the top row (5 mm down, off the top edge)
 
-# Status/effect LEDs and vents in the rear (-Y) wall.
-STATUS_LED_D = 5.0
+# Status/effect LEDs in the rear (-Y) wall (5 mm LED body + clearance, like LED_HOLE_D).
+STATUS_LED_D = 5.2
 STATUS_N = 4
 STATUS_Z = 90.0
-VENT_L, VENT_H = 40.0, 4.0
-VENT_COUNT = 6
-VENT_Z = 55.0
 
 # Power inlet: Amass XT60E-M panel-mount on the rear wall (external PSU box next to
 # the hub, short 5 V jumper plugs in here). Per datasheet: body cutout ~16 x 9,
@@ -121,13 +117,16 @@ PWR_SCREW_D = 3.2
 PWR_SCREW_DZ = 14.0
 PWR_POS = (190.0, 30.0)
 
-# Camera Module 3 (standard) per official mechanical drawing: board 25 x 23.862, holes
-# d2.2, spacing ~14.4 x 12.5, lens roughly central. It looks FORWARD to the terrace,
-# slightly down. It hangs in a downward box (open at the top into the cavity), +X side
-# near the Pi, set back so it does NOT protrude past the front face. The whole FRONT WALL
-# of the box is TILTED (a flat plane perpendicular to the view axis), so the board presses
-# flat against its inside and the lens goes through a clean round hole bored straight
-# through it. See _camera_pod().
+# Camera Module 3 Wide per the official mechanical drawing: board 25 x 23.862, the lens
+# stack protrudes 8.3 mm above the board (base plate to 2.75, lens block ~10.8 wide to
+# 4.07, barrel d6.95 to the tip at 8.3). It looks FORWARD to the terrace, slightly down,
+# hanging in a downward box (open at the top into the cavity), +X side near the Pi, set
+# back so it does NOT protrude past the front face. The whole FRONT WALL of the box is
+# TILTED (a flat plane perpendicular to the view axis). Mounting is HOT GLUE: the lens
+# block presses flat against the inside of that wall, the barrel passes through the bore
+# (~1.7 mm proud outside, so the wide FOV cannot vignette) and the board corners are
+# tacked with hot glue. No screw holes: the real hole pattern is 21.0 x 12.5 (holes 2.0
+# off the board edges, lens ON the top row), useless in a 2.5 mm wall without standoffs.
 CAM_TILT_DOWN = 24.0         # front-wall tilt below horizontal. Enough that the FOV top
                              # edge clears the enclosure's own front underside (Camera
                              # Module 3 Wide, ~±33 deg). Lower this for a narrower lens.
@@ -139,9 +138,9 @@ CAM_BOX_WALL = 2.5           # box side/back/floor walls
 CAM_WIN_WALL = 2.5           # flat tilted front wall (also gives the board screws purchase)
 CAM_LENS_Y = 52.0            # lens centre on the front wall, outer face (Y at CAM_LENS_Z)
 CAM_LENS_Z = -20.0           # lens centre height (below the bottom, mid of the hang)
-CAM_LENS_D = 9.0             # inner lens hole
-CAM_CHAMFER_D = 14.0         # outer lens opening (widens outward; clears the mount holes)
-CAM_HOLE_DX, CAM_HOLE_DY = 14.4, 12.5   # board mount-hole pattern around the lens
+CAM_LENS_D = 9.0             # lens bore (barrel d6.95 + clearance; block seats inside)
+CAM_CHAMFER_D = 14.0         # outer lens opening (widens outward)
+CAM_DRAIN_D = 4.0            # drain in the pod floor (condensation + powder escape)
 
 # Speaker: Visaton BF 45, a round fullrange (45 mm cutout, ~26 mm deep, 17 mm voice coil).
 # Glued to the inside of the bottom wall firing DOWN; a round hex-packed hole grille in the
@@ -151,25 +150,12 @@ SPK_POS = (180.0, 40.0)      # (x, y) pre-mirror; clear of the wordmark and off 
 SPK_GRILLE_D = 44.0          # grille field diameter (matches the BF 45 cone/cutout)
 SPK_HOLE_D = 3.5             # grille hole diameter
 SPK_HOLE_PITCH = 6.0         # hex-packing pitch
-RADAR_MEMBRANE = 2.0                     # thinned wall the LD2410B sees through
-RADAR_AREA = 26.0
-RADAR_POS = (140.0, 49.0)
-MIC_D = 4.0
-MIC_POS = (205.0, 49.0)
-RADAR_MEMBRANE = 2.0                     # thinned wall the LD2410B sees through
-RADAR_AREA = 26.0
-RADAR_POS = (140.0, 49.0)
-MIC_D = 4.0
-MIC_POS = (205.0, 49.0)
 
 # Split + dowel posts on the rear inner wall.
 DOWEL_D = 4.0
 POST_L, POST_DEPTH, POST_H = 16.0, 10.0, 10.0
 
-# Raised slogans: short end walls + bottom face.
-TEXT_RIGHT = "HagiOne"          # +X end
-TEXT_LEFT = "Balkon Borg"       # -X end
-TEXT_SIZE = 14.0
+# Raised wordmarks: rear wall (REAR_TEXTS) + bottom face.
 TEXT_DEPTH = 1.5
 TEXT_BOTTOM = "Balkon Borg"     # -Z bottom brand plate (faces the terrace below)
 BOTTOM_SIZE = 48.0              # doubled; big Balkon Borg on the underside
@@ -183,13 +169,10 @@ TOL = 0.5               # SLS/PA12 clearance for fits (holes, pocket, dowels) �
                         # the SLS range, not the 0.4 low limit (dowels/diffuser fit)
 CORNER_R = 12.0        # rounded vertical corners + bottom edges (organic; top stays flat)
 RIB_W, RIB_H = 3.0, 8.0   # internal stiffening ribs against long-panel warp (bottom wall)
-RIB_X = (-95.0, -40.0, 40.0, 95.0)   # rib X positions, clear of tower/camera/drain
+RIB_X = (-95.0, -40.0, 40.0, 110.0)  # rib X positions, clear of tower/camera box/drain
+                                     # (the 54 mm camera box spans x 48..102: 110, not 95)
 MIRROR = True          # full left/right (X) mirror: swaps the busy +X side (Pi/SDR,
                        # camera/radar/mic) with the quiet -X side (buttons, LED tower)
-
-# Ear gussets (triangular ribs under the ceiling ears for strength).
-GUSSET_L = 14.0        # how far the rib reaches along the ear
-GUSSET_H = 16.0        # how far it runs down the wall
 
 # LED panel locating nubs on the frame back (panel glues between them).
 PANEL_BOARD_W = PANEL_W + 8.0          # 438, board slightly larger than pixels
@@ -210,11 +193,6 @@ FRONT_SEAM_Y = 115.0   # a seam clamp near the open front (bottom wall), so the 
 SEAM_Z = (28.0, 82.0)  # z heights of the rear seam clamps
 
 # Front is open: the diffuser + LED panel are glued into the frame rebate (no bezel).
-
-# Narrow insect-resistant vent slits.
-VENT_SLIT = 2.0        # slit width (was 4 mm)
-VENT_MID_X = 20.0      # rear vents in the clear zone between carrier and Pi
-VENT_END_Z = 100.0     # exhaust slits high on the end walls
 
 # Rear-wall layout. The boards behind the wall define keep-out zones for anything that
 # cuts THROUGH the wall (grille, holes). Raised text sits on the OUTSIDE and may go
@@ -266,9 +244,7 @@ LID_CORNER_R = 12.0    # rounded opening corners (SLS: avoid sharp inside notche
 LID_NOTCH_M = 6.0      # extra material kept around the WLED cradle inside the opening
 LID_TONGUE_RIB = 5.0   # extra ceiling-wall thickness under the notch tongue (stiffen it)
 
-# Radar + mic holders and BME280 ambient opening on the bottom face.
-RADAR_MNT_DX = 38.0                  # boss spacing flanking the radar membrane
-MIC_HOLDER = (205.0, 49.0)          # near the mic hole
+# BME280 ambient opening on the bottom face (radar lives in the LED tower, mic on the Pi).
 BME_POS = (-205.0, 49.0)            # (x, y) ambient opening + mount on the bottom
 BME_MESH_DX, BME_MESH_DY = 12.0, 12.0   # small vent grid to outside air
 BME_HOLE_DX = 16.0                  # BME280 breakout mount spacing (VERIFY)
@@ -284,7 +260,9 @@ LED_BOX_WALL = 3.0
 LED_TAPER = 20.0               # draft angle from vertical: wide at top, 40x40 at bottom
 LED_BOX_POS = (-155.0, 74.0)   # (x, y) tower axis on the bottom face (left, centred depth)
 LED_HOLE_D = 5.2               # 5 mm LED body + clearance (flange seats from inside)
-RADAR_WIN_D = 18.0             # radar window in the front (+Y) tower face (LD2410B view)
+RADAR_WIN_L = 30.0             # radar window in the front (+Y) tower face: a slot the
+RADAR_WIN_W = 5.5              # 35x7 LD2410B overlaps all round, glued over it from
+                               # inside (seals the tower against insects and holds it)
 
 # Drain holes at the lowest points (ceiling-mounted, bottom faces down): condensation
 # runs out, and they double as powder-escape for the tower pocket.
@@ -298,8 +276,7 @@ DIV_X = (-25.0, 48.0)  # ribs separating carrier | middle | Pi bays
 # Derived outer size
 OUT_W = PANEL_W + 2 * BORDER            # X (460)
 OUT_Z = PANEL_H + 2 * BORDER            # Z (110)
-OUT_Y = DEPTH + WALL                    # Y (78), front open
-CTRL_Y = OUT_Y / 2                      # control column at mid depth on the end
+OUT_Y = DEPTH + WALL                    # Y (148), front open
 
 BUILD = Path(__file__).parent / "build"
 
@@ -390,20 +367,20 @@ def _hex_grille(u_c: float, v_c: float, w: float, h: float, pitch: float,
 def _camera_pod(body: cq.Workplane) -> cq.Workplane:
     """Downward-hanging camera box (+X side, pre-mirror), open at the top, WEDGE front.
 
-    The Camera Module 3 looks FORWARD to the terrace, slightly down. The box hangs below
-    the bottom wall like the LED tower, set back so nothing protrudes past the front face.
-    The whole FRONT WALL is a flat plane tilted CAM_TILT_DOWN (perpendicular to the view
-    axis): the board presses flat against its inside and the lens goes through a clean
-    round hole bored straight through it, with four screw holes around it. The box is OPEN
-    AT THE TOP: the hollow runs up through the bottom wall into the cavity, so the camera
-    is fitted from the ceiling opening and the CSI routes up to the Pi.
+    The Camera Module 3 Wide looks FORWARD to the terrace, slightly down. The box hangs
+    below the bottom wall like the LED tower, set back so nothing protrudes past the front
+    face. The whole FRONT WALL is a flat plane tilted CAM_TILT_DOWN (perpendicular to the
+    view axis): the lens BLOCK presses flat against its inside, the barrel (d6.95) passes
+    through the bore and ends ~1.7 mm proud of the outer face (no vignetting), and the
+    module is fixed with hot glue at the board corners. The box is OPEN AT THE TOP: the
+    hollow runs up through the bottom wall into the cavity, so the camera is fitted from
+    the ceiling opening and the CSI routes up to the Pi. A floor drain lets condensation
+    out (and powder, after printing).
     """
     t = math.radians(CAM_TILT_DOWN)
     st, ct = math.sin(t), math.cos(t)
     tan_t = st / ct
     n = cq.Vector(0.0, ct, -st)           # outward view normal (forward + down)
-    ev = cq.Vector(0.0, st, ct)           # up-along the front wall (in-plane)
-    ex = cq.Vector(1.0, 0.0, 0.0)         # across the front wall (in-plane, = X)
     cx, W, wall = CAM_CX, CAM_BOX_W, CAM_BOX_WALL
     hw = W / 2.0
     z_top, z_floor, yb = WALL, -CAM_BOX_DROP, CAM_BOX_BACK_Y
@@ -436,12 +413,9 @@ def _camera_pod(body: cq.Workplane) -> cq.Workplane:
     body = body.cut(cq.Solid.makeCone(
         CAM_LENS_D / 2, CAM_CHAMFER_D / 2, CAM_WIN_WALL + 2 * EPS,
         lens_out - n.multiply(CAM_WIN_WALL + EPS), n))
-    # Four board screw holes through the flat front wall (board presses flat on the inside).
-    for sx in (-1, 1):
-        for sv in (-1, 1):
-            c = lens_out + ex.multiply(sx * CAM_HOLE_DX / 2) + ev.multiply(sv * CAM_HOLE_DY / 2)
-            body = body.cut(cq.Solid.makeCylinder(
-                2.2 / 2, CAM_WIN_WALL + 2 * EPS, c + n.multiply(EPS), n.multiply(-1)))
+    # Drain in the pod floor (its lowest inner point is a closed tub otherwise).
+    body = body.cut(_cyl(CAM_DRAIN_D, wall + 2 * EPS,
+                         cq.Vector(cx, yb + 10.0, z_floor - EPS), cq.Vector(0, 0, 1)))
     return body
 
 
@@ -500,14 +474,18 @@ def build_body() -> cq.Workplane:
 
     # Core the frame border from the back (leave a ~5 mm front skin + 3 mm walls + a
     # surround around the window/nubs) so it is not a solid ~13x12 mm ring — cuts mass,
-    # warp/sink and material. Moderate ("nicht zu stark").
+    # warp/sink and material. Moderate ("nicht zu stark"). The kept block spans past the
+    # locating nubs AND the diffuser rebate, so the nubs sit on solid frame back (not on
+    # a cored edge) and no ~1 mm skin sliver is left between rebate floor and coring.
     fskin = RECESS + DIFF_T + 1.0
+    keep_w = PANEL_BOARD_W + 2 * TOL + 2 * NUB + 2.0
+    keep_h = PANEL_BOARD_H + 2 * TOL + 2 * NUB + 2.0
     core_outer = cq.Solid.makeBox(
         OUT_W - 2 * WALL, FRAME_D - fskin + EPS, OUT_Z - 2 * WALL,
         cq.Vector(-(OUT_W / 2 - WALL), OUT_Y - FRAME_D - EPS, WALL))
     core_keep = cq.Solid.makeBox(
-        WINDOW_W + 8, FRAME_D, WINDOW_H + 8,
-        cq.Vector(-(WINDOW_W + 8) / 2, OUT_Y - FRAME_D - EPS, (OUT_Z - WINDOW_H - 8) / 2))
+        keep_w, FRAME_D, keep_h,
+        cq.Vector(-keep_w / 2, OUT_Y - FRAME_D - EPS, (OUT_Z - keep_h) / 2))
     body = body.cut(core_outer.cut(core_keep))
 
     # LED panel locating nubs at the board corners on the frame back.
@@ -575,7 +553,7 @@ def build_body() -> cq.Workplane:
     body = body.cut(_cyl(ENC_D + TOL, WALL + 2 * EPS,
                          cq.Vector(xw, BTN_COLS_Y[1], ENC_Z), cq.Vector(1, 0, 0)))
 
-    # Rear (-Y) wall: status LEDs, cable gland, ventilation slots.
+    # Rear (-Y) wall: status LEDs, XT60 power inlet, honeycomb vents.
     for i in range(STATUS_N):
         sx = 150.0 + i * 20.0          # right side, clear of the carrier board
         body = body.cut(_cyl(STATUS_LED_D, WALL + 2 * EPS,
@@ -655,11 +633,13 @@ def build_body() -> cq.Workplane:
         centre = cq.Vector(lbx + dx * off, lby + dy * off, -LED_BOX_H / 2.0)
         body = body.cut(cq.Solid.makeCylinder(
             LED_HOLE_D / 2, 8.0, centre - normal.multiply(4.0), normal))
-    # ...and a larger radar window in the front (+Y) face for the LD2410B, facing forward.
+    # ...and a radar slot in the front (+Y) face for the LD2410B, facing forward. The
+    # slot (RADAR_WIN_L x RADAR_WIN_W, horizontal) exposes all three antenna patches of
+    # the 35x7 board, which glues over it from inside and seals the tower.
     rnorm = cq.Vector(0, n_out, -n_down)
     rcentre = cq.Vector(lbx, lby + off, -LED_BOX_H / 2.0)
-    body = body.cut(cq.Solid.makeCylinder(
-        RADAR_WIN_D / 2, 8.0, rcentre - rnorm.multiply(4.0), rnorm))
+    rpl = cq.Plane(origin=rcentre - rnorm.multiply(4.0), xDir=(1, 0, 0), normal=rnorm)
+    body = body.cut(cq.Workplane(rpl).slot2D(RADAR_WIN_L, RADAR_WIN_W).extrude(8.0))
     # Drain in the tower floor (lowest point): condensation + powder escape.
     body = body.cut(_cyl(DRAIN_D, WALL + 2 * EPS,
                          cq.Vector(lbx, lby, -LED_BOX_H - EPS), cq.Vector(0, 0, 1)))

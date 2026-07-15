@@ -18,6 +18,55 @@ log what is already in the code/YAML.
 
 ---
 
+## 2026-07-15 — Pre-upload mechanical review: camera glue mount, radar slot, fixes
+
+**Context:** the JLC order (in file review) needs the regenerated two-half STLs. Before
+uploading, a full mechanical review (printability, mountability, every component checked)
+was run against the rebuilt model, with numeric point-probe verification on the STLs and
+the official Camera Module 3 Wide mechanical drawing as reference.
+
+**Findings and fixes (all verified on the rebuilt model, 24/24 probes OK):**
+- **Camera screw holes were wrong and are gone.** The model had four d2.2 holes at
+  14.4 × 12.5 symmetric around the lens; the official drawing says 21.0 × 12.5 (holes
+  2.0 off the board edges) with the lens ON the top hole row — 14.4 is the lens-to-
+  board-bottom dimension, misread on 2026-07-10. Also the lens stack (base to 2.75,
+  ~10.8 mm block to 4.07, d6.95 barrel tip at 8.3) keeps the board ~4 mm off the wall,
+  so flat screwing was impossible anyway. **User decision: mount by hot glue** — the
+  lens block seats flat on the wall inside, the barrel passes the 9 mm bore and ends
+  ~1.7 mm proud outside (vignetting impossible), board corners tacked with glue.
+  *Rejected:* printed standoff pads + self-tapping M2 (works, but glue is simpler).
+- **Radar window d18 → 30 × 5.5 slot** (`RADAR_WIN_L/W`): the round window was an open
+  hole into the tower (and cavity) wider than the 35 × 7 LD2410B, so it could not be
+  sealed — an insect door. The slot exposes all three antenna patches and the board
+  glues over it from inside, sealing the tower and holding the module.
+- **Stiffening rib 95 → 110** (`RIB_X`): the rib at x=95 bridged the camera pod's top
+  opening as a floating 3 × 8 strut (the pod had been widened to 54 mm after the ribs
+  were placed). Verified clear of drain (120) and speaker (158+).
+- **Status LED holes 5.0 → 5.2** (`STATUS_LED_D`): were cut at exactly the 5 mm LED
+  body diameter, no clearance (the tower already used 5.2).
+- **Camera pod floor drain d4** (`CAM_DRAIN_D`): the pod was the only closed tub left
+  (condensation could pool ~19 mm below the lens); doubles as powder escape.
+- **Frame coring keep-block enlarged** past the nubs and the diffuser rebate: the four
+  panel locating nubs hung on ~1.5 × 1.5 mm of cored frame edge (finger-breakable) and
+  a ~1 mm skin sliver stood between rebate floor and coring. Both gone; body volume
+  710 → 737 cm³.
+- Dead parameters removed (duplicated RADAR_*/MIC_* blocks, unused TEXT_/GUSSET_/VENT_/
+  CTRL_Y), docstring updated to the real face layout.
+
+**Checked and fine (no change):** both halves watertight single solids, 254 mm each;
+nothing crosses the front plane (y=148.0 exact); ear through-holes + counterbores; seam
+clamps + dowels; FOV top ray 9.5° above horizontal vs 11.8° to the front-bottom edge
+(2.3° margin), tower/speaker outside the frame; grille cells under the ear blends leave
+no meaningful blind pockets; radar fits the tower (~46 mm inner width at slot height).
+
+**Assembly note (manual, no CAD change):** the LED panel (+3 mm alu plate, ~438 × 88)
+fits through neither the front window (434) nor the ceiling opening (424, tongue in the
+way). It must be laid in while bolting the halves together: hold it at y≈120–126 (clear
+of the front seam clamp and the nub sweep, verified), join the halves, then push it
+10 mm forward into the nubs and glue. Measure the real panel width first (438 is an
+assumption). Small parts without a modelled mount (PAM8403, Wago, fuse holders): stick-on
+zip-tie anchors on the free bottom/rear walls.
+
 ## 2026-07-14 — Camera looks forward, not down (front-bottom pod)
 
 **Context:** noticed late (after the enclosure STLs had already gone to JLC) that the
