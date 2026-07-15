@@ -5,10 +5,18 @@ prioritise. **Nothing here changes the hardware design.** Fill the **Rate** colu
 `skip` / `low` / `high` (or your own scale); the `high` ones can later graduate into real
 U-numbers and get built.
 
-Hardware in play: camera (CSI, Frigate/vision on the Pi), mic + speaker (USB), RTL-SDR,
+Hardware in play: camera (CSI, Frigate/vision on the Pi), mic + speaker (USB),
+**RTL-SDR V4** (500 kHz–1.766 GHz in one sweepable input, HF/shortwave built in),
 LD2410B presence radar, BME280 (temp/humidity/pressure), WLED RGBW-WW 8×25 matrix,
 4 buttons + encoder, button/indicator LEDs, the always-on nas-Pi and the phone app — all
 over MQTT.
+
+Two ground rules for the **Listen** group (84+): the dongle is a **single tuner** — one
+task at a time, and readsb normally owns it, so listening modes need a schedule (or a
+second stick, ~35 €). And German law: broadcast (FM/DAB+/shortwave), amateur radio,
+ISM/rtl_433 beacons, satellites and radar echoes are fair game; air band, pagers and
+other **non-public** services (ideas 37–39) fall under the Abhörverbot — receiving them
+is formally prohibited in Germany, rate those accordingly.
 
 | # | Group | Use case | Uses | Rate |
 |--:|---|---|---|---|
@@ -53,7 +61,7 @@ over MQTT.
 | 39 | SDR | ACARS/VDL2 aircraft text messages as matrix ticker | SDR, WLED | |
 | 40 | SDR | Radiosonde hunt: track Munich-region weather balloons, predict landing | SDR, nas-Pi | |
 | 41 | SDR | ISS SSTV: auto-decode images from the space station when transmitting | SDR, nas-Pi | |
-| 42 | SDR | DCF77 time sync (77.5 kHz, direct sampling) | SDR | |
+| 42 | SDR | DCF77 time sync — **dead with the V4**: 77.5 kHz sits below its 500 kHz floor and there is no direct-sampling mode (NTP does this better anyway) | SDR | skip |
 | 43 | SDR | Spectrum monitor: "what's transmitting nearby" waterfall | SDR | |
 | 44 | Env | Frost / heat warning for balcony plants (BME thresholds) → announcement/push | BME, speaker, app | |
 | 45 | Env | Thunderstorm early warning: fast pressure drop → "bring cushions/laundry in" | BME, speaker | |
@@ -95,3 +103,23 @@ over MQTT.
 | 81 | Play | **Konami code / easter eggs**: a secret button/encoder sequence unlocks a hidden mode, light program, or inside-joke audio | encoder, buttons, WLED, speaker | |
 | 82 | Env | **Invisible warning**: matrix off, but on frost (<2 °C) or heat (>35 °C) + radar sees someone approaching the door → 2 s ice-blue / deep-red flash, then off | BME, radar, WLED | |
 | 83 | Meta | **Tricorder / diagnostics**: encoder press → matrix shows CPU load, WiFi/MQTT status, live radar distance, audio level — hardware debug without the phone or SSH | all sensors, WLED | |
+| 84 | Listen | **FM radio + RDS ticker**: rtl_fm/redsea, encoder = tuning knob, station/song/programme text scrolls on the matrix — the balcony gets a radio with a display | SDR, speaker, encoder, WLED | |
+| 85 | Listen | **DAB+ receiver** (welle-cli headless): station list over MQTT, buttons = favourites, encoder browses, label on the matrix | SDR, speaker, buttons, WLED | |
+| 86 | Listen | **World-band radio**: MW/LW/shortwave broadcast through the V4's built-in HF front end — evening DX, BBC WS/RRI/CRI and friends; a few metres of longwire on the balcony rail makes it real | SDR, speaker | |
+| 87 | Listen | **Number stations & the Buzzer** (UVB-76, 4625 kHz): the creepiest ambient a party can have, live from the ether | SDR, speaker | |
+| 88 | Listen | **Amateur-band chatter**: local 2 m/70 cm repeaters, 80/40 m SSB rag-chews at night — the original social network as background murmur | SDR, speaker | |
+| 89 | Listen | **APRS 144.800 ticker**: decode passing balloons/hikers/IGates → matrix ticker + optional TTS ("balloon DL0XYZ crossing at 8 km") | SDR, WLED, speaker | |
+| 90 | Listen | **ISS live**: auto-tune 145.800 on a pass — FM voice contacts / SSTV tones through the speaker, decoded SSTV image to the dashboard | SDR, speaker, nas-Pi | |
+| 91 | Listen | **Hear shooting stars** (extends 71): pipe the GRAVES meteor pings to the speaker during showers — Perseid evenings with audio | SDR, speaker, WLED | |
+| 92 | Listen | **Weather-sat soundtrack** (extends 35): the classic NOAA APT tick-tock live while the image decodes — satellite pass as an event | SDR, speaker, nas-Pi | |
+| 93 | Listen | **Radiosonde announcer** (extends 40): Oberschleißheim launches 2×/day → "Sonde in 18 km, zieht nach Osten" as TTS + matrix arrow | SDR, speaker, WLED | |
+| 94 | Listen | **868 MHz wind chimes**: every rtl_433 sensor beacon from the neighbourhood strikes a soft chime note — the invisible radio traffic as generative ambient | SDR, speaker | |
+| 95 | Listen | **Radio aurora**: sonify a band's waterfall into a slow evening soundscape — the SDR as a synthesizer fed by the actual ether | SDR, speaker | |
+| 96 | Listen | **Traffic-flash gate**: monitor the FM RDS TA flag, unmute only for traffic announcements, then silence again — car-radio behaviour for the balcony | SDR, speaker | |
+| 97 | Listen | **DAB+ EWF warnings**: monitor the Emergency Warning Functionality → auto-play the warning + red matrix flash (complements cell broadcast, works when the phone is inside) | SDR, speaker, WLED | |
+| 98 | Listen | **Guess the station**: party game — random station from a curated list, guests guess language/country, matrix reveals the answer | SDR, speaker, WLED | |
+| 99 | Listen | **Morse trainer**: HF beacons (IBP chain, 14.100 MHz) decoded to text on the matrix while the audio plays — learn CW against real signals | SDR, speaker, WLED | |
+| 100 | Listen | **Fox hunt**: hide a 433 MHz key fob, kids search the garden, the borg plays warmer/colder from RSSI | SDR, speaker | |
+| 101 | Listen | **Flying repeaters**: amateur FM satellites (SO-50 & friends) — pass prediction, then listen to QSOs bouncing off a shoebox in orbit | SDR, speaker | |
+| 102 | Listen | **Lightning ear** (extends 62): HF static crackle rate as thunderstorm proximity trend, feeds the triple-confirmed storm warning | SDR, speaker, BME | |
+| 103 | Listen | **Ether time capsule**: record 30 s of a random frequency daily → end-of-season montage of what the sky sounded like | SDR, nas-Pi | |
