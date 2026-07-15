@@ -18,6 +18,28 @@ log what is already in the code/YAML.
 
 ---
 
+## 2026-07-15 — PSU box: IP66 junction enclosure on the ceiling
+
+**Context:** the LRS-150F-5 is open-frame; the 230 V separation rule always demanded an
+own external enclosure, but no concrete part was ever specified. User wants it
+water-protected and screwed to the ceiling next to the hub, with made-to-measure cables.
+
+**Decision:** Spelsberg **TK PC 2518-11-m** (254 × 180 × 111, IP66, PC, glow-wire tested),
+ceiling-mounted via the outer lugs on the hub's XT60 side. Glands facing down (M20 for
+the H07RN-F 3G1.5 Schuko lead, M16 for ~0.5 m of 2×2.5 mm² to the XT60), plus an M12
+pressure-compensation membrane so the box breathes instead of collecting condensation.
+PSU on ~10 mm standoffs, PE to the LRS terminal.
+
+**Rationale:** thermals check out — 1–7 W waste heat in the box gives ~10–15 K rise,
+~45 °C inside on a hot evening vs the LRS's 50 °C full-load spec at only ~55 % load.
+IP66 junction boxes are the proper 230 V installation class (glow-wire tested), which
+satisfies the fire-safety rule without a custom metal box. **Rejected:** hermetic
+sealing (condensation pump), a metal box (needs PE bonding of the case, no benefit
+here), and putting the PSU inside the printed enclosure (ruled out long ago).
+
+**Consequence:** full spec + parts (~50 € all in) in `docs/power-distribution.md`; cost
+estimate updated. Cable lengths get measured on site before ordering the H07RN-F lead.
+
 ## 2026-07-15 — Enclosure re-ordered at JLC with the reviewed geometry
 
 **Context:** the 2026-07-14 JLC order carried the old down-camera STLs (see that entry's

@@ -1,13 +1,39 @@
 # 5 V distribution with branch fuses
 
 One feed-in point (XT60), then a fused star distribution to the loads. The 230 V
-power supply stays **external** in its own V-0/metal enclosure; only 5 V DC comes
-in here.
+power supply stays **external** in its own enclosure (next section); only 5 V DC
+comes in here.
+
+## External PSU box (ceiling-mounted, water-protected)
+
+The LRS-150F-5 is an open-frame supply and lives in its **own IP66 junction box on
+the ceiling next to the hub**, XT60 side:
+
+- **Enclosure:** Spelsberg **TK PC 2518-11-m** (254 × 180 × 111, IP66, polycarbonate,
+  glow-wire tested — proper 230 V installation class), mounted via the outer lugs
+  (outside the seal), like the hub's ears. The generous depth is deliberate.
+- **Thermals (checked):** everyday load 10–30 W, party peak ~60–70 W → at ~90 %
+  efficiency 1–7 W of waste heat in the box; the 2518 sheds that through its walls at
+  ~10–15 K rise, so ~45 °C inside on a 30 °C evening. The LRS is specified to 50 °C
+  at full load and runs at only ~55 % here. Mount the PSU on ~10 mm standoffs,
+  vent slots free.
+- **Water + breathing:** both cable glands point **down**, drip loops in both cables,
+  and a **pressure-compensation membrane plug** (M12, Gore-style) instead of a
+  hermetic seal — otherwise the day/night cycle pumps moisture in that never leaves.
+- **230 V side:** H07RN-F 3G1.5 with a moulded Schuko plug, length measured to the
+  terrace socket (~5 m per the log), through an **M20 gland** (strain relief built
+  in). **PE to the LRS PE terminal** — mandatory even in a plastic box. Work on it
+  only unplugged; the terrace socket is RCD-protected.
+- **5 V side:** short and thick — box right next to the hub's XT60 wall, ~0.5 m of
+  2 × 2.5 mm² through an **M16 gland** to the XT60 plug (~0.2 V drop at 15 A, which
+  the 5.15 V trim absorbs). Ferrules on everything entering the LRS screw terminals.
+- **Box parts:** enclosure ~30 €, M20 + M16 glands + locknuts, M12 vent plug,
+  H07RN-F lead with plug — ~50 € all in.
 
 ## Diagram
 
 ```
- external PSU (Mean Well LRS-150-5, trimmed to 5.15 V)
+ external PSU (Mean Well LRS-150F-5, trimmed to 5.15 V, in the IP66 ceiling box)
         │ 5 V / GND, short thick cable (2.5 mm2)
         ▼
    [ XT60E-M ]  panel connector in the rear wall

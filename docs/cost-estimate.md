@@ -13,18 +13,19 @@ Pi/camera are bought new are the big swing items.
 | **Light** | Athom WLED High-Power 18, SK6812 RGBWW strip 5 m/60 per m (builds the 8×25 field) 32, opal diffuser NP40 443×93 (ordered 2026-07-15, 15.60 landed, actual) 16, alu plate 438×88×3 cut to size at Alufritze (ordered 2026-07-15, 42.82 incl. project fee + shipping, actual) 43 | **109** |
 | **ESP / sensing / controls** | ESP32-DevKitC 9, LD2410B 4, BME280 (genuine Bosch) 8, 4× illuminated buttons 16, EC11 encoder 3, 4× indicator LEDs 8 | **48** |
 | **Reception + audio** | RTL-SDR V4 32, USB microphone 10, RG316 pigtail SMA plug → SMA bulkhead 25 cm (Mauritz, ordered 2026-07-15: 20.30 + 5.95 shipping = 26.25, actual) 26, telescopic antennas: Bingfu short 2-pack 10.99 + VooGenzek 75 cm 2-pack 7.99 (Amazon, ordered 2026-07-15, free shipping, actual) 19, USB sound card (DELOCK 61645) 6, class-D amp (PAM8403) 3, Visaton BF 45 speaker 16 | **112** |
-| **Power** | Mean Well LRS-150F-5 28, its own vented V-0/metal enclosure with PE + strain relief 20, XT60 3, 2× Wago 221 3, fuses + holders 5, wire/ferrules 8 | **67** |
+| **Power** | Mean Well LRS-150F-5 28, IP66 ceiling box (Spelsberg TK PC 2518-11-m) + M20/M16 glands + M12 vent plug + H07RN-F lead 50, XT60 3, 2× Wago 221 3, fuses + holders 5, wire/ferrules 8 | **97** |
 | **Camera** | Raspberry Pi Camera Module 3 (standard), Amazon 2026-07-15, actual | **30** |
 | **Carrier PCB** | Aisler Beautiful Boards (3 pcs, incl. VAT) **47**, THT parts (R/C/Q/JST/sockets/polyfuse) 15 | **62** |
 | **Enclosure** | SLS/PA12 black, **two halves** at JLC3DP (re-order 2026-07-15 with the reviewed geometry): goods 208 $ + shipping 88 $ = 296 $ (~275 €), landed with German import VAT + duty | **350–365** |
 | **Small parts** | heat-set inserts, screws M2.5/M3/M5, dowel pins, panel nuts, thermal pad, glue, insect mesh, zip ties | **25** |
 
-**Total ≈ 895–910 €, realistically ~900 € mid** (PCB, enclosure, camera, diffuser, alu
+**Total ≈ 925–940 €, realistically ~930 € mid** (PCB, enclosure, camera, diffuser, alu
 plate, SDR pigtail and antennas are ordered actuals, not estimates; the one-off cut and
 confection services carry project fees and shipping that the early ballpark missed —
-the old "antenna + pigtail 13 €" line alone became 45 €. The PSU enclosure was a real
-gap in the early list: the LRS is an open-frame supply and needs its own vented
-V-0/metal box with PE and strain relief, per the 230 V separation rule.)
+the old "antenna + pigtail 13 €" line alone became 45 €. The PSU box was a real gap in
+the early list: the LRS is an open-frame supply and needs its own IP66 ceiling
+enclosure with glands and a vent plug, per the 230 V separation rule — full spec in
+[`power-distribution.md`](power-distribution.md).)
 
 ## Cost drivers
 
