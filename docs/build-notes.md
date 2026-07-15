@@ -81,7 +81,10 @@ Complements `power-distribution.md`, `enclosure-sintering.md` and the log.
 - **XT60E-M** + mating plug, **Wago 221**, wire 2.5/1.5/0.5 mm².
 - **Cut-to-size flat parts** (order these, do not cut yourself): **alu plate** AlMg3
   3 mm at exactly **438 × 88** (the nubs have 1 mm play for the ±1 mm shear tolerance),
-  and the **diffuser** in acrylic XT opal white ~30 % transmission, 3 mm, ordered at
+  and the **diffuser** in opal white acrylic with strong diffusion, ~40–45 % transmission,
+  3 mm (e.g. "Acrylglas GS Opal NP40", 44 %). Mind the grade naming: the "030"/NP30
+  grades are **70 %** (LEDs show as dots at our 8 mm gap) and "069"/NP69 is **3 %**
+  (blickdicht, no light) — the number is a grade code, not the transmission. Ordered at
   **443 × 93** — the rebate is 444.5 × 94.5 and saw cuts also come ±1 mm, so 444 × 94
   nominal could arrive at 445 and not fit; the smaller blank still overlaps the light
   window by ≥ 4 mm per side and is glued anyway.
