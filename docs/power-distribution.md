@@ -78,7 +78,11 @@ Fuses as **inline blade-fuse holders** (automotive mini) at the junction, on the
 
 ## Distribution parts list
 
-- 1× XT60E-M (rear wall) + XT60 socket on the PSU cable
+- 1× XT60E-M (rear wall) + XT60 socket on the PSU cable. Low-solder tip: XT60 cable
+  connectors have solder cups — buy the socket as a **pre-soldered pigtail** ("XT60
+  female with lead", 12 AWG silicone, ~50 cm): that IS the whole PSU-to-XT60 cable —
+  socket end to the hub, wire end through the M16 gland, ferrules on, into the LRS
+  screw terminals. No soldering.
 - 2× Wago 221 (5-way) for 5V+ and GND
 - 1× inline blade-fuse holder + 10 A mini fuse (LED)
 - 1× inline blade-fuse holder + 5 A mini fuse (borg-pi5)
