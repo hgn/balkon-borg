@@ -13,7 +13,7 @@ A smart, local sensor-and-effector node for the balcony, tied into the home netw
 - Motion: radar (LD2410B; presence and motion detection)
 - Acoustics: USB microphone (BirdNET, noise-level monitoring, audio event classification)
 - Environment: sensor (BME280; temperature, humidity, pressure)
-- Radio: SDR receiver (RTL-SDR V3; aircraft/ADS-B, LoRa, 433/868 MHz weather and smart-home sensors, tire-pressure sensors/TPMS)
+- Radio: SDR receiver (RTL-SDR V4; aircraft/ADS-B, FM/DAB+ and AM/shortwave broadcast (built-in HF front end), LoRa, 433/868 MHz weather and smart-home sensors, tire-pressure sensors/TPMS)
 - Controls: physical interface (four illuminated buttons and a rotary encoder)
 
 **Effectors**
@@ -115,7 +115,7 @@ runs off a shared 5 V feed and an MQTT/WiFi bus. The goal is a build that looks
 | U2 | Manual light control without a phone | 4× stainless buttons + rotary encoder (on/off, scenes, dimming, automation pause) |
 | U3 | Effect / party light | WLED 2D effects, strobe, scrolling text on the 8×25 matrix |
 | U4 | Environment data | BME280 (temperature/humidity/pressure) → MQTT → dashboard |
-| U5 | Aircraft reception | RTL-SDR V3 + readsb/tar1090 (approach MUC, optional feed) |
+| U5 | Aircraft reception | RTL-SDR V4 + readsb/tar1090 (approach MUC, optional feed) |
 | U6 | Bird-call log | USB microphone → BirdNET → species statistics over the season |
 | U7 | Camera + local recognition | Camera Module 3 → Frigate (people/animals) **on the Pi 5 CPU** |
 | U8 | Passive radio listening (optional) | LoRa/Meshtastic **RX** over the SDR (no active transmit node) |
@@ -129,7 +129,7 @@ for rating in [`docs/ideas.md`](docs/ideas.md), an idea pool, not committed scop
 - **Central compute (borg-pi5):** Raspberry Pi 5 (8 GB) + Active Cooler, microSD in the enclosure, **the hub the project is about**: recording (camera/audio/SDR), local inference (Frigate, readsb/tar1090, BirdNET-Go), and the **MQTT broker (Mosquitto), dashboards and app**. Powered on **only when needed**, not 24/7.
 - **Sensor/control front panel:** ESP32 (ESPHome) with LD2410B (UART), BME280 (I²C), 4 buttons + encoder (GPIO).
 - **Light:** Athom high-power WLED controller + SK6812 RGBW-WW light field: 8 rows of 60/m strip, 25 LEDs each = 200 px, on a 3 mm aluminium plate (438 × 88, bought cut to size), opal acrylic diffuser.
-- **Reception:** RTL-SDR V3 (ADS-B 1090 MHz, optional LoRa RX), USB microphone (on the Pi 5). The LD2410B radar points **forward** (in the LED tower), toward the terrace.
+- **Reception:** RTL-SDR V4 (ADS-B 1090 MHz, FM/DAB+/shortwave listening, optional LoRa RX), USB microphone (on the Pi 5). The LD2410B radar points **forward** (in the LED tower), toward the terrace.
 - **Audio out:** USB sound card (C-Media, e.g. DELOCK 61645) + a **PAM8403** mini class-D amp + a **Visaton BF 45** broadband speaker on the borg-pi5, plays a short wav on events (detection, greeting). The Pi 5 has no analogue output, hence the USB card; amp powered off the Pi's 5 V branch (see [power](docs/power-distribution.md)).
 - **Power:** Mean Well LRS-150F-5 (5 V/22 A) in its own V-0 enclosure, fused branches.
 - **Enclosure:** 3D print in SLS/PA12 (black), **two halves** split at X=0 (each ~254 mm, fits a standard SLS bed such as JLC3DP), bolted with internal M3 seam clamps and 4 mm dowel pins; aluminium plate = front + heatsink.

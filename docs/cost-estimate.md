@@ -12,7 +12,7 @@ Pi/camera are bought new are the big swing items.
 | **Compute** | Pi 5 (8 GB) 80, Active Cooler 6, microSD 64 GB 10 | **96** |
 | **Light** | Athom WLED High-Power 18, SK6812 RGBWW strip 5 m/60 per m (builds the 8×25 field) 32, opal diffuser 10, alu plate 438×88×3 cut to size 12 | **72** |
 | **ESP / sensing / controls** | ESP32-DevKitC 9, LD2410B 4, BME280 (genuine Bosch) 8, 4× illuminated buttons 16, EC11 encoder 3, 4× indicator LEDs 8 | **48** |
-| **Reception + audio** | RTL-SDR V3 32, USB microphone 10, antenna + RG316 pigtail 13, USB sound card (DELOCK 61645) 6, class-D amp (PAM8403) 3, Visaton BF 45 speaker 16 | **80** |
+| **Reception + audio** | RTL-SDR V4 32, USB microphone 10, antenna + RG316 pigtail 13, USB sound card (DELOCK 61645) 6, class-D amp (PAM8403) 3, Visaton BF 45 speaker 16 | **80** |
 | **Power** | Mean Well LRS-150-5 28, XT60 3, 2× Wago 221 3, fuses + holders 5, wire/ferrules 8 | **47** |
 | **Camera** | Raspberry Pi Camera Module 3 (standard), Amazon 2026-07-15, actual | **30** |
 | **Carrier PCB** | Aisler Beautiful Boards (3 pcs, incl. VAT) **47**, THT parts (R/C/Q/JST/sockets/polyfuse) 15 | **62** |

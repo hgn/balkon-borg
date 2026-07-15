@@ -18,6 +18,22 @@ log what is already in the code/YAML.
 
 ---
 
+## 2026-07-15 — RTL-SDR V4 replaces the V3
+
+**Context:** a working RTL-SDR Blog V4 arrived and replaces the V3 in the plan.
+
+**Decision / consequences:** the connection side is unchanged (same SMA female input,
+same software-switched bias tee), so the end-wall bulkhead, RG316 pigtail and copper
+ground plane stay exactly as designed. Gains: built-in HF front end (0.5–28 MHz AM and
+shortwave through the same port, no direct-sampling mode — which also kills idea 42,
+DCF77 at 77.5 kHz, below the V4's 500 kHz floor), band filtering, less heat. One hard
+software requirement for the deploy work: a **V4-capable librtlsdr** (osmocom ≥ v2.0.1
+or the rtl-sdr-blog fork) — older Debian packages tune but receive garbage; verify with
+`rtl_test`. On the user's request the manual thanks **Steve Markgraf**, maintainer of
+the rtl-sdr library. The idea pool gained a **Listen** group (84–103: FM/RDS, DAB+,
+shortwave, ISS, meteor pings, sonifications, …) with a single-tuner scheduling note and
+a Abhörverbot legality note.
+
 ## 2026-07-15 — LED panel build fixed: 60/m strips on a cut-to-order alu plate
 
 **Context:** the "SK6812 8×43 panel" (344 px, 10 mm pitch) existed only as an assumption;

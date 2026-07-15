@@ -133,9 +133,21 @@ Complements `power-distribution.md`, `enclosure-sintering.md` and the log.
   `CAM_CX` / `CAM_LENS_Y` / `CAM_LENS_Z` place it. Earlier tries (straight-down bottom hole,
   then a forward pod, then a vertical-wall box with a tilted lens) are superseded; the ragged
   opening came from boring a tilted axis through a straight wall, fixed by tilting the wall.
+- **RTL-SDR V4** (replaces the V3 in the plan): the connection side is **unchanged** —
+  same SMA female input, same software-switched bias tee, so the bulkhead/pigtail/
+  ground-plane plan below applies as-is. What the V4 adds: **HF (0.5–28 MHz, AM and
+  shortwave) works out of the box** through the same port via its built-in front end —
+  no direct-sampling mode needed — plus band filtering and less heat. One catch: it
+  needs a **V4-capable driver**, i.e. librtlsdr from osmocom ≥ v2.0.1 or the
+  rtl-sdr-blog fork. The library in older Debian releases is too old (the dongle tunes
+  but receives garbage); `rtl_test` shows whether the V4 is recognised. Thanks to
+  **Steve Markgraf**, maintainer of the rtl-sdr library, whose driver work makes this
+  receiver run.
 - **SDR antenna**: a cheap **telescopic SMA whip** (extends to ~30 cm+, wideband when
   length-tuned) is the best budget "covers a lot" antenna. For one specific band (e.g.
-  ADS-B 1090 MHz) a tuned antenna beats a whip.
+  ADS-B 1090 MHz) a tuned antenna beats a whip. For serious shortwave listening the
+  short whip is a compromise; a few metres of wire (longwire) along the balcony beats
+  it any day and plugs into the same bulkhead.
   - **Connector chain:** RTL-SDR is **SMA female** → pigtail end **SMA male** to the SDR,
     **SMA female bulkhead** in the 6.5 mm end-wall hole (`ANT_POS`), pushed through from
     inside and locked outside with the nut + star washer; the antenna (SMA male) screws

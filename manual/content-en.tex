@@ -76,7 +76,7 @@ device. Authoritative reference: \texttt{pcb/docs/board-spec.md} (board) and
 4 & 12\,mm button & illuminated, stainless, \textbf{5\,V} ring LED \\
 1 & WLED controller & Athom high-power (pre-flashed) \\
 1 & SK6812 RGBW-WW & strip 60 LED/m: 8 rows of 25 = 200 px, on an aluminium plate (438×88×3, cut to size) + opal diffuser \\
-1 & RTL-SDR V3 & + telescopic SMA antenna (ADS-B, optional LoRa) \\
+1 & RTL-SDR V4 & + telescopic SMA antenna (ADS-B, FM/DAB+, shortwave; optional LoRa) \\
 1 & USB microphone & on the Pi (BirdNET) \\
 1 & audio chain & USB sound card (DELOCK 61645) + PAM8403 amp + Visaton BF\,45 \\
 1 & Camera Module 3 & on the Pi's CSI port \\
@@ -296,6 +296,13 @@ Every module sits in its place — on ~8\,mm standoffs, with plenty of room to t
 The SDR belongs on USB-2, not USB-3: USB-3 radiates right on 1090\,MHz and would jam the
 aircraft reception (ADS-B). Small move, big difference.
 \end{warum}
+\begin{tipp}
+The RTL-SDR \textbf{V4} needs a current driver: librtlsdr with V4 support (osmocom
+v2.0.1 or later, or the rtl-sdr-blog fork). The library in older Debian releases is too
+old — the stick then seems to tune but receives only noise; \texttt{rtl\_test} shows
+whether the V4 is recognised. A thank-you to \textbf{Steve Markgraf}, maintainer of the
+rtl-sdr library: without his work this receiver would stay silent.
+\end{tipp}
 \begin{ergebnis}
 A fully populated enclosure — just not wired yet.
 \end{ergebnis}
