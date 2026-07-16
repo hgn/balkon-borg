@@ -29,7 +29,7 @@ FRAME = "#c8c8c8"
 # per-view orientation fix-ups (in-plane rotation in degrees ccw, flip x, flip y), tuned
 # to the TechDraw projection frame so each view reads upright.
 TRANSFORMS = {
-    "Rear (house)": (0.0, False, True),
+    "Rear (house)": (0.0, False, False),
     "Right end": (90.0, False, False),
     "Underside (terrace)": (0.0, False, False),
     "Isometric": (60.0, False, False),
