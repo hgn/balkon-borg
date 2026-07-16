@@ -73,21 +73,32 @@ Terminal assignment and the GPIO/I²C/Wago plan behind these images live in
 
 ## Documentation
 
-- **Start here:** [decision log](log/decisions.md) (why the build is the way it is) ·
-  [design review](docs/design-review.md) (open issues, ranked) ·
-  [cost estimate](docs/cost-estimate.md)
-- **Build & hardware:** [network](docs/network.md) (who is on when, MQTT flow + sequence) ·
-  [light scenarios](docs/light-scenarios.md) ·
-  [enclosure & SLS printing](docs/enclosure-sintering.md) ·
-  [build/integration notes](docs/build-notes.md) ·
-  [power distribution](docs/power-distribution.md) ·
-  [carrier board spec](pcb/docs/board-spec.md)
-- **Domains:** [`cad/`](cad/README.md) (enclosure) ·
-  [`pcb/`](pcb/README.md) (carrier board) ·
-  [`src/`](src/README.md) (software stack: Pi, ESP32 app, Android, shared)
-- **Bonus:** the full illustrated build manual as a PDF (parts list, soldering, wiring
-  with colour-coded connection tables), [Deutsch](manual/manual-de.pdf) ·
-  [English](manual/manual-en.pdf)
+One bullet per document: short path, what it is for, and the link.
+
+**What it does & why it is built this way**
+- [`docs/use-cases.md`](docs/use-cases.md) — the binding list of what the unit does (U1–U20), each with its requirements, value and planned implementation.
+- [`log/decisions.md`](log/decisions.md) — the hardware decision log: why every enclosure, PCB, power and wiring choice is the way it is, and which alternatives were rejected.
+- [`src/log/decisions.md`](src/log/decisions.md) — the software decision log: architecture, protocol, data-contract and stack choices.
+
+**Software stack**
+- [`src/README.md`](src/README.md) — layout of the software stack (Pi, ESP32 app, Android, shared) and the still-open questions.
+- [`src/architecture.md`](src/architecture.md) — the whole-system concept: the four resource axes, how features combine, the mode model and data flow.
+
+**Hardware & build**
+- [`docs/network.md`](docs/network.md) — how the borg-pi5, ESP32 and nas-Pi talk, plus the MQTT topic scheme.
+- [`docs/wiring.md`](docs/wiring.md) — terminal assignment and the GPIO / I²C / Wago plan.
+- [`docs/power-distribution.md`](docs/power-distribution.md) — the 5 V fused star and the external IP66 PSU box.
+- [`docs/build-notes.md`](docs/build-notes.md) — hands-on integration notes (Pi power, flashing, antenna, camera, speaker).
+- [`docs/enclosure-sintering.md`](docs/enclosure-sintering.md) — SLS/PA12 manufacturing rules and print providers.
+- [`docs/light-scenarios.md`](docs/light-scenarios.md) — the catalogue of WLED light scenes (L1–L12).
+- [`pcb/docs/board-spec.md`](pcb/docs/board-spec.md) — the binding carrier-board spec, the source of truth for the PCB.
+- [`cad/README.md`](cad/README.md) — the parametric CadQuery enclosure: how to build and regenerate it.
+- [`pcb/README.md`](pcb/README.md) — the carrier board: the netlist-from-code → place → route → fabricate flow.
+
+**Review, cost, manual**
+- [`docs/design-review.md`](docs/design-review.md) — the ranked whole-system review findings, severity-tagged.
+- [`docs/cost-estimate.md`](docs/cost-estimate.md) — the bill of materials and running cost (ordered items are actuals).
+- [`manual/manual-de.pdf`](manual/manual-de.pdf) · [`manual/manual-en.pdf`](manual/manual-en.pdf) — the illustrated step-by-step build manual (German / English).
 
 ---
 
@@ -109,20 +120,12 @@ runs off a shared 5 V feed and an MQTT/WiFi bus. The goal is a build that looks
 
 ## 3 · Use cases
 
-| # | Use case | Realisation |
-|---|---|---|
-| U1 | Light at the dining table, automatic in the evening | SK6812 RGBW panel (WLED) + LD2410B radar → soft fade-in on presence, warm-white channel |
-| U2 | Manual light control without a phone | 4× stainless buttons + rotary encoder (on/off, scenes, dimming, automation pause) |
-| U3 | Effect / party light | WLED 2D effects, strobe, scrolling text on the 8×25 matrix |
-| U4 | Environment data | BME280 (temperature/humidity/pressure) → MQTT → dashboard |
-| U5 | Aircraft reception | RTL-SDR V4 + readsb/tar1090 (approach MUC, optional feed) |
-| U6 | Bird-call log | USB microphone → BirdNET → species statistics over the season |
-| U7 | Camera + local recognition | Camera Module 3 → Frigate (people/animals) **on the Pi 5 CPU** |
-| U8 | Passive radio listening (optional) | LoRa/Meshtastic **RX** over the SDR (no active transmit node) |
-| U9 | Audio feedback | small **USB speaker** on the borg-pi5 → plays a short clip / says hello when something is detected |
-
-More use-case ideas (radar zones, SDR reception, sensor combinations, …) are collected
-for rating in [`docs/ideas.md`](docs/ideas.md), an idea pool, not committed scope.
+The unit's functions are specified as **20 use cases (U1–U20)** — table lighting,
+manual and gesture control, effect light, environment data, aircraft and bird
+reception, radio (FM/DAB+/shortwave), a scanner for ADS-B and ISM sensors, a security
+suite, an intercom, and more. Each with its requirements, value and planned
+implementation lives in [`docs/use-cases.md`](docs/use-cases.md), the binding list of
+what gets built.
 
 ## 4 · System components (current state)
 
@@ -131,8 +134,8 @@ for rating in [`docs/ideas.md`](docs/ideas.md), an idea pool, not committed scop
 - **Light:** Athom high-power WLED controller + SK6812 RGBW-WW light field: 8 rows of 60/m strip, 25 LEDs each = 200 px, on a 3 mm aluminium plate (438 × 88, bought cut to size), opal acrylic diffuser.
 - **Reception:** RTL-SDR V4 (ADS-B 1090 MHz, FM/DAB+/shortwave listening, optional LoRa RX), USB microphone (on the Pi 5). The LD2410B radar points **forward** (in the LED tower), toward the terrace.
 - **Audio out:** USB sound card (C-Media, e.g. DELOCK 61645) + a **PAM8403** mini class-D amp + a **Visaton BF 45** broadband speaker on the borg-pi5, plays a short wav on events (detection, greeting). The Pi 5 has no analogue output, hence the USB card; amp powered off the Pi's 5 V branch (see [power](docs/power-distribution.md)).
-- **Power:** Mean Well LRS-150F-5 (5 V/22 A) in its own V-0 enclosure, fused branches.
-- **Enclosure:** 3D print in SLS/PA12 (black), **two halves** split at X=0 (each ~254 mm, fits a standard SLS bed such as JLC3DP), bolted with internal M3 seam clamps and 4 mm dowel pins; aluminium plate = front + heatsink.
+- **Power:** Mean Well LRS-150F-5 (5 V/22 A) in its own external **IP66 ceiling box**, fused 5 V branches into the enclosure (see [power distribution](docs/power-distribution.md)).
+- **Enclosure:** 3D print in SLS/PA12 (black), **two halves** split at X=0 (each ~254 mm, fits a standard SLS bed such as JLC3DP), bolted with internal M3 seam clamps and 4 mm dowel pins; a 3 mm aluminium plate behind the diffuser carries the LED strips.
 - **nas-Pi5 (existing, minor role):** a separate, **always-on** Raspberry Pi 5 wired to the Fritz!Box. Only the **remote-access point** (reach the unit from outside) and occasional **image/data storage**, not the hub (see [network](docs/network.md)).
 
 ## 5 · Architecture and data flow
@@ -177,32 +180,13 @@ WiFi repeater → cable → Fritz!Box → nas-Pi5 (see [network](docs/network.md
 **Budget**
 - **~415 €** new parts + **~40 €** odds and ends (connectors, fuses, Wago, wire, screws, inserts, glands). Camera and NAS-Pi already on hand.
 
-## 7 · Deliberately out of scope (with consequence)
-
-| Dropped | Consequence |
-|---|---|
-| **E-ink status display** | Data shown only via the existing dashboards (Grafana/tar1090). |
-| **AI HAT / Hailo NPU** | Object recognition runs on the **Pi 5 CPU** (one camera stream ok, lower FPS); **retrofittable** any time, the PCIe port stays free (optional NVMe SSD). |
-| **Heltec / active Meshtastic node** | LoRa **receive** only over the SDR, no transmit into the mesh. |
-| **AS3935 lightning sensor** | No local thunderstorm early warning. |
-| **Stairville Wild Wash + USB-DMX** | No separate blinder; effect/strobe light comes from the WLED panel itself. |
-
-## 8 · Open points / next steps
-
-1. **Terminal assignment**: concrete ESP32 GPIOs, I²C addresses (BME280), Wago plan of the 5 V distribution.
-2. **Podman quadlets**: Mosquitto, Frigate (CPU detector), readsb/tar1090, BirdNET-Go.
-3. **Real board measurement** → adjust the mounting-boss positions in `balkon_borg.py` (CadQuery).
-4. **WLED config**: 2D 25×8 serpentine, ABL at 8 A, presets/scenes + button mapping.
-5. **PSU**: EEPROM `PSU_MAX_CURRENT=5000`, trim the output to 5.15 V.
-6. **Fit test**: print a corner/brow (insert and diffuser-rebate fit) before the two-half print.
-
-## 9 · Key risks
+## 7 · Key risks
 
 - **Thermal in summer**: CPU detection raises the continuous load; ventilation and the Active Cooler decide stability.
 - **Recognition performance**: without an NPU, FPS/stream limited; possibly a lighter model or a later Hailo retrofit.
 - **Humidity/condensation**: mind the downward ventilation and possibly pressure equalisation so nothing collects.
 
-## 10 · Built with Claude (Fable 5)
+## 8 · Built with Claude (Fable 5)
 
 The complete hardware design in this repo, the parametric CadQuery enclosure, the
 SKiDL → KiCad → Freerouting carrier board, the ESPHome firmware, the MQTT/Podman
