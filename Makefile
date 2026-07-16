@@ -2,7 +2,7 @@
 # Everything is generated from source: `make all` builds, `make clean` cleans.
 .DELETE_ON_ERROR:
 
-.PHONY: all cad pcb firmware render preview clean distclean help
+.PHONY: all cad pcb firmware render views preview clean distclean help
 
 all: cad pcb firmware          ## build enclosure + board outputs + check firmware
 
@@ -23,6 +23,9 @@ render: cad                    ## render preview images + publish STL into docs/
 	cp cad/build/balkon-borg-body.stl docs/img/enclosure.stl
 	kicad-cli pcb render pcb/balkon-borg-carrier.kicad_pcb \
 	    -o docs/img/pcb-top.png --side top --background opaque --quality high
+
+views:                         ## FreeCAD line-art overview sheet -> docs/img/overview.png
+	$(MAKE) -C cad views
 
 preview: all render            ## build everything, then print how to view it
 	@echo
