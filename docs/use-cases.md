@@ -11,6 +11,58 @@ through the list together — entries without them yet are marked `_TBD_`.
 
 ---
 
+## Mode placement (overview)
+
+How the use cases map onto the mode tree (`src/log/decisions.md`). This is the sort,
+not the detail — the *how* of each lives in its own section below.
+
+**Main modes** (exactly one active; Button 3 or the app cycles them):
+
+| Main mode | Submodes | Use cases |
+|---|---|---|
+| **Licht** | Distance Detector · Info Ticker · normal · ambient · cozy | U1 (Distance Detector), U3.2/U3.3 (Info Ticker) |
+| **Party** | effect choice (which effect/visualiser) | U3.1 (effects/strobe), U3.4 (visualiser) |
+| **Radio** (SDR, listen) | FM+RDS · DAB+ · Shortwave · Airband | U10.1/.2/.3, U20.2; U10.4 (DAB+ EWF) as a monitor under DAB |
+| **Scanner** (SDR, decode) | ADS-B · ISM/rtl_433 · APRS · Radiosonde · Spectrum · Pager · LoRa · scheduled captures | U5, U13, U15, U16, U17, U20.1, U8, U14 |
+| **Away** (security) | — | U11 (auto-triggered by absence/geofence) |
+
+*Night* is treated as a **modifier**, not its own main mode — it shifts thresholds and
+scenes (dimmer, warmer, quieter) within whatever main mode is active. Revisit if it
+grows its own behaviour.
+
+**Radio vs Scanner** are two separate main modes because the user chose to split
+active listening (audio out: FM/DAB/shortwave/airband) from data decoding
+(ADS-B/rtl_433/APRS/images). Both contend for the **single SDR tuner**, so they are
+mutually exclusive at the main-mode level — you're in one or the other, never both.
+
+**Baseline** (runs regardless of mode, while the borg-pi5 is powered — cheap or
+always-valuable): U4 (environment + Grafana + heatmap), U6 (BirdNET bird log),
+U18 (daily time-lapse frame).
+
+**Shared services** (consumed *by* modes, not modes themselves): U7 (camera/Frigate,
+radar-gated — used by Away and by the U2.3 gesture input), and the speaker/audio-out
+path (used by U9, U10, U12, …).
+
+**Overlays / interrupts** (event-driven, cut across whatever mode is active, need a
+priority rule — TBD): U9 (audio/TTS feedback), the U11 alarm, U12 (intercom, grabs
+mic+speaker), U19 (presence ghost, ambient matrix overlay), U9.3 (storm warning).
+
+**Control surface** (not a mode): U2 (buttons / clap / gesture) is how modes are
+changed and light is controlled.
+
+**Consequences to resolve later:**
+- **SDR data freshness.** With Radio and Scanner as distinct modes (and neither the
+  idle default), SDR-derived data is only fresh *while Scanner runs*. That starves
+  U3.2's "next flight" ticker line and U13's sensor net whenever you're in Licht/
+  Party/Radio. Open: should ADS-B (or Scanner) be the tuner's idle default when no
+  interactive mode is active, so those tickers stay live? Deferred.
+- **DAB+ EWF (U10.4)** can only catch emergency warnings while the tuner is actually
+  on DAB — it cannot monitor in the background during Radio-FM/Scanner/etc. A real
+  limitation of the single tuner, not a bug to fix; the app/cell-broadcast remain the
+  always-on warning path.
+
+---
+
 ## U1 — Light at the table, automatic in the evening
 
 **Requirements:**

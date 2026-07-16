@@ -14,6 +14,49 @@ split into src/") for why.
 
 ---
 
+## 2026-07-16 — All 20 use cases placed on the mode tree
+
+**Context:** with `docs/use-cases.md` holding the binding 20 use cases, sort them onto
+the mode structure so the architecture has a shape before any code. Full map lives in
+that file's "Mode placement (overview)" section; this records the decisions and the
+one real fork.
+
+**Main modes:** Licht, Party, Radio, Scanner, Away. **Radio vs Scanner is the fork**
+the user resolved: rather than one "Funk" main mode with everything as submodes, or
+ADS-B as a silent tuner default, the SDR splits into two peer main modes — **Radio**
+(active listening, audio out: FM/DAB+/shortwave/airband) and **Scanner** (data decode:
+ADS-B/rtl_433/APRS/radiosonde/spectrum/pager/LoRa/scheduled NOAA-ISS-meteor captures).
+Both contend for the single tuner, so they're mutually exclusive at the main-mode
+level. *Night* is a **modifier** (shifts thresholds/scenes inside the active mode),
+not its own main mode.
+
+**Non-mode buckets:**
+- **Baseline** (always on while the Pi is powered): U4 environment/Grafana/heatmap,
+  U6 BirdNET, U18 daily time-lapse.
+- **Shared services** (used by modes, not modes): U7 camera/Frigate (radar-gated),
+  the speaker/audio path.
+- **Overlays / interrupts** (event-driven, cross-mode, priority rule still TBD):
+  U9 audio/TTS feedback, U11 alarm, U12 intercom, U19 presence ghost, U9.3 storm
+  warning.
+- **Control surface** (not a mode): U2 buttons/clap/gesture.
+
+**Rejected (the SDR fork):** one "Funk" main mode with all SDR uses as flat submodes
+(simplest, but ADS-B then never runs unless explicitly picked); ADS-B as the tuner's
+default background job that Radio preempts (keeps ADS-B "just on," but the user
+preferred an explicit Scanner mode).
+
+**Consequences / open:**
+- **SDR data freshness:** because neither Radio nor Scanner is the idle default,
+  SDR-derived data (U3.2 flight ticker, U13 sensor net) is only fresh while Scanner
+  runs. Open whether ADS-B/Scanner should be the tuner's idle default so those tickers
+  stay live — deferred.
+- **DAB+ EWF (U10.4)** only catches warnings while tuned to DAB; the single tuner
+  can't monitor it in the background. Accepted limitation, not a bug.
+- The **overlay priority rule** (what interrupts what: does an intercom call override
+  a storm warning? does the alarm override everything?) is now the next real open
+  question, alongside the still-open per-mode settings and automatic-trigger
+  heuristics.
+
 ## 2026-07-16 — Submodes are mutually exclusive → they arbitrate shared resources
 
 **Context:** U1 (distance-based light + a proximity bar on the matrix's top row) and
