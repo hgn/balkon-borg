@@ -33,3 +33,7 @@ pcb/logs/
 # local secrets / scratch (do not commit)
 .openai-key
 .gemini-key
+
+# Claude Code: track the shared project skills, ignore local/personal config
+.claude/*
+!.claude/skills/
