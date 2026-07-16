@@ -7,7 +7,8 @@ OVERVIEW := ../docs/img/overview.png
 all: clean                     ## clean then build the enclosure halves (STEP + STL)
 	$(PY) balkon_borg.py
 
-views: all                     ## build, then render docs/img/overview.png (needs ImageMagick)
+views: all                     ## build, then render docs/img/overview.png (needs FreeCAD)
+	freecadcmd freecad-views.py
 	$(PY) render-views.py
 
 preview: views                 ## render the overview and open it

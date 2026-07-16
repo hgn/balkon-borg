@@ -39,8 +39,9 @@ by `make render`):
 
 [![Enclosure](docs/img/enclosure.png)](docs/img/enclosure.stl)
 
-All sides of the current enclosure model, regenerated from the CAD with
-`make -C cad views` (shaded views montaged by ImageMagick):
+Four views of the current enclosure model as a clean line-art sheet, regenerated from
+the CAD with `make -C cad views` (FreeCAD projects the STEP to hidden-line-removed 2D
+views, matplotlib composes them):
 
 ![Enclosure from all sides](docs/img/overview.png)
 
