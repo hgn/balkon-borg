@@ -72,3 +72,23 @@ stages:
 
 Comments/net names in English. THT only, JST-XH 2.5 mm, generous spacing. Change the
 schematic only in `gen-netlist.py`, then regenerate the netlist and re-import.
+
+## Wiring
+
+The cable harness from the carrier board's JST connectors to the external components,
+shown two ways. Both are **generated from the netlist** (`make -C pcb harness`), so they
+cannot silently disagree with the board.
+
+Schematic harness (pinout + wire colours), rendered by **WireViz** from
+[`wiring-harness.yaml`](wiring-harness.yaml) — click for the zoomable SVG:
+
+[![Wiring harness](docs/img/wiring-harness.png)](docs/img/wiring-harness.svg)
+
+The same connections on the board render, with callouts placed by
+[`annotate-board.py`](annotate-board.py) from the connector positions
+([full-resolution PNG](docs/img/board-annotated.png)):
+
+[![Board with cable callouts](docs/img/board-annotated.png)](docs/img/board-annotated.png)
+
+Terminal assignment and the GPIO/I²C/Wago plan behind these images live in
+[`../docs/wiring.md`](../docs/wiring.md).

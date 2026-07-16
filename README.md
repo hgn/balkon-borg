@@ -45,30 +45,11 @@ views, matplotlib composes them):
 
 ![Enclosure from all sides](docs/img/overview.png)
 
-![Carrier board](docs/img/pcb-top.png)
+[![Carrier board](docs/img/pcb-top.png)](pcb/README.md)
 
-### Wiring
-
-The cable harness from the carrier board's JST connectors to the external components,
-shown two ways. Both are **generated from the netlist** (see
-[`docs/img/SOURCES.md`](docs/img/SOURCES.md) for exactly what each image derives from):
-
-**Click either image to open it full resolution** (harness as zoomable SVG, board as the
-300 dpi PNG).
-
-Schematic harness (pinout + wire colours), rendered by **WireViz** from
-[`pcb/wiring-harness.yaml`](pcb/wiring-harness.yaml):
-
-[![Wiring harness](docs/img/wiring-harness.png)](docs/img/wiring-harness.svg)
-
-The same connections on the board render, with callouts placed by
-[`pcb/annotate-board.py`](pcb/annotate-board.py) from the connector positions
-([full-resolution PNG](docs/img/board-annotated.png)):
-
-[![Board with cable callouts](docs/img/board-annotated.png)](docs/img/board-annotated.png)
-
-Terminal assignment and the GPIO/I²C/Wago plan behind these images live in
-[`docs/wiring.md`](docs/wiring.md).
+The cable harness (which JST connector goes to which external part, with pinout and wire
+colours) is board-specific detail and lives with the board: see
+[`pcb/README.md`](pcb/README.md#wiring).
 
 ---
 

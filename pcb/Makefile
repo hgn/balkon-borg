@@ -33,7 +33,8 @@ harness:                       ## wiring diagram (WireViz -> 300 dpi PNG) + anno
 	$(WIREVIZ) -f gs wiring-harness.yaml
 	dot -Tpng -Gdpi=300 wiring-harness.gv -o wiring-harness.png
 	$(PY) annotate-board.py         # needs board-top.png (kicad-cli render) present
-	cp wiring-harness.png wiring-harness.svg board-annotated.png ../docs/img/
+	@mkdir -p docs/img
+	cp wiring-harness.png wiring-harness.svg board-annotated.png docs/img/
 
 clean:                         ## remove generated outputs, netlists and caches
 	rm -rf output __pycache__ *.net *.dsn *.ses *.rpt *-backups \
