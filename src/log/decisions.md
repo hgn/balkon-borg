@@ -14,6 +14,39 @@ split into src/") for why.
 
 ---
 
+## 2026-07-16 — Drop InfluxDB + Grafana: live-only, no telemetry database
+
+**Supersedes item 3 of the "Software service stack fixed" entry below** (InfluxDB v2 +
+Grafana as the telemetry store).
+
+**Context:** specifying U4, the user noted that persisting BME data across the unit's
+downtime is a data grave with no value, and asked why an InfluxDB at all. That was the
+*last* real consumer of the telemetry DB, so the question cascades to the whole stack.
+
+**Decision:** **no InfluxDB, no Grafana.** Every service that needs history already keeps
+its own store and UI — tar1090 (aircraft), BirdNET-Go (birds), Frigate (recordings),
+Netdata (system health). The unit's own live data (environment, presence, mode) stays on
+MQTT; the arbiter holds a short **in-RAM ring buffer** for recent trends (e.g. the BME
+pressure trend for U4). The **Flutter app is the live dashboard** for that data
+(subscribes to the topics, keeps a short trend while connected); the matrix Info-Ticker
+can surface a value too.
+
+**Rationale:** matches the user's "kein Datengrab" line — the device is all-on/all-off,
+so a persistent time-series DB would mostly store gaps, and each capture service already
+owns its domain UI. Dropping both removes two containers, a database and its retention/
+downsampling upkeep, and RAM/maintenance load, for no loss (nothing wanted the unified
+historical pane badly enough to justify it — the diagnostics/tricorder idea was rated
+skip).
+
+**Rejected:** keeping InfluxDB+Grafana for mode/event history + a unified glance pane
+(the data grave the user is avoiding; no use case needs it); keeping Grafana live-only on
+an MQTT datasource (contrived, and the app already is the live dashboard).
+
+**Consequences:** `architecture.md` §1 (drop the telemetry row), §8 (no telemetry DB
+note) and §9 (reverse-proxy list, resolved list) updated; `README.md` goal, `docs/
+design-review.md` U4 line, and `docs/use-cases.md` U4 implementation updated. The
+Podman-quadlet set to build shrinks accordingly (no influxdb/grafana units).
+
 ## 2026-07-16 — U4 reduced to live environment only (no long-term log / heatmap)
 
 **Context:** specifying U4 (`docs/use-cases.md`). It had wanted a long-term climate log
@@ -26,8 +59,9 @@ off), and a presence "usage heatmap" would be circular (the unit is on *because*
 is there, so it mostly plots its own on-time). Shipping either would be a misleading
 half-record.
 
-**Consequence for the stack:** no long-term retention/downsampling to maintain in
-InfluxDB — the BME data needs only a short window (~7 days) for the trend view. Radar
+**Consequence for the stack:** no persistence at all for BME — an in-RAM ring buffer in
+the arbiter serves the recent trend (see the next entry, which drops InfluxDB/Grafana
+wholesale). Radar
 presence stays live for U1/mode logic but is no longer logged. Environment *alerts*
 (frost/heat/storm) are not U4; they live in their own use cases (e.g. U9.3). Full
 write-up in `docs/use-cases.md` U4.

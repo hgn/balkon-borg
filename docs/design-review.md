@@ -160,8 +160,9 @@ unless noted. Gaps are flagged, not fixed.
 - **Buttons/encoder → light (U2):** GPIO → ESP → MQTT → WLED. Complete. Button **LEDs**
   are driven locally (ESP GPIO → NPN), so the panel indicators work even with the Pi off;
   only the actual light switching is broker-bound (SF1).
-- **BME280 → dashboard (U4):** I²C → ESP → MQTT sensors → Grafana. Firmware done; the
-  Grafana/Mosquitto **quadlets do not exist yet** (§8.2).
+- **BME280 → dashboard (U4):** I²C → ESP → MQTT sensors → app (live only, no database;
+  see the U4 spec and the 2026-07-16 stack decision). Firmware done; the Mosquitto
+  **quadlet does not exist yet** (§8.2).
 - **Camera → Frigate (U7):** CSI → Pi → MQTT events + storage. CSI, no USB contention.
   Quadlet pending.
 - **Mic → BirdNET (U6) / SDR → tar1090 (U5,U8):** USB → Pi → stats/map. Quadlets pending.

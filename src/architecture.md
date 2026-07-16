@@ -17,7 +17,6 @@ only the nas-Pi5 is truly always-on.
 |---|---|---|---|
 | **Mode arbiter** ("the brain") | borg-pi5 — Python, host systemd service | with unit | owns `balkon/mode`, resolves pin-vs-auto, applies the YAML config, starts/stops the service quadlets to enforce exclusivity |
 | **MQTT broker** (Mosquitto) | borg-pi5 | with unit | the bus everything talks over |
-| **Telemetry:** InfluxDB v2 + Grafana | borg-pi5 | with unit | history store (env/presence/mode/events) fed by an MQTT bridge, plus the app dashboards |
 | **System monitor:** Netdata | borg-pi5 | with unit | CPU/temp/health, own UI (watch the thermals under vision load) |
 | **Frigate** | borg-pi5 | with unit | security surveillance (~2 FPS while absent); own UI |
 | **MediaPipe** | borg-pi5 | with unit | gesture input while present |
@@ -281,6 +280,13 @@ Topic scheme is in [`../docs/network.md`](../docs/network.md); the mode layer ad
 read by every mode-dependent service and by the app. The mode→per-service settings
 map is a central declarative config (likely `shared/`, format TBD).
 
+**No telemetry database.** The unit's own live data (environment, presence, mode) stays
+on MQTT; the arbiter keeps a short **in-RAM ring buffer** for recent trends (e.g. the
+BME pressure trend for U4). The **app is the live dashboard**; each capture service keeps
+its own UI (tar1090, BirdNET-Go, Frigate) and Netdata covers system health. Persisting
+this data would be a data grave across the unit's downtime, so there is deliberately no
+InfluxDB/Grafana.
+
 ---
 
 ## 9. Open questions / risks (ranked)
@@ -294,10 +300,12 @@ map is a central declarative config (likely `shared/`, format TBD).
 4. **Presets** — define the named feature bundles (Licht/Party/Radio/Scanner/Away) and
    the per-feature settings, plus the automatic-trigger heuristics (the Vision axis's
    presence schedule is already defined; the rest are not).
-5. **Reverse proxy** for the several web UIs (Grafana, Netdata, tar1090, Frigate,
-   BirdNET-Go) — nice-to-have, minor.
+5. **Reverse proxy** for the several web UIs (Netdata, tar1090, Frigate, BirdNET-Go) —
+   nice-to-have, minor.
 
 *Resolved:* the Pi-power coupling worry (§2, unit is all-on/all-off); the combinable-
 feature model + resource table (§3–4); the software stack (Python arbiter as a host
-systemd service, YAML config in `shared/`, InfluxDB+Grafana, Netdata — see the decision
-log); Frigate vs MediaPipe (both kept, time-shared on the Vision axis by presence, §3).
+systemd service, YAML config in `shared/`, Netdata for system health, **no telemetry
+DB** — live data on MQTT + an in-RAM ring buffer, the app as the dashboard, each service
+its own UI; see the decision log); Frigate vs MediaPipe (both kept, time-shared on the
+Vision axis by presence, §3).

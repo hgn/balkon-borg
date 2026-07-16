@@ -96,7 +96,7 @@ runs off a shared 5 V feed and an MQTT/WiFi bus. The goal is a build that looks
 
 - **One visible box, minimal cabling**: exactly one 230 V feed, everything else 5 V + radio.
 - **Value over gimmick**: automations and data actually used day to day (light at the table, weather, birds, aircraft).
-- **Cleanly integrated into the existing setup**: MQTT bus, Podman/Quadlets, Netdata/Grafana.
+- **Cleanly integrated into the existing setup**: MQTT bus, Podman/Quadlets, live-only (no telemetry database).
 - **Maintainable and extensible**: low-solder, pre-flashed components; enclosure as parametric code (CadQuery), not a throwaway click model.
 - **Reliable continuous outdoor operation** (protected), thermally and electrically designed for summer duty.
 

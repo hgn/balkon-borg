@@ -172,12 +172,15 @@ cannot honestly deliver.
 
 **Implementation:** the ESP32 already reads the BME280 over I²C and publishes
 `balkon/env/{temperature,humidity,pressure}` over MQTT (ESPHome), sampled every ~30–60 s
-(slow signals, no need for more). The MQTT→InfluxDB bridge writes them; Grafana shows the
-current values as stat panels plus a trend graph over a **short retention window** (e.g.
-7 days — enough for the recent trend, and no long-term downsampling to maintain since the
-log is intentionally not long-term). Radar presence stays live for the light/mode logic
-(U1) but is no longer logged. **No alerts here:** frost/heat/storm warnings are their own
-use cases (e.g. U9.3 storm warning); U4 is display-only.
+(slow signals, no need for more). No database: the arbiter keeps the recent samples in an
+**in-RAM ring buffer** (a few hours' worth), which is enough to compute local trends (a
+pressure drop → weather turning) and to serve the current values + short trend. The
+**app is the dashboard** (subscribes to `balkon/env/*` for live values, and can request or
+keep the short trend); the matrix Info-Ticker can surface a value too. Persisting BME data
+would be a data grave — pointless across the unit's downtime — so it is deliberately
+live-only. Radar presence stays live for the light/mode logic (U1) but is not logged.
+**No alerts here:** frost/heat/storm warnings are their own use cases (e.g. U9.3 storm
+warning); U4 is display-only.
 
 ---
 
