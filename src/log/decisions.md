@@ -14,6 +14,88 @@ split into src/") for why.
 
 ---
 
+## 2026-07-16 — Vision axis is presence-scheduled; safe power-on defaults
+
+**Context:** the user questioned why Frigate at all, given MediaPipe (the pose/hand
+framework from the Hackaday Pi 5 benchmark) is already in for gestures — and whether
+both fit in 8 GB and perform. Both are CPU-bound (no NPU; PCIe stays free for a later
+Coral/Hailo).
+
+**Decision — keep both, time-shared on the Vision axis by presence:**
+- **Present** (radar sees someone, plus a **30-minute hold** after they were last seen)
+  → Vision runs **MediaPipe** for gestures/interaction.
+- **Absent** (hold expired) → Vision runs **Frigate at ~2 FPS** (1 frame / 0.5 s) for
+  security surveillance.
+Never both at once (the Vision axis is exclusive), so the CPU is never double-loaded,
+and Frigate at 2 FPS is trivial CPU-only. They are not redundant: MediaPipe does
+fine-grained gesture landmarks, Frigate is a full NVR (recording, zones, object
+classes, event UI) for the U11 security suite. RAM at 8 GB is workable (rough sum
+~3.5–4.5 GB; the two heaviest, Frigate and MediaPipe, never coincide) — Netdata is in
+to watch it. **Rejected:** dropping Frigate for a lightweight radar-triggered snapshot
+(loses the NVR/review the user wants); running either continuously.
+
+**Params:** `PRESENCE_HOLD` = 30 min, Frigate-when-absent ≈ 2 FPS. A note to watch:
+MediaPipe at ~60–70 % CPU for the whole presence window may want further gating (only
+while gesture features are actually plausible) — an implementation refinement, not a
+design change.
+
+**Decision — safe power-on defaults (new `architecture.md` §7):** the unit is
+all-on/all-off, so every boot takes a defined calm state: automatic mode (no stale
+pin survives a reboot); Panel = Distance-detector (off until presence, lights gently on
+approach); SDR = off (no radio/audio on boot); Vision = presence-driven from the first
+radar reading (absent → Frigate @ 2 FPS until someone is seen); Speaker = silent;
+baseline up. Boots quiet, dark and safe; the everyday table light still triggers on
+presence. The one open cell is the SDR default (off vs. a silent ADS-B idle), tied to
+the SDR-idle-default open question.
+
+## 2026-07-16 — Software service stack fixed (interview)
+
+Resolved via `interview-me`, one decision at a time. Fills the stack gaps that
+`architecture.md` and `src/README.md` left open.
+
+1. **`src/pi/` language: Python** (asyncio + aiomqtt), in the existing `../.venv`. The
+   arbiter is I/O-bound glue, not compute — matches the all-Python project (CadQuery,
+   SKiDL, every script). *Rejected:* Go (robust single binary, but breaks the
+   Python-throughout line for no real gain on an I/O daemon); Node/TS (the app is Dart,
+   so no shared-types win).
+2. **Config: a git-managed YAML** in `src/shared/` (features → exclusive resources,
+   presets, default settings). Matches the repo's existing YAML (ESPHome, wiring
+   harness), allows comments/review. The **app does not edit the file** — it sends
+   commands (set mode / toggle feature) and reads derived state + the preset list the
+   arbiter publishes over MQTT. *Rejected:* Python-as-code (only Python could read it,
+   tuning = code change); app-writable JSON store (not versioned, no review, device is
+   the only source of truth).
+3. **Telemetry store: InfluxDB v2** with a thin MQTT→Influx bridge (Telegraf or ~30
+   lines in the arbiter), read by **Grafana**. Purpose-built time-series with retention/
+   downsampling for the BME/presence/mode/event history (U4.2 climate log, U4.3
+   heatmap need real history). The capture services keep their own UIs (tar1090,
+   BirdNET-Go, Frigate). *Rejected:* Prometheus (pull/metrics model is awkward for
+   irregular push events); Grafana-reads-MQTT-live (no history, kills the long-term
+   use cases).
+4. **System monitoring: Netdata standalone** (own UI), one container, no glue, no
+   second TSDB — kept separate from the app telemetry. Mainly there to watch the
+   thermals under Frigate/MediaPipe load. *Rejected:* funnelling Netdata → InfluxDB →
+   Grafana (more plumbing, mixes the DB); Prometheus + node_exporter (a second TSDB
+   beside InfluxDB, needless for one device).
+5. **Arbiter deployment: a host systemd service** (not itself containerised) that
+   **starts/stops the service quadlets** to enforce resource exclusivity at the OS
+   level — mode Radio stops readsb and starts the FM decoder, Scanner does the reverse,
+   so only one process ever grabs the SDR dongle. Simplest control, since the same
+   systemd owns the quadlets. *Rejected:* arbiter-as-container (needs the podman socket
+   mounted to control siblings, more plumbing/attack surface); all SDR services staying
+   up behind an MQTT lock (fragile hand-off of the exclusive `/dev` device, idle
+   services waste RAM/CPU).
+
+**Assumptions stated, not objected to (still changeable):** **Home Assistant is out** —
+the custom arbiter *is* the hub; HA would overlap the arbiter, app and Grafana. **Broker
+defaults:** username/password on the LAN, persistence on for retained mode/state topics.
+
+**Still open (deferred on purpose):** build order (which use case first — the user's
+sequencing call), the overlay priority ordering (proposed in `architecture.md` §5,
+needs confirm), whether ADS-B/Scanner is the tuner's idle default, the automatic-trigger
+heuristics, and a possible reverse proxy for the several web UIs (minor). These are
+cheaper to settle when building the specific feature than to pin now.
+
 ## 2026-07-16 — Four axes, the panel is one program, drawn as parallel-region mermaid
 
 **Refines the revision below into its final shape.** Two clarifications from the user:

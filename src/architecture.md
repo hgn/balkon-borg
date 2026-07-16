@@ -10,18 +10,23 @@ something *new* (not already in the decision log), it is marked **[NEW – confi
 
 ## 1. Components and where they run
 
+"With unit" = powered when the unit is on; the whole box is all-on/all-off (§2), so
+only the nas-Pi5 is truly always-on.
+
 | Component | Host | Powered | Role |
 |---|---|---|---|
-| **Mode arbiter** ("the brain") | borg-pi5 | on-demand | owns `balkon/mode`, resolves pin-vs-auto, applies the mode→settings config |
-| **MQTT broker** (Mosquitto) | borg-pi5 | on-demand | the bus everything talks over |
-| **Frigate** | borg-pi5 | on-demand | camera object detection (radar-gated) |
-| **MediaPipe** | borg-pi5 | on-demand | hand-gesture input (radar-gated) |
-| **readsb / radio decoders** | borg-pi5 | on-demand | the single SDR tuner's consumers |
-| **BirdNET-Go** | borg-pi5 | on-demand | continuous bird-call log |
-| **Dashboards / audio out (TTS, clips)** | borg-pi5 | on-demand | Grafana/tar1090; USB sound → amp → speaker |
-| **Light loop** (buttons, encoder, radar, BME → WLED) | ESP32 (ESPHome) | **always on** | the fast, human-facing control loop |
-| **WLED controller** | Athom board | **always on** | the light; own onboard presets run independently |
-| **App** | phone (Flutter) | user's phone | full control surface, reads/writes mode over MQTT |
+| **Mode arbiter** ("the brain") | borg-pi5 — Python, host systemd service | with unit | owns `balkon/mode`, resolves pin-vs-auto, applies the YAML config, starts/stops the service quadlets to enforce exclusivity |
+| **MQTT broker** (Mosquitto) | borg-pi5 | with unit | the bus everything talks over |
+| **Telemetry:** InfluxDB v2 + Grafana | borg-pi5 | with unit | history store (env/presence/mode/events) fed by an MQTT bridge, plus the app dashboards |
+| **System monitor:** Netdata | borg-pi5 | with unit | CPU/temp/health, own UI (watch the thermals under vision load) |
+| **Frigate** | borg-pi5 | with unit | security surveillance (~2 FPS while absent); own UI |
+| **MediaPipe** | borg-pi5 | with unit | gesture input while present |
+| **readsb/tar1090 + radio decoders** | borg-pi5 | with unit | the single SDR tuner's consumers (Radio xor Scanner) |
+| **BirdNET-Go** | borg-pi5 | with unit | bird-call log, own UI |
+| **Audio out** (TTS, clips) | borg-pi5 | with unit | USB sound → amp → speaker |
+| **Light loop** (buttons, encoder, radar, BME → WLED) | ESP32 (ESPHome) | with unit | the fast, human-facing control loop |
+| **WLED controller** | Athom board | with unit | the light |
+| **App** | phone (Flutter) | user's phone | full control surface; sends commands + reads state over MQTT |
 | **Remote access + image store** | nas-Pi5 | **always on** | minor helper, not the broker |
 
 Physical/network path is in [`../docs/network.md`](../docs/network.md).
@@ -82,7 +87,14 @@ axes are independent, so they combine freely. There are four:
   Visualiser · Ghost.
 - **SDR tuner**: off · Listen (FM/DAB+/shortwave/airband) · Scanner (ADS-B/rtl_433/
   APRS/…).
-- **Vision** (camera + heavy CPU): off · Frigate/Away · Gesture.
+- **Vision** (camera + heavy CPU): off · MediaPipe (gesture) · Frigate (security).
+  This axis is **presence-scheduled**, not manually cycled: while the radar sees
+  someone — and for a **30-minute hold** after they were last seen — Vision runs
+  **MediaPipe** (interaction/gesture). Once the hold expires (really nobody there),
+  Vision switches to **Frigate at ~2 FPS** (1 frame / 0.5 s) for security. Never both,
+  and 2 FPS keeps CPU-only Frigate trivial. So MediaPipe and Frigate are two tools for
+  two different jobs (fine-grained gesture vs. surveillance/recording), time-shared by
+  presence rather than competing.
 - **Speaker** (one sound at a time, priority-ducked, §5): silent · playing.
 
 You set each axis and leave it; a light effect persists regardless of what the radio is
@@ -241,7 +253,28 @@ Priority answer to the old open question: **app/manual > automation** while pinn
 
 ---
 
-## 7. Data flow (MQTT)
+## 7. Power-on defaults (safe state)
+
+The unit is all-on/all-off (§2), so every boot needs a defined, safe starting state —
+nothing garish, loud or surprising, and no stale state carried across a power cycle. On
+power-on the arbiter comes up in **automatic** (no manual pin ever survives a reboot),
+and each axis takes a calm default:
+
+| Axis | Power-on default | Why it is safe |
+|---|---|---|
+| Mode / pin | **automatic**, sensor-driven, no pinned mode | a stale pin never outlives a power cycle |
+| **Panel** | **Distance-detector** (auto table light) | with nobody present it is simply off; it lights gently on approach — everyday-ready, never a garish flash on boot |
+| **SDR** | **off** | no radio/audio on boot until asked (see open question: or a silent Scanner/ADS-B idle if the flight ticker / sensor net should be live from boot) |
+| **Vision** | **presence-driven from the first radar reading** — until presence is seen, the absent state (Frigate @ ~2 FPS) | surveillance-safe by default; flips to MediaPipe the moment someone is detected |
+| **Speaker** | **silent** | no auto-play; only overlays (alarm/warning) may make sound |
+| **Baseline** | up (BME log, BirdNET, dashboards, Netdata) | always on, no choice |
+
+Rationale: the box boots quiet and dark, the daily-driver table light still triggers on
+presence, and nothing startles with sound or brightness. The one genuinely open cell is
+the SDR default (off vs. a silent ADS-B idle), tied to the SDR-idle-default question in
+§9.
+
+## 8. Data flow (MQTT)
 
 Topic scheme is in [`../docs/network.md`](../docs/network.md); the mode layer adds
 `balkon/mode` (main) and `balkon/mode/sub` (submode), written only by the arbiter,
@@ -250,20 +283,21 @@ map is a central declarative config (likely `shared/`, format TBD).
 
 ---
 
-## 8. Open questions / risks (ranked)
+## 9. Open questions / risks (ranked)
 
-1. **Confirm the combinable-feature model (§3)** and **complete the resource table
-   (§4)** together — this replaces the earlier "one exclusive main mode" framing and is
-   now the core of the architecture.
-2. **Overlay priority (§5)** — confirm the ordering, especially safety-warning vs
+1. **Overlay priority (§5)** — confirm the ordering, especially safety-warning vs
    intercom.
-3. **SDR data freshness** — the tuner is the dominant bottleneck; decide whether
-   ADS-B/Scanner is its idle default so the flight ticker / sensor net stay live when
-   no other radio feature is on.
+2. **SDR idle default** — decide whether the SDR default (on boot and when no radio
+   feature is on) is *off* or a silent ADS-B/Scanner idle, so the flight ticker (U3.2)
+   and sensor net (U13) can stay live. Also sets the §7 Panel/SDR power-on default.
+3. **Build order** — which use case to implement first (the user's sequencing call).
 4. **Presets** — define the named feature bundles (Licht/Party/Radio/Scanner/Away) and
-   the per-feature settings + automatic-trigger heuristics.
-5. **Config format and home** for the feature/preset/settings map.
-6. **Stack/language for `pi/`** — the resource allocator + glue; not chosen yet.
+   the per-feature settings, plus the automatic-trigger heuristics (the Vision axis's
+   presence schedule is already defined; the rest are not).
+5. **Reverse proxy** for the several web UIs (Grafana, Netdata, tar1090, Frigate,
+   BirdNET-Go) — nice-to-have, minor.
 
-*Resolved:* the Pi-power coupling worry (§2) is void — the unit is all-on/all-off, so
-there is no partial-power state to design around.
+*Resolved:* the Pi-power coupling worry (§2, unit is all-on/all-off); the combinable-
+feature model + resource table (§3–4); the software stack (Python arbiter as a host
+systemd service, YAML config in `shared/`, InfluxDB+Grafana, Netdata — see the decision
+log); Frigate vs MediaPipe (both kept, time-shared on the Vision axis by presence, §3).
