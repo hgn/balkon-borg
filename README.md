@@ -84,7 +84,7 @@ Terminal assignment and the GPIO/I²C/Wago plan behind these images live in
   [carrier board spec](pcb/docs/board-spec.md)
 - **Domains:** [`cad/`](cad/README.md) (enclosure) ·
   [`pcb/`](pcb/README.md) (carrier board) ·
-  [`firmware/esphome/`](firmware/esphome/README.md) (ESP32)
+  [`src/`](src/README.md) (software stack: Pi, ESP32 app, Android, shared)
 - **Bonus:** the full illustrated build manual as a PDF (parts list, soldering, wiring
   with colour-coded connection tables), [Deutsch](manual/manual-de.pdf) ·
   [English](manual/manual-en.pdf)

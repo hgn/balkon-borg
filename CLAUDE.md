@@ -8,10 +8,14 @@ deliberately deviates.
 ## Always read first
 
 1. This file.
-2. `log/decisions.md` — the decision log. Holds *why* the build is the way it is.
-   Before re-opening a design question, check whether it is already settled there.
+2. `log/decisions.md` — the **hardware** decision log (enclosure, PCB, manufacturing,
+   wiring, power). Holds *why* the build is the way it is. Before re-opening a design
+   question, check whether it is already settled there.
 3. `README.md` when you need the full project overview (use cases U1-U8, components,
    constraints, scope boundaries).
+4. Working under `src/`? Read `src/CLAUDE.md` and `src/log/decisions.md` instead —
+   the software stack has its own conventions and its own decision log, kept separate
+   so hardware minutiae don't bloat software context and vice versa.
 
 ## What this is
 
@@ -37,10 +41,9 @@ The project has several domains. When creating new artefacts, hit the right doma
 |---|---|---|
 | Enclosure (CAD) | CadQuery (Python), parametric, export STEP/STL | `cad/balkon_borg.py` |
 | Carrier board (sensor carrier) | netlist from code (SKiDL) → Aisler; Python for output/DRC/BOM | `pcb/` |
-| ESP32 firmware | ESPHome (YAML) | `firmware/esphome/` |
 | Light | WLED config, presets, button mapping | `wled/` |
-| Backend services | Podman quadlets (Mosquitto, Frigate, readsb/tar1090, BirdNET-Go) | `deploy/quadlets/` |
 | Wiring | terminal assignment, GPIO/I²C/Wago plan | `docs/wiring.md` |
+| **Software stack** (Pi orchestration + quadlets, ESP32 app, Android app, shared contracts) | see [`src/CLAUDE.md`](src/CLAUDE.md) for the sub-domain breakdown | `src/` |
 
 Create directories only when the first real content appears, not on spec.
 
@@ -75,10 +78,15 @@ Create directories only when the first real content appears, not on spec.
 
 ## Keep the decision log (important)
 
-As soon as a non-trivial decision is made (part choice, GPIO assignment, topic scheme,
-dimension/tolerance decision, scope change, rejected alternative), **append a dated
-entry to `log/decisions.md`**. Format and example are in the head of that file. The log
-is the project's memory layer: it stops already-settled questions from being reopened.
+As soon as a non-trivial **hardware** decision is made (part choice, GPIO assignment,
+topic scheme, dimension/tolerance decision, scope change, rejected alternative),
+**append a dated entry to `log/decisions.md`**. Format and example are in the head of
+that file. The log is the project's memory layer: it stops already-settled questions
+from being reopened.
+
+Software-stack decisions (architecture, protocols, data contracts, stack choices) go in
+`src/log/decisions.md` instead — same format, same rule, kept separate so neither log
+bloats the other's context.
 
 Do not log what is already in the code/YAML. Log *why* it is that way and which
 alternative was rejected for which reason.
@@ -86,4 +94,5 @@ alternative was rejected for which reason.
 ## Next steps
 
 Current state and open points: see `README.md` §8 and the most recent entries in
-`log/decisions.md`.
+`log/decisions.md` (hardware). For the software stack, see `src/README.md` — it is
+still a skeleton, blocked on picking the first use cases from `docs/ideas.md`.

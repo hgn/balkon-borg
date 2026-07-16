@@ -49,7 +49,7 @@ button group.
 ## Terminal assignment (ESP32-DevKitC-V4)
 
 Authoritative pin map is in [`../pcb/docs/board-spec.md`](../pcb/docs/board-spec.md);
-firmware in [`../firmware/esphome/balkon-borg.yaml`](../firmware/esphome/balkon-borg.yaml).
+firmware in [`../src/esp/balkon-borg.yaml`](../src/esp/balkon-borg.yaml).
 Summary:
 
 | Net | GPIO | Function |

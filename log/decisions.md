@@ -18,6 +18,44 @@ log what is already in the code/YAML.
 
 ---
 
+## 2026-07-16 — Software stack split into src/, with its own log
+
+**Context:** with the hardware essentially bought and ordered (enclosure, PCB, camera,
+SDR, power), software work (Pi orchestration, ESP application, an Android app) is
+starting next. This log had grown to ~1150 lines of enclosure/PCB/manufacturing detail;
+funnelling every future software session through it (per `CLAUDE.md`'s "always read
+first") would waste context on wall thickness and connector part numbers that are
+irrelevant to software decisions — and the reverse would eventually be true too, once
+software decisions accumulate.
+
+**Decision:** a new `src/` tree holds the entire software stack, with its **own**
+`CLAUDE.md` and **own** `log/decisions.md` — physically separate files, not just
+sections, since a nested `CLAUDE.md` is what actually controls what gets pulled into
+context automatically. Layout: `src/pi/` (borg-pi5 orchestration + `src/pi/quadlets/`
+for the Podman units), `src/esp/` (the ESP32 application, moved from
+`firmware/esphome/` via `git mv` to preserve history), `src/android/` (phone app),
+`src/shared/` (cross-cutting contracts, e.g. the MQTT schema once it needs to be code
+rather than the sketch in `docs/network.md`). This root log stays exactly as is —
+hardware/CAD/PCB/manufacturing/wiring/power — nothing here moves.
+
+**Rationale:** matches how Claude Code already scopes context (nested `CLAUDE.md`
+files), and mirrors the project's existing per-domain-README pattern (`cad/README.md`,
+`pcb/README.md`) one level up, now with domain-specific *logs* too since the domains
+crossing into software are numerous and will accumulate real decision volume.
+
+**Rejected:** keeping one shared log with clearer section headers — doesn't reduce what
+gets auto-loaded, only physical separation does. Moving `deploy/quadlets/` (planned,
+never created) to a top-level `src/deploy/` — user's call: quadlets run *on* the Pi, so
+`src/pi/quadlets/` is where they belong, not a separate deploy root.
+
+**Consequences:** `CLAUDE.md`'s "Always read first", domain table and "keep the
+decision log" sections now branch on hardware vs. `src/`. `README.md`, `Makefile`,
+`.gitignore` and `docs/wiring.md` updated for the `firmware/esphome/` → `src/esp/`
+move. `src/README.md` is deliberately a skeleton: the high-level architecture (which
+use cases, concurrency/scheduling, the MQTT/Android priority question) is explicitly
+deferred until a first slice of use cases is picked from `docs/ideas.md` — not decided
+today.
+
 ## 2026-07-15 — PSU box: IP66 junction enclosure on the ceiling
 
 **Context:** the LRS-150F-5 is open-frame; the 230 V separation rule always demanded an

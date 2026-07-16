@@ -1,4 +1,4 @@
-# firmware/esphome — ESP32 front panel
+# src/esp — ESP32 front panel
 
 ESPHome config for the ESP32-DevKitC on the carrier board. Reads the buttons,
 encoder, LD2410B radar and BME280, and controls the **WLED light directly over

@@ -20,8 +20,8 @@ pcb/gen-netlist_sklib.py
 pcb/*.png
 
 # ESPHome secrets and cache
-firmware/esphome/secrets.yaml
-firmware/esphome/.esphome/
+src/esp/secrets.yaml
+src/esp/.esphome/
 
 # Crash dumps, logs, reports (generated)
 **/core.*

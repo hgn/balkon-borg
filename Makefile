@@ -12,8 +12,8 @@ cad:                           ## build the enclosure STEP/STL (cad/)
 pcb:                           ## board fabrication outputs (pcb/)
 	$(MAKE) -C pcb all
 
-firmware:                      ## validate the ESPHome config (firmware/esphome/)
-	$(MAKE) -C firmware/esphome all
+firmware:                      ## validate the ESPHome config (src/esp/)
+	$(MAKE) -C src/esp all
 
 render: cad                    ## render preview images + publish STL into docs/img/
 	@mkdir -p docs/img
@@ -33,7 +33,7 @@ preview: all render            ## build everything, then print how to view it
 clean:                         ## remove all build artifacts
 	$(MAKE) -C cad clean
 	$(MAKE) -C pcb clean
-	$(MAKE) -C firmware/esphome clean
+	$(MAKE) -C src/esp clean
 
 distclean: clean               ## also remove the Python venv
 	rm -rf .venv
