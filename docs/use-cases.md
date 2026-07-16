@@ -52,11 +52,16 @@ architecture (`src/log/decisions.md`, 2026-07-16) is live, this is the default
 *within* whichever mode leaves WLED on automatic — "away" or "party" mode override it
 via the mode's own WLED preset, this behaviour doesn't fight them.
 
+**Mode placement:** this whole use case is the **"Distance Detector" submode of the
+Licht main mode** (`src/log/decisions.md`). It is one light submode among others
+(normal / ambient / cozy / …), selected via Button 2 or the app, not a permanent
+background behaviour. Because submodes are mutually exclusive, the top-row ownership
+question against U3's ticker resolves itself: the "Info Ticker" is a *different* Licht
+submode, so the proximity bar and the ticker are never active at the same time.
+
 **Open before building:** the "at the table" distance threshold needs on-site
 calibration once mounted (real distance from the enclosure to where people actually
-sit), not a value to guess from a datasheet. The top row is also the natural home for
-U3's scrolling-text ticker requirement — the proximity bar and the ticker can't both
-own that row at once; likely resolved by mode/submode (not decided yet).
+sit), not a value to guess from a datasheet.
 
 ---
 
@@ -83,6 +88,13 @@ own that row at once; likely resolved by mode/submode (not decided yet).
 2. Scrolling-text ticker: time / temperature / next flight / welcome message.
 3. Scrolling-text ticker: bird of the day.
 4. Audio-reactive visualiser (mic → FFT → matrix).
+
+**Mode placement (partial, rest TBD when we work through U3):** the ticker
+requirements (2, 3) are the **"Info Ticker" submode of the Licht main mode** — a
+sibling of U1's "Distance Detector" submode, which is why they never fight over the
+top row (only one Licht submode is active at a time). The effects/strobe/visualiser
+requirements (1, 4) most likely belong to a **Party** main mode, not Licht — to be
+confirmed when this use case is worked out.
 
 **Value:** _TBD_
 **Implementation:** _TBD_

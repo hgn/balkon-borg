@@ -14,6 +14,34 @@ split into src/") for why.
 
 ---
 
+## 2026-07-16 — Submodes are mutually exclusive → they arbitrate shared resources
+
+**Context:** U1 (distance-based light + a proximity bar on the matrix's top row) and
+U3 (a scrolling-text ticker, also wanting the top row) collided over who owns that
+row. The main/sub structure (previous entry) turns out to already resolve it.
+
+**Decision / insight:** within a main mode, exactly one **submode** is active at a
+time, and submodes are **mutually exclusive**. That makes the submode the natural
+arbiter of any resource shared inside a main mode: the two claimants just become two
+submodes, and only one is ever live. Concretely, under the **Licht** main mode:
+- **"Distance Detector"** submode = all of U1 (presence fade-in, distance-scaled
+  brightness, the top-row proximity bar, the departure flicker).
+- **"Info Ticker"** submode = U3's scrolling-text requirements (time/temp/flight/
+  bird-of-the-day on the matrix).
+- plus the plainer light submodes (normal / ambient / cozy — the last folded in from
+  Button 2's old "scene cozy").
+The proximity bar and the ticker can never run at once because they are different
+Licht submodes, so the top-row conflict simply doesn't arise. User's framing:
+"Distance Detektor Submodus im Licht modus" and "der Info ticker ist ein spezieller
+(sub) modus wieder."
+
+**Consequence:** this is the general pattern for intra-main-mode resource contention
+(the matrix, the speaker, later the camera) — express the competing behaviours as
+sibling submodes rather than trying to run them concurrently. Cross-*main*-mode
+contention for the single global resources (the SDR tuner, heavy CPU) is still the
+main mode's job, as before. `docs/use-cases.md` U1 and U3 updated with their submode
+placement. The Licht submode list is illustrative, not yet closed.
+
 ## 2026-07-16 — Mode value gets structure: main mode + submode
 
 **Context:** the mode list is growing past simple flat values as `docs/use-cases.md`
