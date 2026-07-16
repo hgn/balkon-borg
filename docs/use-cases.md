@@ -16,12 +16,21 @@ through the list together — entries without them yet are marked `_TBD_`.
 **Requirements:**
 1. Soft fade-in of warm-white light on presence.
 2. Brightness scales with distance, not a binary on/off.
+3. The matrix's top row shows a live proximity indicator: a wide bar at first
+   detection (far away), narrowing to a single lit pixel at close range, off when
+   nobody's present or out of range.
+4. On departure, one brief flicker instead of a silent fade-out.
 
 **Value:** the light comes on exactly when and where it's needed, without reaching
 for a switch — and scaling with distance makes the transition feel deliberate
 rather than jarring: it gently brightens as someone approaches the table instead of
 snapping to full brightness the instant the radar sees anything at all, including
-someone just passing the far edge of its range.
+someone just passing the far edge of its range. The proximity bar gives an early,
+peripheral "something's out there" cue while someone is still far off, without
+competing with the main light once they're close and it's already bright — the
+indicator recedes to a single pixel exactly as the real payoff (the warm light)
+takes over. The departure flicker gives a clear, deliberate "goodbye" instead of the
+light just quietly draining away.
 
 **Implementation:** the LD2410B already reports a **distance value** over UART
 (moving-target and static-target distance in cm), not just a presence boolean — no
@@ -29,24 +38,36 @@ new hardware, this is unused capability already sitting in the module. ESPHome's
 `ld2410` component exposes it as a sensor entity. Map distance to brightness with a
 curve (e.g. >4 m off, 2-4 m ramping 20-70 %, <2 m at the table 100 % warm-white),
 smoothed (exponential moving average or a debounce window) so radar jitter doesn't
-flicker the light. This stays **on the ESP32**, not round-tripped through the Pi:
-it's the same local control loop ESPHome already owns (radar → WLED over MQTT), just
-enriched with distance instead of a boolean, and it needs to feel instant. Once the
-mode architecture (`src/log/decisions.md`, 2026-07-16) is live, this is the default
+flicker the light. The **same distance value drives the top-row indicator**, inverted:
+far away → most/all of the row's pixels lit (wide, attention-grabbing), narrowing as
+distance shrinks, down to one pixel right at the table, 0 pixels when nobody's
+present or the target is out of range. Runs as an independent WLED **segment** on row
+1 (WLED supports addressing sub-ranges of the panel independently), so it doesn't
+interfere with the main warm-white channel below it. On a presence-lost transition,
+fire one short bright pulse (~200-300 ms) before fading to off, rather than a plain
+fade. All of this stays **on the ESP32**, not round-tripped through the Pi: it's the
+same local control loop ESPHome already owns (radar → WLED over MQTT), just enriched
+with distance instead of a boolean, and it needs to feel instant. Once the mode
+architecture (`src/log/decisions.md`, 2026-07-16) is live, this is the default
 *within* whichever mode leaves WLED on automatic — "away" or "party" mode override it
 via the mode's own WLED preset, this behaviour doesn't fight them.
 
 **Open before building:** the "at the table" distance threshold needs on-site
 calibration once mounted (real distance from the enclosure to where people actually
-sit), not a value to guess from a datasheet.
+sit), not a value to guess from a datasheet. The top row is also the natural home for
+U3's scrolling-text ticker requirement — the proximity bar and the ticker can't both
+own that row at once; likely resolved by mode/submode (not decided yet).
 
 ---
 
 ## U2 — Manual light control without a phone
 
 **Requirements:**
-1. Physical controls: 4 illuminated buttons + rotary encoder (on/off, scene select,
-   dimming, automation pause).
+1. Physical controls: 4 illuminated buttons + rotary encoder. Button roles now tied
+   into the mode system (`src/log/decisions.md`): Button 1 on/off, Button 2 submode
+   cycle within the current main mode (light-specific submodes here: normal/ambient/
+   cozy/…), Button 3 main-mode cycle (short press) / release to automatic (long
+   press), Button 4 free for a future function, encoder brightness + push = off.
 2. Clap switch (2 claps) as an additional input.
 3. Hand-gesture control via the camera (MediaPipe).
 

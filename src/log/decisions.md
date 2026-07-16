@@ -14,6 +14,49 @@ split into src/") for why.
 
 ---
 
+## 2026-07-16 — Mode value gets structure: main mode + submode
+
+**Context:** the mode list is growing past simple flat values as `docs/use-cases.md`
+takes shape — e.g. U10 "Radio" has four internal choices (FM/DAB+/shortwave/EWF),
+U2 wants several light-specific sub-behaviours (normal/ambient/cozy/…). A single
+flat `balkon/mode` value can't express "which one, within Radio" cleanly, and there
+aren't enough physical buttons to give every option added over time its own control.
+
+**Decision:** the mode value gets a **second, dependent level**: `balkon/mode`
+(main mode: Licht / Radio / Party / Away / Night / …) and `balkon/mode/sub`
+(submode, meaningful only relative to whichever main mode is currently active — "FM"
+only means something when the main mode is Radio). This is a **tree, not the
+rejected independent-axes design** from the first mode-architecture entry above:
+exactly one main mode is active at a time, and its submode is scoped to it, not a
+free product of several simultaneously-combinable dimensions.
+
+**Physical control (buttons), reassigned:**
+- **Button 3**: main-mode cycle, short press advances, long press releases an active
+  pin back to automatic (unchanged from the earlier entry).
+- **Button 2**: submode cycle *within the current main mode* (repurposed — its old
+  "scene cozy" role becomes just one submode value under main mode "Licht", not a
+  separate button function).
+- **Button 4**: freed up. It used to toggle "presence automation on/off", which now
+  overlaps with Button 3's long-press. Not reassigned yet.
+
+Only a **curated, small subset** of each main mode's submodes gets a button-reachable
+slot (e.g. Radio: FM/DAB+/off cycle on Button 2, not the full four requirements) —
+buttons are the fast/common path. The **app can address the full main-mode/submode
+space**, including submodes with no button shortcut at all and ones added later.
+This is the user's own framing, stated directly: physical controls can't keep up
+with "which [modes] come" over time, so the app is the complete, authoritative
+control surface and the buttons are a convenience shortcut into part of it.
+
+**Rejected:** giving every submode its own button (impossible, only 4 buttons +
+encoder exist and 2 are already spoken for elsewhere); keeping Button 4's old
+"automation on/off" meaning unchanged (redundant with Button 3 long-press once the
+mode system is the actual source of truth for "automatic").
+
+**Consequences:** `docs/use-cases.md` U2's button-role description updated to match.
+`src/esp/README.md`'s "planned" note needs a second line for Button 2 once this is
+implemented (still not implemented — no mode list exists in code yet, same caveat as
+the first mode-switch entry).
+
 ## 2026-07-16 — Android app: Flutter/Dart
 
 **Decision:** the phone app (`src/android/`) is built in **Flutter/Dart**. User's

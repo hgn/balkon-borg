@@ -24,10 +24,12 @@ ESPHome.
 | Radar | with automatic on: presence turns the light on, absence (after 2 min) off |
 | LED1 | presence detected |
 
-**Planned:** Button 3 becomes the mode-cycle control (short press = next mode, long
-press = release to automatic) once the mode system exists — see
-[`../log/decisions.md`](../log/decisions.md) (2026-07-16). Not yet in this YAML; no
-mode list is defined yet.
+**Planned:** once the mode system exists (see [`../log/decisions.md`](../log/decisions.md),
+2026-07-16 entries), Button 3 becomes the main-mode cycle (short press = next mode,
+long press = release to automatic) and Button 2 becomes the submode cycle within the
+current main mode (its "scene cozy" role folds into being one submode value under
+main mode "Licht"). Button 4 is freed up, not reassigned yet. Not yet in this YAML;
+no mode list is defined yet.
 
 ## Prerequisites
 
