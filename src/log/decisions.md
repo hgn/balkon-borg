@@ -14,6 +14,24 @@ split into src/") for why.
 
 ---
 
+## 2026-07-16 — U4 reduced to live environment only (no long-term log / heatmap)
+
+**Context:** specifying U4 (`docs/use-cases.md`). It had wanted a long-term climate log
+and a presence usage heatmap.
+
+**Decision:** U4 is **live-only** — current BME values + a short recent/session trend.
+Both historical requirements are dropped, because the unit is all-on/all-off and runs
+only when needed: a "long-term" climate log would be full of gaps (nothing logged while
+off), and a presence "usage heatmap" would be circular (the unit is on *because* someone
+is there, so it mostly plots its own on-time). Shipping either would be a misleading
+half-record.
+
+**Consequence for the stack:** no long-term retention/downsampling to maintain in
+InfluxDB — the BME data needs only a short window (~7 days) for the trend view. Radar
+presence stays live for U1/mode logic but is no longer logged. Environment *alerts*
+(frost/heat/storm) are not U4; they live in their own use cases (e.g. U9.3). Full
+write-up in `docs/use-cases.md` U4.
+
 ## 2026-07-16 — Vision axis is presence-scheduled; safe power-on defaults
 
 **Context:** the user questioned why Frigate at all, given MediaPipe (the pose/hand

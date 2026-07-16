@@ -36,7 +36,7 @@ active listening (audio out: FM/DAB/shortwave/airband) from data decoding
 mutually exclusive at the main-mode level — you're in one or the other, never both.
 
 **Baseline** (runs regardless of mode, while the borg-pi5 is powered — cheap or
-always-valuable): U4 (environment + Grafana + heatmap), U6 (BirdNET bird log),
+always-valuable): U4 (live environment), U6 (BirdNET bird log),
 U18 (daily time-lapse frame).
 
 **Shared services** (consumed *by* modes, not modes themselves): U7 (camera/Frigate,
@@ -156,12 +156,28 @@ confirmed when this use case is worked out.
 ## U4 — Environment data
 
 **Requirements:**
-1. BME280 (temperature/humidity/pressure) → MQTT → dashboard.
-2. Long-term climate log in Grafana.
-3. Presence usage heatmap (radar → dashboard).
+1. BME280 (temperature/humidity/pressure) → MQTT → dashboard: current values plus a
+   short-term (recent / session) trend.
 
-**Value:** _TBD_
-**Implementation:** _TBD_
+*(Dropped: the long-term climate log and the presence usage heatmap — see Value.)*
+
+**Value:** an at-a-glance read of the balcony's conditions while you're using it — warm
+and dry enough to sit out, pressure dropping so the weather is turning. Deliberately
+**live-only**: the whole unit is all-on/all-off and runs only when needed, so a
+"long-term" climate log would be full of gaps (no data whenever the unit is off) and a
+presence "usage heatmap" would be circular (the unit is on *because* someone is there,
+so it would mostly plot its own on-time). Both were dropped rather than ship a
+misleading half-record; U4 shows what is true right now and the recent trend, nothing it
+cannot honestly deliver.
+
+**Implementation:** the ESP32 already reads the BME280 over I²C and publishes
+`balkon/env/{temperature,humidity,pressure}` over MQTT (ESPHome), sampled every ~30–60 s
+(slow signals, no need for more). The MQTT→InfluxDB bridge writes them; Grafana shows the
+current values as stat panels plus a trend graph over a **short retention window** (e.g.
+7 days — enough for the recent trend, and no long-term downsampling to maintain since the
+log is intentionally not long-term). Radar presence stays live for the light/mode logic
+(U1) but is no longer logged. **No alerts here:** frost/heat/storm warnings are their own
+use cases (e.g. U9.3 storm warning); U4 is display-only.
 
 ---
 
