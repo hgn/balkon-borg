@@ -45,7 +45,8 @@ need answers — deliberately deferred until the use cases that drive them are p
   mode, and whether a manual pin ever times out on its own.
 - **Config format and home** for the mode → settings mapping (likely `shared/`, format
   TBD).
-- **Stack/language choices** for `pi/` and `android/` — not fixed yet.
+- **Stack/language choice for `pi/`** — not fixed yet. (`android/` is decided:
+  Flutter/Dart, see [`log/decisions.md`](log/decisions.md).)
 
 Once a first slice of use cases is picked, the high-level architecture (component
 diagram, data flow, the concrete mode list) belongs here as the next real content,

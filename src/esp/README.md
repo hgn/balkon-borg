@@ -24,6 +24,11 @@ ESPHome.
 | Radar | with automatic on: presence turns the light on, absence (after 2 min) off |
 | LED1 | presence detected |
 
+**Planned:** Button 3 becomes the mode-cycle control (short press = next mode, long
+press = release to automatic) once the mode system exists — see
+[`../log/decisions.md`](../log/decisions.md) (2026-07-16). Not yet in this YAML; no
+mode list is defined yet.
+
 ## Prerequisites
 
 - **WLED** with MQTT enabled, device topic `wled/balkon` (else adjust

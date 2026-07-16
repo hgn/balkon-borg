@@ -14,6 +14,48 @@ split into src/") for why.
 
 ---
 
+## 2026-07-16 — Android app: Flutter/Dart
+
+**Decision:** the phone app (`src/android/`) is built in **Flutter/Dart**. User's
+choice, stated directly.
+
+**Consequences:** `android/` will hold a standard Flutter project once code starts.
+Follow-on choices not made yet: the MQTT client library (e.g. `mqtt_client` is the
+common pure-Dart option), and whether the cross-platform reach Flutter gives for free
+(iOS) is ever used — the project is scoped as an Android app, nothing changes that
+here. Removes "stack/language choice for `android/`" from `src/README.md`'s open
+list; `pi/`'s stack choice is still open.
+
+## 2026-07-16 — Mode switch: reuse an existing button, no new hardware
+
+**Context:** the mode mechanism (previous entry) needs a physical way to cycle modes.
+User initially asked for "a dedicated switch." Both the enclosure (re-ordered
+2026-07-15 with the reviewed geometry) and the carrier PCB (ordered 2026-07-14, in
+fabrication at Aisler) are already committed with exactly 4 buttons + 1 encoder wired
+— no spare connector or bore for a sixth control.
+
+**Decision:** **Button 3** (currently "scene party," GPIO27) becomes the general
+mode-cycle control: short press = advance to the next mode; long press = release an
+active manual pin back to automatic. Firmware-only change in `src/esp/`, to be made
+once the mode list and the Pi-side arbiter exist — **not implemented yet**, no mode
+values are defined. Rest of the mapping stays: Button 1 on/off, Button 2 scene,
+Button 4 automation toggle, encoder turn/push brightness/light-off.
+
+**Rejected:** a new physical switch — needs a new enclosure bore (a fourth CAD/order
+cycle, on top of an order paid barely a day ago) and a new PCB header (board respin;
+the current board is already in fabrication). Not worth it for a function achievable
+entirely in firmware.
+
+**Display (proposed, not yet built):** mode identity shown two ways. The Android app
+reads `balkon/mode` directly — already covered by the mode architecture, no new work.
+The WLED panel gives a brief (~2-3 s) visual confirmation on every mode change
+(scrolling mode name or a mode-specific colour flash, using the matrix's existing 2D
+text capability — see ideas 21/27 in `../../docs/ideas.md`), then reverts to that
+mode's normal light behaviour. Button 3's own LED can double as a lightweight binary
+indicator (lit = a manual pin is active, off = automatic) — it cannot show *which*
+mode (single-colour ring LED, not addressable), so mode identity stays the panel's/
+app's job.
+
 ## 2026-07-16 — Mode architecture: one global mode, manual pins, central config
 
 **Context:** two of `src/README.md`'s open questions (concurrency/scheduling, the

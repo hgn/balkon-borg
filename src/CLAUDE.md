@@ -20,7 +20,7 @@ reading for work in this directory.
 |---|---|
 | `pi/` | borg-pi5 orchestration + `pi/quadlets/` (Podman: Mosquitto, Frigate, readsb/tar1090, BirdNET-Go) |
 | `esp/` | ESP32 application (ESPHome config) |
-| `android/` | Phone app |
+| `android/` | Phone app (Flutter/Dart) |
 | `shared/` | Cross-cutting contracts (MQTT schema, once formalised as code) |
 
 Create files only once the first real content appears, not on spec — see
