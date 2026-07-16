@@ -16,23 +16,37 @@ anything in here, not the hardware log.
 | `android/` | The phone app. |
 | `shared/` | Contracts both sides depend on (MQTT topic/payload schema, currently sketched in [`../docs/network.md`](../docs/network.md); formalise here once code needs it, not before). |
 
+## Mode architecture (decided, mechanism only)
+
+Concurrency/scheduling and the app-vs-automation priority question are resolved as a
+**mode mechanism** — see [`log/decisions.md`](log/decisions.md) (2026-07-16) for the
+full reasoning. Summary: one global mode value on MQTT (e.g. `balkon/mode`), read by
+every mode-dependent service; **manual selection (app/buttons) pins the mode**, and
+without an active pin **automatic triggers** (radar/time/presence) set it — so a manual
+choice always wins while pinned. One arbitration component on the **borg-pi5** owns
+writing the mode. A small **baseline** (BME logging, broker/dashboards, basic radar
+motion log) runs regardless of mode, but only while the borg-pi5 itself is powered (it
+is not 24/7). The mode → per-service mapping (WLED preset, SDR owner, gesture
+detection, Frigate intensity, ...) lives in one central declarative config, not
+hardcoded per service.
+
 ## Not yet decided
 
-This is a skeleton, not an architecture. Before any of the above grows real code, the
-following need answers — deliberately deferred until the use cases that drive them are
-picked (see [`../docs/ideas.md`](../docs/ideas.md), the candidate pool):
+This is still a skeleton, not a build. The mode *mechanism* above is settled; these
+need answers — deliberately deferred until the use cases that drive them are picked
+(see [`../docs/ideas.md`](../docs/ideas.md), the candidate pool):
 
-- **Which use cases get built first.** The idea pool has 100+ candidates; the
-  architecture (what has to run continuously vs. on demand, what owns the single
-  RTL-SDR tuner, what the Android app controls vs. only observes) depends on the
-  selection.
-- **Concurrency / scheduling.** Several use cases want the same limited resources at
-  once (the SDR tuner, the camera, the light). Something has to arbitrate between them
-  — not designed yet.
-- **Priority model.** Does an Android app command always pre-empt automation (radar,
-  scenes)? Does MQTT from the ESP32 win over the app, or the other way round? Open.
+- **Which use cases get built first.** The idea pool has 100+ candidates; this decides
+  the actual set of mode values, what the Android app controls vs. only observes, and
+  which services even need to exist.
+- **The closed list of mode values** and their concrete per-service settings — depends
+  on the above.
+- **Automatic-trigger heuristics** — what radar/time/presence pattern proposes which
+  mode, and whether a manual pin ever times out on its own.
+- **Config format and home** for the mode → settings mapping (likely `shared/`, format
+  TBD).
 - **Stack/language choices** for `pi/` and `android/` — not fixed yet.
 
 Once a first slice of use cases is picked, the high-level architecture (component
-diagram, data flow, the scheduling/priority model above) belongs here as the first real
-content, backed by an entry in [`log/decisions.md`](log/decisions.md).
+diagram, data flow, the concrete mode list) belongs here as the next real content,
+backed by an entry in [`log/decisions.md`](log/decisions.md).
