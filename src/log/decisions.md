@@ -14,6 +14,40 @@ split into src/") for why.
 
 ---
 
+## 2026-07-16 — Four axes, the panel is one program, drawn as parallel-region mermaid
+
+**Refines the revision below into its final shape.** Two clarifications from the user:
+
+- **The presence ghost owns the whole panel** ("für sich, in diesem Modus"), like any
+  other visual program — not a lightweight overlay sharing rows.
+- **The light/visual axis is set by hand and persists, independent of audio** ("Disko
+  ist Disko, egal ob ich Radio, Flugfunk oder live singe"). A visual program is not
+  overridden by whatever the SDR/speaker are doing.
+
+This collapses the exclusive resources into **four clean axes**, each internally
+one-at-a-time, mutually independent so they combine freely:
+1. **Panel** (the WLED LEDs are physically *both* the ambient lamp and the 2D matrix →
+   one visual program at a time: Ambient / Distance-light+bar / Ticker / Disco /
+   Visualiser / Ghost). This merges the earlier separate "Matrix-whole / rows / lamp"
+   into one resource, which is more honest to the single-panel hardware.
+2. **SDR tuner** (off / Listen / Scanner).
+3. **Vision** (off / Frigate / Gesture).
+4. **Speaker** (one sound, priority-ducked per the overlay model).
+Plus an always-on **baseline** (BME, BirdNET, time-lapse) with no choice, and **Mic** as
+a shared (non-exclusive) input.
+
+**Representation:** the natural picture is a **state diagram with parallel/orthogonal
+regions** (one region per axis) — validated as mermaid and embedded in
+[`../architecture.md`](../architecture.md) §3. It's the honest form because parallelism
+*between* regions shows features combine, while one active state *per* region shows each
+resource is exclusive; the FM/Airband/ADS-B/… states are the "Subzustände" the user
+asked about. The §4 table is the same information in the form that becomes the
+implementation (each feature declares its exclusive resources; the allocator grants).
+
+**Consequence:** the earlier per-use-case "submode" notes (U1 Distance Detector, U3 Info
+Ticker) remain valid — they're just two programs on the Panel axis, still mutually
+exclusive there — so `docs/use-cases.md` needs no rewrite; the axis model subsumes them.
+
 ## 2026-07-16 — REVISION: features are combinable, gated by a resource table
 
 **Supersedes the core of the three earlier mode entries below** (one global exclusive

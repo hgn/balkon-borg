@@ -72,52 +72,134 @@ matrix** (large, and it hides *why* two things clash) but a **resource-allocatio
 table**: map each feature to the exclusive resources it needs, and the conflicts derive
 themselves. That table is §4, and it is the thing to complete together.
 
+### The exclusive resources are independent axes
+
+Each exclusive resource is really an **axis**: you pick at most one value on it, and the
+axes are independent, so they combine freely. There are four:
+
+- **Panel** (the WLED LEDs — they *are* both the ambient lamp and the 2D matrix, so it
+  runs one visual program at a time): Ambient · Distance-light+bar · Ticker · Disco ·
+  Visualiser · Ghost.
+- **SDR tuner**: off · Listen (FM/DAB+/shortwave/airband) · Scanner (ADS-B/rtl_433/
+  APRS/…).
+- **Vision** (camera + heavy CPU): off · Frigate/Away · Gesture.
+- **Speaker** (one sound at a time, priority-ducked, §5): silent · playing.
+
+You set each axis and leave it; a light effect persists regardless of what the radio is
+doing (user: *"Disko ist Disko, egal ob ich Radio, Flugfunk oder live singe"*). Presets
+are just convenient one-tap settings across several axes at once. Plus an always-on
+**baseline** (BME log, BirdNET, time-lapse) that has no choice to make.
+
+Because the axes are concurrent and each is internally exclusive, the natural picture is
+a **state diagram with parallel regions** — which directly answers "can we draw this as
+mermaid?": yes, and this orthogonal-region form *is* the honest one (parallelism between
+regions = features combine; one active state per region = the resource is exclusive):
+
+```mermaid
+stateDiagram-v2
+  [*] --> Off
+  Off --> Unit : power on
+  Unit --> Off : power off
+  state Unit {
+    state "Panel (WLED) — one visual program" as Panel {
+      [*] --> Ambient
+      Ambient --> DistanceLight
+      DistanceLight --> Ticker
+      Ticker --> Disco
+      Disco --> Visualiser
+      Visualiser --> Ghost
+      Ghost --> Ambient
+    }
+    --
+    state "SDR tuner — one function" as SDR {
+      [*] --> SDR_off
+      SDR_off --> Listen
+      SDR_off --> Scanner
+      Listen --> SDR_off
+      Scanner --> SDR_off
+      state Listen {
+        [*] --> FM
+        FM --> DABp
+        DABp --> Shortwave
+        Shortwave --> Airband
+      }
+      state Scanner {
+        [*] --> ADSB
+        ADSB --> rtl433
+        rtl433 --> APRS
+      }
+    }
+    --
+    state "Vision — camera + CPU" as Vision {
+      [*] --> Vision_off
+      Vision_off --> Frigate
+      Vision_off --> Gesture
+      Frigate --> Vision_off
+      Gesture --> Vision_off
+    }
+    --
+    state "Speaker — one sound, priority ducked" as Speaker {
+      [*] --> Silent
+      Silent --> Playing
+      Playing --> Silent
+    }
+    --
+    state "Baseline — always, no choice" as Base {
+      [*] --> Running
+    }
+  }
+```
+
+The within-region arrows are just the button-cycle order; the app can jump any region to
+any state directly. The state names (FM, Airband, ADS-B, …) are the "Subzustände" —
+substates of the Listen/Scanner composite states.
+
 ---
 
 ## 4. Resource-allocation table (draft — to complete together)
 
-**Exclusive resources** (only one user at a time): **SDR** tuner · **Vision** (camera +
-its heavy CPU — Frigate xor MediaPipe) · **Speaker** (one sound at a time, ordered by
-§5) · **Matrix-whole** (a full-panel effect blocks all per-row uses).
-**Shared resources** (any number of users, never a conflict): **Mic** (fan-out to
-BirdNET + clap + FFT + intercom at once) · **Matrix-rows** (different rows/segments
-coexist) · BME, dashboards, logging.
+Same information as the diagram, in the form that becomes the implementation. **Four
+exclusive resources** (● = needs it, one user at a time): **Panel** (the WLED LEDs, one
+visual program) · **SDR** tuner · **Vision** (camera + heavy CPU) · **Speaker** (one
+sound, priority-ducked per §5). **Shared** (○, never a conflict): **Mic** (fan-out to
+BirdNET + clap + FFT + intercom at once); BME/dashboards/logging need nothing scarce.
 
-| Feature | SDR | Vision | Speaker | Matrix-whole | (shared: Mic / rows / lamp) |
-|---|:--:|:--:|:--:|:--:|---|
-| Auto table light (U1) | | | | | lamp warm, row 1 |
-| Info ticker (U3) | reads¹ | | | | rows |
-| Effects / strobe (U3) | | | | ● | lamp RGB |
-| Music visualiser (U3) | | | | ● | mic, lamp RGB |
-| Radio listen — FM/DAB/SW/airband (U10,U20.2) | ● | | ● | | |
-| Scanner decode — ADS-B/rtl_433/APRS/… (U5,U13,U15,U16,U17,U20.1,U8) | ● | | | | |
-| BirdNET (U6) | | | | | mic |
-| Clap switch (U2) | | | | | mic |
-| Gesture (U2) | | ● | | | |
-| Frigate / Away (U7,U11) | | ● | ●² | | |
-| TTS feedback (U9) | | | ● | | |
-| Intercom (U12) | | | ● | | mic |
-| Presence ghost (U19) | | | | | 1 px / segment |
-| Env log (U4), time-lapse (U18) | | | | | (negligible) |
+| Feature | Panel | SDR | Vision | Speaker | Mic |
+|---|:--:|:--:|:--:|:--:|:--:|
+| Ambient / warm light | ● | | | | |
+| Distance light + bar (U1) | ● | | | | |
+| Info ticker (U3) | ● | reads¹ | | | |
+| Disco / effects (U3) | ● | | | | |
+| Music visualiser (U3) | ● | | | | ○ |
+| Presence ghost (U19) | ● | | | | |
+| Radio listen — FM/DAB/SW/airband (U10, U20.2) | | ● | | ● | |
+| Scanner decode — ADS-B/rtl_433/APRS/… (U5,U13,U15,U16,U8) | | ● | | | |
+| Gesture (U2) | | | ● | | |
+| Frigate / Away (U7, U11) | | | ● | ●² | |
+| TTS feedback (U9) | | | | ● | |
+| Intercom (U12) | | | | ● | ○ |
+| BirdNET (U6), clap (U2) | | | | | ○ |
+| Env log (U4), time-lapse (U18) | | | | | |
 
 ¹ The ticker's *flight* line needs live ADS-B, i.e. the Scanner holding the tuner — so
-a full ticker and any Radio feature clash on the tuner, even though the ticker's
-time/temp lines don't. ² Only the alarm; otherwise Away is silent.
+a full ticker + any Radio feature clash on the tuner (the ticker's time/temp lines
+don't). ² Only the alarm; Away is otherwise silent.
 
-**Reading the conflicts off the table** (same ● in an exclusive column = clash):
-- **SDR:** any two of {Radio, Scanner, full Info-ticker} clash — the tuner is the
-  dominant bottleneck.
+**Reading the conflicts off the table** (same ● in an exclusive column = clash;
+disjoint = run in parallel):
+- **Panel:** the six visual programs are mutually exclusive — one look at a time
+  (Ambient / Distance / Ticker / Disco / Visualiser / Ghost). The ghost owns the whole
+  panel like any other, per the user ("für sich, in diesem Modus").
+- **SDR:** Radio ⟂ Scanner ⟂ full Info-ticker — the tuner is the dominant bottleneck.
 - **Vision:** Gesture ⟂ Frigate/Away — never both.
-- **Matrix-whole:** Effects/visualiser block the ticker, the proximity bar and the
-  ghost (they own the whole panel).
 - **Speaker:** Radio, TTS, intercom, alarm don't *hard*-clash — they queue by priority
   (§5), one sound at a time.
-- **Everything else runs in parallel.** Ambient light + airband + BirdNET + env log:
-  disjoint resources, all at once — exactly the user's example.
+- **Across axes: free.** Disco (Panel) + airband (SDR+Speaker) + BirdNET (Mic) + env
+  log, all at once — exactly the user's "Disko ist Disko, egal was der Empfänger tut."
 
-This table is the single source of truth for "what can run together." Filling in the
-last uncertain cells (does the ghost really tolerate the ticker on other rows? is a
-light effect ever wanted *with* radio audio?) is the joint task.
+The only cells still genuinely open are edge refinements (e.g. should the panel ever be
+*segmented* so a tiny status row coexists with a main program — deferred; one program
+per panel for now).
 
 ---
 
