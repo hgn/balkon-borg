@@ -276,9 +276,11 @@ the SDR default (off vs. a silent ADS-B idle), tied to the SDR-idle-default ques
 ## 8. Data flow (MQTT)
 
 Topic scheme is in [`../docs/network.md`](../docs/network.md); the mode layer adds
-`balkon/mode` (main) and `balkon/mode/sub` (submode), written only by the arbiter,
-read by every mode-dependent service and by the app. The mode→per-service settings
-map is a central declarative config (likely `shared/`, format TBD).
+`balkon/mode` (main), `balkon/mode/sub` (submode) and `balkon/mode/chan` (the optional
+**third level** — the channel/station list within a submode, e.g. the FM station or the
+airband frequency; empty where a submode has no list). All three are written only by the
+arbiter, read by every mode-dependent service and by the app. The mode→per-service
+settings map is a central declarative config (likely `shared/`, format TBD).
 
 **No telemetry database.** The unit's own live data (environment, presence, mode) stays
 on MQTT; the arbiter keeps a short **in-RAM ring buffer** for recent trends (e.g. the

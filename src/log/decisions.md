@@ -14,6 +14,31 @@ split into src/") for why.
 
 ---
 
+## 2026-07-16 — Control map refined: Button 4 = sub-submode, encoder does volume too
+
+**Refines the button map** from the earlier mode-switch entries (Button 4 was "free",
+encoder push was "light off"). From specifying U2.
+
+- **A third mode level.** Some submodes carry a list — Radio/FM has stations, Radio/
+  airband has frequencies (Munich Tower/Approach/…), Scanner/ADS-B has filter presets.
+  So the mode tree gains an optional **sub-submode** (`balkon/mode/chan`), used only
+  where a submode has a list; inert otherwise. User's idea.
+- **Button 4 = cycle the sub-submode** (next station/frequency/preset within the current
+  submode). Replaces its "free/mute" placeholder.
+- **Encoder push toggles what the knob controls (brightness ↔ volume)**, turn adjusts the
+  current target, the panel shows which. Dropped the old "push = light off" — Button 1
+  already does off, and there are now *two* continuous quantities (light brightness and
+  audio volume) that one encoder must serve. Automatic context-switching was rejected:
+  when light and radio are both on it is ambiguous, so an explicit toggle wins.
+- **Clap (U2.2)** kept but **gated to quiet contexts** — disabled while the speaker plays
+  loud (Party mode / radio/media), else it false-triggers or is masked. Lightweight
+  spike/two-in-a-window detector on the Pi mic (fan-out, cheap).
+- **Gesture (U2.3)** kept at full vocabulary (5 fingers on, fist off, thumbs scene, swipe
+  dim, finger count = preset). Honest limit recorded in the use case: it needs light to
+  see the hand, so the evening auto-on stays the radar's job, not a gesture in the dark.
+
+Full write-up in `docs/use-cases.md` U2; `src/architecture.md` §8 gains the third topic.
+
 ## 2026-07-16 — Drop InfluxDB + Grafana: live-only, no telemetry database
 
 **Supersedes item 3 of the "Software service stack fixed" entry below** (InfluxDB v2 +

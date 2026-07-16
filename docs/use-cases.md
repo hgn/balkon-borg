@@ -120,16 +120,48 @@ sit), not a value to guess from a datasheet.
 ## U2 — Manual light control without a phone
 
 **Requirements:**
-1. Physical controls: 4 illuminated buttons + rotary encoder. Button roles now tied
-   into the mode system (`src/log/decisions.md`): Button 1 on/off, Button 2 submode
-   cycle within the current main mode (light-specific submodes here: normal/ambient/
-   cozy/…), Button 3 main-mode cycle (short press) / release to automatic (long
-   press), Button 4 free for a future function, encoder brightness + push = off.
-2. Clap switch (2 claps) as an additional input.
-3. Hand-gesture control via the camera (MediaPipe).
+1. Physical controls: 4 illuminated buttons + rotary encoder, mapped to the mode system
+   (`src/log/decisions.md`):
+   - **Button 1** — on/off.
+   - **Button 2** — cycle the **submode** within the current main mode (e.g. Licht:
+     normal/ambient/cozy/distance-detector/ticker).
+   - **Button 3** — cycle the **main mode** (short press) / release a manual pin back to
+     automatic (long press).
+   - **Button 4** — cycle the **sub-submode** (the channel/station list within the
+     current submode, where one exists): Radio/FM → next station, Radio/airband →
+     Munich Tower / Approach / …, Scanner/ADS-B → filter preset. Inert where the submode
+     has no list (e.g. Panel/Disco).
+   - **Encoder** — turn adjusts the current target (brightness *or* volume); **short
+     push toggles the target** (light ↔ audio), the panel briefly shows which. (The old
+     "push = light off" is dropped: Button 1 already does off, so the push is free to
+     switch what the knob controls — needed now that there are two continuous
+     quantities, brightness and volume.)
+2. Clap switch (2 claps) → toggle the light, as a lazy hands-free input.
+3. Hand-gesture control via the camera (MediaPipe): 5 fingers = on, fist = off,
+   thumbs-up = scene, swipe = dim, finger count = preset number.
 
-**Value:** _TBD_
-**Implementation:** _TBD_
+**Value:** control the unit without reaching for a phone, three ways that each fit a
+different moment: the buttons/encoder for deliberate, reliable control (always work,
+day or night); a lazy 2-clap toggle for a quiet evening without getting up; and hand
+gestures as a fun, touch-free remote when there's light to see them. Together they mean
+the phone is never *required* — it is one option among several, not the only way in.
+
+**Implementation:**
+- **Buttons/encoder** are on the ESP32 (ESPHome, wired per the carrier board). Each
+  press/turn becomes an MQTT message to the arbiter, which owns the mode state and the
+  brightness/volume targets; the arbiter applies the change (WLED preset/brightness, or
+  the audio volume). The three mode levels map to `balkon/mode`, `balkon/mode/sub` and a
+  third `balkon/mode/chan` (the sub-submode). Button LEDs are driven locally by the ESP
+  and can reflect state (active mode/pin).
+- **Clap** runs as a lightweight energy-spike / two-within-a-window detector on the Pi's
+  mic stream (fan-out alongside BirdNET, cheap). **Gated to quiet contexts** — disabled
+  while the speaker is playing loud (Party main mode, or radio/media audio active) so it
+  neither false-triggers nor is masked. On a clean double clap it publishes a
+  light-toggle command.
+- **Gesture** is MediaPipe on the Pi, active only while present (the Vision axis's
+  presence schedule, `src/log/decisions.md`); a recognised gesture publishes the matching
+  command. Honest limit: it needs light to see the hand, so it works in daylight or once
+  the panel is on — the evening auto-on comes from the radar, not a gesture in the dark.
 
 ---
 
