@@ -16,6 +16,13 @@ anything in here, not the hardware log.
 | `android/` | The phone app. |
 | `shared/` | Contracts both sides depend on (MQTT topic/payload schema, currently sketched in [`../docs/network.md`](../docs/network.md); formalise here once code needs it, not before). |
 
+## Architecture
+
+The whole-system concept — components, mode system, resource arbitration, overlay
+priority, and the graceful-degradation story when the borg-pi5 is off — is in
+[`architecture.md`](architecture.md) (the Gesamtkonzept, currently under review). The
+per-decision reasoning is in [`log/decisions.md`](log/decisions.md).
+
 ## Mode architecture (decided, mechanism only)
 
 Concurrency/scheduling and the app-vs-automation priority question are resolved as a
