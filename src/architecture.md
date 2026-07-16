@@ -28,93 +28,96 @@ Physical/network path is in [`../docs/network.md`](../docs/network.md).
 
 ---
 
-## 2. Resilience: what works when the borg-pi5 is off  ⚠️
+## 2. Power model: all on, or all off
 
-**This is the load-bearing check.** The borg-pi5 is deliberately **not 24/7**, yet it
-hosts both the broker and the mode brain. As currently specified (broker on the Pi,
-ESP→WLED *over MQTT via that broker*), the chain breaks the moment the Pi is off:
+The **whole unit powers as one** off the single 5 V feed — borg-pi5, ESP32 and WLED
+come up together or not at all; there is no per-branch switch. There is therefore **no
+"Pi off but panel on" state**, which dissolves what looked like a coupling problem:
+because the broker (on the Pi) is up whenever the ESP32 and WLED are, the ESP→broker→
+WLED path is always intact when it matters. Broker-on-the-Pi costs nothing here.
 
-```
-ESP32 --(MQTT)--> [broker on borg-pi5 = OFF] --(MQTT)--> WLED     ✗ broken
-```
-
-So with the Pi off, **U1 (automatic table light) — the flagship everyday use case —
-does not work**, nor does button-driven mode switching. Only WLED's own onboard time
-presets run. This is already noted as a consequence in `network.md`, but it deserves
-to be a conscious decision, not a side effect, because it makes the most-used feature
-depend on powering the whole Pi.
-
-**[NEW – confirm] Proposed fix: decouple the basic light loop from the Pi.** Let the
-ESP32 drive WLED **directly on the LAN** (WLED's HTTP/JSON API, or a broker-less local
-link) for the core light loop, and use the Pi's MQTT broker only for telemetry and for
-the *mode* layer. Then:
-
-- **Pi off:** the ESP32 runs U1 (presence + distance dimming, the proximity bar,
-  departure flicker) entirely on its own, talking straight to WLED. Basic, automatic
-  table light always works. No modes, no gesture, no radio — just the light.
-- **Pi on:** the full mode system layers on top; the arbiter can still command WLED
-  (via the ESP or directly) per the active mode.
-
-This is a clean graceful-degradation story: the always-on parts (ESP + WLED) deliver
-the daily-driver feature without the Pi, and the Pi adds the rich modes when it's up.
-The alternative is to accept "no light automation unless the Pi is on" — a legitimate
-choice, but it should be made on purpose.
+Consequence for the design: "baseline runs while the Pi is powered" simply means
+"whenever the unit is on." Nothing needs to survive a partial power state, because
+there isn't one. (This corrects an earlier assumption that WLED was independently
+powered and ran its own presets while the Pi was off — it does not; when the unit is
+off, everything including WLED is off.)
 
 ---
 
-## 3. The mode system
+## 3. The mode model: combinable features, resource-gated  **[REVISED – confirm]**
 
-One global **main mode** (`balkon/mode`), and within it one **submode**
-(`balkon/mode/sub`). Exactly one of each is active; both are mutually exclusive at
-their level, which is what arbitrates shared resources (§4).
+**Correction to the earlier "one exclusive main mode" model.** Modes are **not**
+mutually exclusive. Features run **in parallel** and are toggled independently — the
+user's examples: *Ambient light + airband listening* together, or *airband off but
+Ambient on*. Only *some* combinations clash, and always for the same reason: **two
+features that need the same exclusive resource cannot both run.** Ambient (the lamp)
+and airband (the tuner + speaker) share nothing, so they coexist; two radio features
+(both the tuner) do not.
 
-```mermaid
-graph TD
-  root["balkon/mode (one active)"]
-  root --> licht["Licht"]
-  root --> party["Party"]
-  root --> radio["Radio (SDR listen)"]
-  root --> scanner["Scanner (SDR decode)"]
-  root --> away["Away / Security"]
+So the real model is:
 
-  licht --> l1["Distance Detector (U1)"]
-  licht --> l2["Info Ticker (U3)"]
-  licht --> l3["normal / ambient / cozy"]
-  radio --> r1["FM · DAB+ · Shortwave · Airband"]
-  scanner --> s1["ADS-B · rtl_433 · APRS · Radiosonde"]
-  scanner --> s2["Spectrum · Pager · LoRa · NOAA/ISS/meteor"]
-```
+- A set of **independently toggleable features** (the former submodes — Distance light,
+  Info ticker, FM, airband, ADS-B decode, gesture, Frigate, effects, …).
+- A small set of **exclusive resources** they contend for.
+- A rule: **two features are compatible iff their exclusive-resource sets are
+  disjoint.** Conflicts are not arbitrary pairs — they fall out of the resource map.
 
-Around the modes sit four non-mode layers (full mapping in
-[`../docs/use-cases.md`](../docs/use-cases.md) → "Mode placement"):
+"Modes" (Licht / Party / Radio / Scanner / Away) survive only as **presets**: named,
+convenient bundles of feature toggles (e.g. Party = effects on + visualiser on). You
+start from a preset and can toggle individual features on/off, as long as the resource
+allocator permits. Buttons cycle presets; the app toggles individual features.
 
-- **Baseline** — always on while the Pi runs: environment logging (U4), BirdNET (U6),
-  daily time-lapse frame (U18).
-- **Shared services** — used *by* modes: camera/Frigate (radar-gated, U7), the
-  speaker path.
-- **Overlays / interrupts** — event-driven, cut across the active mode (§5).
-- **Control surface** — buttons/clap/gesture (U2) and the app; not a mode.
-
-*Night* is a modifier (shifts thresholds/scenes inside the active mode), not a main
-mode.
+The right tool to figure out what clashes is therefore **not an N×N feature-vs-feature
+matrix** (large, and it hides *why* two things clash) but a **resource-allocation
+table**: map each feature to the exclusive resources it needs, and the conflicts derive
+themselves. That table is §4, and it is the thing to complete together.
 
 ---
 
-## 4. Resource arbitration — who resolves each conflict
+## 4. Resource-allocation table (draft — to complete together)
 
-| Scarce resource | Contenders | Arbiter |
-|---|---|---|
-| **SDR tuner** (one) | ADS-B, FM/DAB/SW, airband, rtl_433, APRS, … | **main mode** (Radio xor Scanner xor neither) |
-| **Heavy CPU** | Frigate vs MediaPipe gesture | **main mode** (Away uses Frigate; Licht+gesture uses MediaPipe — never both) |
-| **Matrix rows** | proximity bar vs ticker vs effects | **submode** (Distance Detector xor Info Ticker within Licht) |
-| **Speaker** | radio, TTS feedback, intercom, alarm | **overlay priority** (§5) |
-| **Camera** | Frigate, MediaPipe, time-lapse | **radar-gated shared service** + main mode |
+**Exclusive resources** (only one user at a time): **SDR** tuner · **Vision** (camera +
+its heavy CPU — Frigate xor MediaPipe) · **Speaker** (one sound at a time, ordered by
+§5) · **Matrix-whole** (a full-panel effect blocks all per-row uses).
+**Shared resources** (any number of users, never a conflict): **Mic** (fan-out to
+BirdNET + clap + FFT + intercom at once) · **Matrix-rows** (different rows/segments
+coexist) · BME, dashboards, logging.
 
-The design principle: **inside a main mode**, express competing behaviours as
-mutually-exclusive submodes; **across main modes**, the single global resources (tuner,
-heavy CPU) are the main mode's job. Only the speaker genuinely needs a cross-mode
-priority rule, because overlays (alarm, warnings, intercom, feedback) can fire during
-*any* mode.
+| Feature | SDR | Vision | Speaker | Matrix-whole | (shared: Mic / rows / lamp) |
+|---|:--:|:--:|:--:|:--:|---|
+| Auto table light (U1) | | | | | lamp warm, row 1 |
+| Info ticker (U3) | reads¹ | | | | rows |
+| Effects / strobe (U3) | | | | ● | lamp RGB |
+| Music visualiser (U3) | | | | ● | mic, lamp RGB |
+| Radio listen — FM/DAB/SW/airband (U10,U20.2) | ● | | ● | | |
+| Scanner decode — ADS-B/rtl_433/APRS/… (U5,U13,U15,U16,U17,U20.1,U8) | ● | | | | |
+| BirdNET (U6) | | | | | mic |
+| Clap switch (U2) | | | | | mic |
+| Gesture (U2) | | ● | | | |
+| Frigate / Away (U7,U11) | | ● | ●² | | |
+| TTS feedback (U9) | | | ● | | |
+| Intercom (U12) | | | ● | | mic |
+| Presence ghost (U19) | | | | | 1 px / segment |
+| Env log (U4), time-lapse (U18) | | | | | (negligible) |
+
+¹ The ticker's *flight* line needs live ADS-B, i.e. the Scanner holding the tuner — so
+a full ticker and any Radio feature clash on the tuner, even though the ticker's
+time/temp lines don't. ² Only the alarm; otherwise Away is silent.
+
+**Reading the conflicts off the table** (same ● in an exclusive column = clash):
+- **SDR:** any two of {Radio, Scanner, full Info-ticker} clash — the tuner is the
+  dominant bottleneck.
+- **Vision:** Gesture ⟂ Frigate/Away — never both.
+- **Matrix-whole:** Effects/visualiser block the ticker, the proximity bar and the
+  ghost (they own the whole panel).
+- **Speaker:** Radio, TTS, intercom, alarm don't *hard*-clash — they queue by priority
+  (§5), one sound at a time.
+- **Everything else runs in parallel.** Ambient light + airband + BirdNET + env log:
+  disjoint resources, all at once — exactly the user's example.
+
+This table is the single source of truth for "what can run together." Filling in the
+last uncertain cells (does the ghost really tolerate the ticker on other rows? is a
+light effect ever wanted *with* radio audio?) is the joint task.
 
 ---
 
@@ -167,14 +170,18 @@ map is a central declarative config (likely `shared/`, format TBD).
 
 ## 8. Open questions / risks (ranked)
 
-1. **Pi-power coupling (§2)** — decide: decouple the basic light loop (ESP↔WLED
-   direct) so U1 survives the Pi being off, or consciously accept "no light automation
-   without the Pi." Biggest single decision here.
+1. **Confirm the combinable-feature model (§3)** and **complete the resource table
+   (§4)** together — this replaces the earlier "one exclusive main mode" framing and is
+   now the core of the architecture.
 2. **Overlay priority (§5)** — confirm the ordering, especially safety-warning vs
    intercom.
-3. **SDR data freshness** — with neither Radio nor Scanner as the idle default,
-   SDR-derived data (U3.2 flight ticker, U13 sensor net) is stale outside Scanner.
-   Decide whether ADS-B/Scanner is the tuner's idle default.
-4. **Per-mode settings + automatic-trigger heuristics** — still to be defined per mode.
-5. **Config format and home** for the mode→settings map.
-6. **Stack/language for `pi/`** — the arbiter + glue; not chosen yet.
+3. **SDR data freshness** — the tuner is the dominant bottleneck; decide whether
+   ADS-B/Scanner is its idle default so the flight ticker / sensor net stay live when
+   no other radio feature is on.
+4. **Presets** — define the named feature bundles (Licht/Party/Radio/Scanner/Away) and
+   the per-feature settings + automatic-trigger heuristics.
+5. **Config format and home** for the feature/preset/settings map.
+6. **Stack/language for `pi/`** — the resource allocator + glue; not chosen yet.
+
+*Resolved:* the Pi-power coupling worry (§2) is void — the unit is all-on/all-off, so
+there is no partial-power state to design around.

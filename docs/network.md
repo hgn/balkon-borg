@@ -40,8 +40,12 @@ So: **borg-pi5 → WiFi repeater → (cable) → Fritz!Box → nas-Pi5.**
   the inference/app; it does not stream raw video/audio over the network.
 - **ESP32** publishes sensor readings and controls the **WLED light over MQTT** (via the
   broker); button/encoder/radar actions become MQTT messages.
-- Because the broker is on the borg-pi5, the **light/MQTT automation works while the
-  borg-pi5 is on**; when it is powered down, the automation is unavailable.
+- The **whole unit powers as one**: one 5 V feed brings up the borg-pi5, the ESP32 and
+  the WLED controller together, or none of them (there is no per-branch switching). So
+  whenever the ESP32 or WLED is running, the broker on the borg-pi5 is up too — the
+  broker-on-the-Pi placement costs nothing in practice, because there is no "Pi off but
+  panel on" state. When the unit is off, everything is off (including WLED's own
+  presets).
 - **Remote access** from outside the home goes through the always-on **nas-Pi5** via the
   Fritz!Box, which also holds occasionally-stored images/data.
 

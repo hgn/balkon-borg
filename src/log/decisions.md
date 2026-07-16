@@ -14,6 +14,48 @@ split into src/") for why.
 
 ---
 
+## 2026-07-16 — REVISION: features are combinable, gated by a resource table
+
+**Supersedes the core of the three earlier mode entries below** (one global exclusive
+main mode; submodes mutually exclusive; Radio-vs-Scanner as exclusive main modes). Two
+user corrections forced the revision:
+
+**1. Power is all-on/all-off.** The whole unit powers as one off the single 5 V feed —
+borg-pi5, ESP32 and WLED together, or nothing; no per-branch switch. So there is **no
+"Pi off but panel on" state**. This voids the entire graceful-degradation concern the
+architecture draft had raised (broker-on-Pi coupling, ESP↔WLED decoupling): the broker
+is always up whenever the panel is. It also corrects the earlier assumption (hardware
+log 2026-07-11, and `docs/network.md`) that WLED was independently powered and ran its
+own presets while the Pi was off — it is not; unit off = everything off. `network.md`
+fixed accordingly.
+
+**2. Modes are NOT mutually exclusive — features combine in parallel.** The user runs
+e.g. Ambient light *and* airband listening at once, or turns airband off while keeping
+Ambient. Only *some* combinations clash, always because **two features need the same
+exclusive resource**. So the model becomes:
+- independently-toggleable **features** (the former submodes),
+- a small set of **exclusive resources** (SDR tuner · Vision = camera+heavy CPU ·
+  Speaker · Matrix-whole-panel), plus **shared** ones that never clash (Mic — fan-out;
+  Matrix per-row; BME/dashboards/logging),
+- rule: **two features are compatible iff their exclusive-resource sets are disjoint.**
+The old "main modes" (Licht/Party/Radio/Scanner/Away) survive only as **presets** —
+named bundles of feature toggles you start from and then adjust, not exclusive states.
+
+**Tooling decision (the user's actual question):** to work out what clashes, use a
+**resource-allocation table** (feature → exclusive resources needed), **not** an N×N
+feature-vs-feature matrix. Rationale: conflicts are resource-driven, not arbitrary
+pairs, so the resource table is far smaller, explains *why* two things clash, captures
+the "verschachtelt" nature naturally (a feature clashes with another only where their
+resources overlap, which differs per pair), and is directly the implementation (the
+allocator grants/denies resources). First draft of the table is in
+[`../architecture.md`](../architecture.md) §4, to be completed together.
+
+**What still holds from the earlier entries:** the manual-pins-over-automatic priority
+rule; one arbiter on the borg-pi5 owning the writes; the overlay/speaker priority model
+(§5); the baseline/shared-service/overlay/control-surface split. What changed is only
+the exclusivity assumption — from "one mode at a time" to "many features at once,
+resource-gated."
+
 ## 2026-07-16 — All 20 use cases placed on the mode tree
 
 **Context:** with `docs/use-cases.md` holding the binding 20 use cases, sort them onto
