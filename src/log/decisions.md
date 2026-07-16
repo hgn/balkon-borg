@@ -240,7 +240,7 @@ entirely in firmware.
 reads `balkon/mode` directly — already covered by the mode architecture, no new work.
 The WLED panel gives a brief (~2-3 s) visual confirmation on every mode change
 (scrolling mode name or a mode-specific colour flash, using the matrix's existing 2D
-text capability — see ideas 21/27 in `../../docs/ideas.md`), then reverts to that
+text capability — see U3 in `../../docs/use-cases.md`), then reverts to that
 mode's normal light behaviour. Button 3's own LED can double as a lightweight binary
 indicator (lit = a manual pin is active, off = automatic) — it cannot show *which*
 mode (single-colour ring LED, not addressable), so mode identity stays the panel's/
@@ -299,7 +299,7 @@ doing. Resolved via `interview-me` (four architecture-level questions, one at a 
   the project's existing code-/data-driven ethos (parametric CAD, netlist-from-code).
 
 **Explicitly still open (deferred on purpose, depends on which use cases get built
-first — see [`../docs/ideas.md`](../docs/ideas.md)):**
+first — see [`../../docs/use-cases.md`](../../docs/use-cases.md)):**
 - The actual closed list of mode values.
 - Concrete per-mode settings (which WLED preset, which SDR owner, etc. per mode).
 - Pin timeout / auto-release behaviour (does a pin ever expire on its own?).

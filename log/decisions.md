@@ -53,8 +53,8 @@ decision log" sections now branch on hardware vs. `src/`. `README.md`, `Makefile
 `.gitignore` and `docs/wiring.md` updated for the `firmware/esphome/` → `src/esp/`
 move. `src/README.md` is deliberately a skeleton: the high-level architecture (which
 use cases, concurrency/scheduling, the MQTT/Android priority question) is explicitly
-deferred until a first slice of use cases is picked from `docs/ideas.md` — not decided
-today.
+deferred until a first slice of use cases is picked from the idea pool (later folded
+into `docs/use-cases.md`) — not decided today.
 
 ## 2026-07-15 — PSU box: IP66 junction enclosure on the ceiling
 

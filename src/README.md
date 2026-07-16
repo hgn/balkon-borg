@@ -39,15 +39,14 @@ hardcoded per service.
 
 ## Not yet decided
 
-This is still a skeleton, not a build. The mode *mechanism* above is settled; these
-need answers — deliberately deferred until the use cases that drive them are picked
-(see [`../docs/ideas.md`](../docs/ideas.md), the candidate pool):
+This is still a skeleton, not a build. The mode *mechanism* above is settled, and the
+use cases are settled in [`../docs/use-cases.md`](../docs/use-cases.md) (all 20 are
+binding); these still need answers:
 
-- **Which use cases get built first.** The idea pool has 100+ candidates; this decides
-  the actual set of mode values, what the Android app controls vs. only observes, and
-  which services even need to exist.
-- **The closed list of mode values** and their concrete per-service settings — depends
-  on the above.
+- **Build order.** Which of the 20 use cases to implement first — this also shapes the
+  concrete presets and what the Android app controls vs. only observes.
+- **The concrete presets** (named feature bundles) and their per-feature settings —
+  depends on the above.
 - **Automatic-trigger heuristics** — what radar/time/presence pattern proposes which
   mode, and whether a manual pin ever times out on its own.
 - **Config format and home** for the mode → settings mapping (likely `shared/`, format

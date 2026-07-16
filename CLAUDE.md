@@ -93,6 +93,7 @@ alternative was rejected for which reason.
 
 ## Next steps
 
-Current state and open points: see `README.md` §8 and the most recent entries in
-`log/decisions.md` (hardware). For the software stack, see `src/README.md` — it is
-still a skeleton, blocked on picking the first use cases from `docs/ideas.md`.
+Current state and open points: the most recent entries in `log/decisions.md`
+(hardware) and `src/log/decisions.md` (software). The use cases are settled in
+`docs/use-cases.md`; the software stack is still a skeleton — what remains open is
+listed in `src/README.md`, and the whole-system concept is in `src/architecture.md`.
