@@ -14,6 +14,47 @@ split into src/") for why.
 
 ---
 
+## 2026-07-16 — Per-mode power-on defaults + Munich station lists
+
+**Power-on defaults** (each region boots into a chosen submode, highlighted amber in the
+§3 diagram): **LUMEN → ticker** (visible it's on, not distracting), **SDR → off**,
+**Camera → gesture** (you're present when you flip the mains), **SENTRY → off**, speaker
+silent. Boots visible-but-calm, present-aware, quiet.
+
+**Munich station lists** (Button 3 sub-submodes under COMMS, real frequencies, default
+first): **FM** — Bayern 3 · 97.3 (default) / Antenne Bayern · 101.3 / Gong · 96.3 /
+Energy · 93.3 / Charivari · 95.5. **DAB+** — Deutschlandfunk (default) / Bayern 3 / BR24.
+**Shortwave** — free tune, no list. **Airband** (EDDM, Laim-receivable, picked for
+"where the action is") — ATIS · 123.13 (default, always-on loop) / Approach · 127.95
+(busiest, aircraft transmit from altitude so it reaches the city) / Director · 118.82 /
+Tower · 118.7. Lists live in the mode config (`src/shared/`), editable without code.
+
+**Diagram:** the deep 5-level nesting (region → SDR → COMMS → FM → station) broke mermaid
+("rank" error), so the station detail is a **second, focused COMMS diagram** (3 levels)
+beside the main mode diagram; both validated. Defaults are marked with a `classDef` amber
+highlight rather than only the initial-state arrow. **Still open:** the SDR idle default
+(off vs. a silent ADS-B) and the SIGINT/ADS-B behaviour for low overflights near Laim —
+to clarify.
+
+## 2026-07-16 — Mode names: LUMEN / COMMS / SIGINT / SENTRY (ops/tactical)
+
+The four main modes get an **ops/tactical** naming (the user's pick from a naming
+brainstorm of five schemes — Borg / cyberpunk / ops / German-fun / elemental):
+
+| Mode name | Function | was |
+|---|---|---|
+| **LUMEN** | the light panel (ambient…effects) | Licht |
+| **COMMS** | SDR listening (FM/DAB/shortwave/airband) | Radio |
+| **SIGINT** | SDR data decode (ADS-B/rtl_433/APRS) — *signals intelligence*, genuinely the right term | Scanner |
+| **SENTRY** | security/surveillance when away | Away |
+
+These are the mode names throughout the live spec and the UI (panel + app; the MQTT
+values too). Submodes follow the same tone. **Rejected:** the other four schemes, and
+the weaker ops picks ILLUM (for LUMEN) and OVERWATCH (for SENTRY). Earlier decision-log
+entries used the functional names (Licht/Radio/Scanner/Away); this entry is the mapping,
+history is not rewritten. Use-case *titles* (e.g. U10 "Radio") keep their descriptive
+names — a use case is a feature, a mode is the button-1 focus that runs it.
+
 ## 2026-07-16 — U3 specified: effects as WLED presets, simple visualiser
 
 **Decision:** the effect scenes (disco / strobe / rotating blue-red police) are **WLED

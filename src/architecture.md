@@ -20,7 +20,7 @@ only the nas-Pi5 is truly always-on.
 | **System monitor:** Netdata | borg-pi5 | with unit | CPU/temp/health, own UI (watch the thermals under vision load) |
 | **Frigate** | borg-pi5 | with unit | security surveillance (~2 FPS while absent); own UI |
 | **MediaPipe** | borg-pi5 | with unit | gesture input while present |
-| **readsb/tar1090 + radio decoders** | borg-pi5 | with unit | the single SDR tuner's consumers (Radio xor Scanner) |
+| **readsb/tar1090 + radio decoders** | borg-pi5 | with unit | the single SDR tuner's consumers (COMMS xor SIGINT) |
 | **BirdNET-Go** | borg-pi5 | with unit | bird-call log, own UI |
 | **Audio out** (TTS, clips) | borg-pi5 | with unit | USB sound → amp → speaker |
 | **Light loop** (buttons, encoder, radar, BME → WLED) | ESP32 (ESPHome) | with unit | the fast, human-facing control loop |
@@ -66,15 +66,15 @@ So the real model is:
 - A rule: **two features are compatible iff their exclusive-resource sets are
   disjoint.** Conflicts are not arbitrary pairs — they fall out of the resource map.
 
-The **main modes** (Licht / Radio / Scanner / Away) are the user-facing grouping of these
+The **main modes** (LUMEN / COMMS / SIGINT / SENTRY) are the user-facing grouping of these
 features: **parallel and independent**, each always in an active submode, and **every
 submode list includes an explicit off** (that is how a main mode is switched off). They
 map to the buttons (Button 1 = focus/main mode, 2 = submode incl. off, 3 = sub-submode,
 4 = reserve — see `docs/use-cases.md` U2). "Focus" is which main mode the buttons steer;
-the others keep running (Licht off + Radio on, or the reverse). There is no separate
-"Party" main mode — its effects (disco/strobe/police/visualiser) are Licht submodes, one
+the others keep running (LUMEN off + COMMS on, or the reverse). There is no separate
+"Party" main mode — its effects (disco/strobe/police/visualiser) are LUMEN submodes, one
 flat program list. **Displacement on resource conflict only:** where two main modes need
-the same exclusive resource (Radio and Scanner on the one tuner), turning one on displaces
+the same exclusive resource (COMMS and SIGINT on the one tuner), turning one on displaces
 the other to off; otherwise they coexist. Named cross-axis *presets* (a one-tap "evening")
 can still exist on top, app-driven.
 
@@ -91,7 +91,7 @@ axes are independent, so they combine freely. There are four:
 - **Panel** (the WLED LEDs — they *are* both the ambient lamp and the 2D matrix, so it
   runs one visual program at a time): off · ambient · full · cozy · distance-auto ·
   ticker · disco · strobe · police · visualiser.
-- **SDR tuner**: off · Listen (FM/DAB+/shortwave/airband) · Scanner (ADS-B/rtl_433/
+- **SDR tuner**: off · Listen (FM/DAB+/shortwave/airband) · SIGINT (ADS-B/rtl_433/
   APRS/…).
 - **Vision** (camera + heavy CPU): off · MediaPipe (gesture) · Frigate (security).
   This axis is **presence-scheduled**, not manually cycled: while the radar sees
@@ -109,46 +109,48 @@ are just convenient one-tap settings across several axes at once. Plus an always
 **baseline** (BME log, BirdNET, time-lapse) that has no choice to make.
 
 The same picture, drawn in the **user-facing mode vocabulary** so the modes are easy to
-read: a **state diagram with parallel regions**, one region per main mode, each starting
-at its explicit **off**. Parallelism between regions = the modes run at once (Licht +
-Radio together); one active state per region = a mode is in exactly one submode. **Radio
-and Scanner share the one SDR tuner, so they are two branches of a single region** — you
-can be on a Radio station *or* a Scanner function *or* SDR-off, never two at once: that is
-the displacement, shown natively. Button 1 picks the focus (which region the buttons
-steer), Button 2 the submode, Button 3 the sub-submode (station / frequency).
+read: a **state diagram with parallel regions**, one region per main mode. Parallelism
+between regions = the modes run at once (LUMEN + COMMS together); one active state per
+region = a mode is in exactly one submode. Each region's **power-on default is
+highlighted** (amber, §7): LUMEN boots into *ticker* (you see it's on, but it isn't
+distracting), the SDR into *off*, the camera into *gesture* (you are present when you
+switch the unit on). **COMMS and SIGINT share the one SDR tuner, so they are two branches
+of a single region** — a COMMS station *or* a SIGINT function *or* off, never two at once:
+the displacement, shown natively. Button 1 picks the focus, Button 2 the submode, Button 3
+the sub-submode (station / frequency), Button 4 is reserve.
 
 ```mermaid
 stateDiagram-v2
   [*] --> Unit : mains on
   Unit --> [*] : mains off
   state Unit {
-    state "Licht (Panel)" as Licht {
-      [*] --> Loff
-      Loff --> ambient
-      ambient --> full
-      full --> cozy
-      cozy --> distance
-      distance --> ticker
+    state "LUMEN (light)" as LUMEN {
+      [*] --> ticker
       ticker --> disco
       disco --> strobe
       strobe --> police
       police --> visualiser
       visualiser --> Loff
+      Loff --> ambient
+      ambient --> full
+      full --> cozy
+      cozy --> distance
+      distance --> ticker
     }
     --
-    state "Radio / Scanner (one SDR tuner)" as SDR {
+    state "COMMS / SIGINT (one SDR tuner)" as SDR {
       [*] --> SDRoff
-      SDRoff --> Radio
-      Radio --> Scanner
-      Scanner --> SDRoff
-      state Radio {
+      SDRoff --> COMMS
+      COMMS --> SIGINT
+      SIGINT --> SDRoff
+      state COMMS {
         [*] --> FM
         FM --> DAB
         DAB --> SW
         SW --> Airband
         Airband --> FM
       }
-      state Scanner {
+      state SIGINT {
         [*] --> ADSB
         ADSB --> rtl433
         rtl433 --> APRS
@@ -157,29 +159,73 @@ stateDiagram-v2
     }
     --
     state "Camera (presence-scheduled)" as Vision {
-      [*] --> Voff
-      Voff --> Gesture
+      [*] --> Gesture
       Gesture --> Security
       Security --> Voff
+      Voff --> Gesture
     }
     --
     state "Baseline (always)" as Base {
       [*] --> Running
     }
   }
-  note right of Unit
-    Button 1 = focus (which mode you steer)
-    Button 2 = submode, Button 3 = sub-submode
-    (station / frequency), Button 4 = reserve.
-    Modes run in parallel; only Radio and
-    Scanner share the tuner, so one region.
-  end note
+  classDef boot fill:#fff3cd,stroke:#e0a800,stroke-width:3px
+  class ticker,SDRoff,Gesture boot
 ```
 
-Within-region arrows are the Button-2 cycle order; the app can jump to any state. The
-deepest names (FM stations, airband frequencies) are the Button-3 sub-submodes. The
-**Camera** region is presence-scheduled (gesture while present, security/Away while
-absent), not button-cycled; the speaker is an output (volume on the encoder), not a mode.
+The SDR-listen submodes (COMMS) carry a **Munich station list** on Button 3, with the
+default highlighted (Bayern 3 / Deutschlandfunk / ATIS). Shortwave is a free tune, no
+preset list:
+
+```mermaid
+stateDiagram-v2
+  [*] --> FM
+  FM --> DAB
+  DAB --> SW
+  SW --> Airband
+  Airband --> FM
+  state "FM  (Button 3 = station)" as FM {
+    state "Bayern 3 · 97.3" as Bayern3
+    state "Antenne Bayern · 101.3" as Antenne
+    state "Gong · 96.3" as Gong
+    state "Energy · 93.3" as EnergyM
+    state "Charivari · 95.5" as Charivari
+    [*] --> Bayern3
+    Bayern3 --> Antenne
+    Antenne --> Gong
+    Gong --> EnergyM
+    EnergyM --> Charivari
+    Charivari --> Bayern3
+  }
+  state "DAB+" as DAB {
+    state "Deutschlandfunk" as Dlf
+    state "Bayern 3" as BR3
+    state "BR24" as BR24
+    [*] --> Dlf
+    Dlf --> BR3
+    BR3 --> BR24
+    BR24 --> Dlf
+  }
+  state "SW (free tune)" as SW
+  state "Airband · Munich EDDM" as Airband {
+    state "ATIS · 123.13" as ATIS
+    state "Approach · 127.95" as Approach
+    state "Director · 118.82" as Director
+    state "Tower · 118.7" as Tower
+    [*] --> ATIS
+    ATIS --> Approach
+    Approach --> Director
+    Director --> Tower
+    Tower --> ATIS
+  }
+  classDef boot fill:#fff3cd,stroke:#e0a800,stroke-width:3px
+  class Bayern3,Dlf,ATIS boot
+```
+
+Within-region arrows are the Button-2 (and Button-3) cycle order; the app can jump to any
+state. The **Camera** region is presence-scheduled (gesture while present, security/SENTRY
+while absent), not button-cycled; the speaker is an output (volume on the encoder), not a
+mode.
 
 ---
 
@@ -199,27 +245,27 @@ BirdNET + clap + FFT + intercom at once); BME/dashboards/logging need nothing sc
 | Disco / effects (U3) | ● | | | | |
 | Music visualiser (U3) | ● | | | | ○ |
 | Presence ghost (U19) | ● | | | | |
-| Radio listen — FM/DAB/SW/airband (U10, U20.2) | | ● | | ● | |
-| Scanner decode — ADS-B/rtl_433/APRS/… (U5,U13,U15,U16,U8) | | ● | | | |
+| COMMS listen — FM/DAB/SW/airband (U10, U20.2) | | ● | | ● | |
+| SIGINT decode — ADS-B/rtl_433/APRS/… (U5,U13,U15,U16,U8) | | ● | | | |
 | Gesture (U2) | | | ● | | |
-| Frigate / Away (U7, U11) | | | ● | ●² | |
+| Frigate / SENTRY (U7, U11) | | | ● | ●² | |
 | TTS feedback (U9) | | | | ● | |
 | Intercom (U12) | | | | ● | ○ |
 | BirdNET (U6), clap (U2) | | | | | ○ |
 | Env log (U4), time-lapse (U18) | | | | | |
 
-¹ The ticker's *flight* line needs live ADS-B, i.e. the Scanner holding the tuner — so
-a full ticker + any Radio feature clash on the tuner (the ticker's time/temp lines
-don't). ² Only the alarm; Away is otherwise silent.
+¹ The ticker's *flight* line needs live ADS-B, i.e. the SIGINT holding the tuner — so
+a full ticker + any COMMS feature clash on the tuner (the ticker's time/temp lines
+don't). ² Only the alarm; SENTRY is otherwise silent.
 
 **Reading the conflicts off the table** (same ● in an exclusive column = clash;
 disjoint = run in parallel):
 - **Panel:** the six visual programs are mutually exclusive — one look at a time
   (Ambient / Distance / Ticker / Disco / Visualiser / Ghost). The ghost owns the whole
   panel like any other, per the user ("für sich, in diesem Modus").
-- **SDR:** Radio ⟂ Scanner ⟂ full Info-ticker — the tuner is the dominant bottleneck.
-- **Vision:** Gesture ⟂ Frigate/Away — never both.
-- **Speaker:** Radio, TTS, intercom, alarm don't *hard*-clash — they queue by priority
+- **SDR:** COMMS ⟂ SIGINT ⟂ full Info-ticker — the tuner is the dominant bottleneck.
+- **Vision:** Gesture ⟂ Frigate/SENTRY — never both.
+- **Speaker:** COMMS, TTS, intercom, alarm don't *hard*-clash — they queue by priority
   (§5), one sound at a time.
 - **Across axes: free.** Disco (Panel) + airband (SDR+Speaker) + BirdNET (Mic) + env
   log, all at once — exactly the user's "Disko ist Disko, egal was der Empfänger tut."
@@ -257,7 +303,7 @@ into a live intercom call?) is the main thing to confirm here.
 - **Manual pin:** app or Button 3 sets `balkon/mode` explicitly → it stays until
   changed or released (Button 3 long-press) back to automatic.
 - **Automatic:** with no active pin, the arbiter picks the mode from triggers (radar
-  pattern, time of day, presence/absence, geofence for Away).
+  pattern, time of day, presence/absence, geofence for SENTRY).
 - **One writer:** only the arbiter (on the borg-pi5) writes `balkon/mode`, to avoid
   competing writers.
 - **Buttons vs app:** Button 3 cycles main modes, Button 2 cycles submodes within the
@@ -275,19 +321,22 @@ nothing garish, loud or surprising, and no stale state carried across a power cy
 power-on the arbiter comes up in **automatic** (no manual pin ever survives a reboot),
 and each axis takes a calm default:
 
-| Axis | Power-on default | Why it is safe |
+These defaults are the **amber-highlighted states** in the §3 diagram.
+
+| Mode / axis | Power-on default | Why |
 |---|---|---|
 | Mode / pin | **automatic**, sensor-driven, no pinned mode | a stale pin never outlives a power cycle |
-| **Panel** | **Distance-detector** (auto table light) | with nobody present it is simply off; it lights gently on approach — everyday-ready, never a garish flash on boot |
-| **SDR** | **off** | no radio/audio on boot until asked (see open question: or a silent Scanner/ADS-B idle if the flight ticker / sensor net should be live from boot) |
-| **Vision** | **presence-driven from the first radar reading** — until presence is seen, the absent state (Frigate @ ~2 FPS) | surveillance-safe by default; flips to MediaPipe the moment someone is detected |
+| **LUMEN** (light) | **ticker** (info-ticker) | you can see the unit is on, but it isn't distracting — not a garish flash, not dark |
+| **COMMS / SIGINT** (SDR) | **off** | no radio/audio on boot until asked (open: or a silent ADS-B/SIGINT idle so the flight ticker / sensor net stay live — §9) |
+| **Camera** (Vision) | **gesture** (MediaPipe) | you are present when you flip the mains, so it comes up ready to read hand gestures; it hands over to security only after the absence hold |
+| **SENTRY** (security) | **off** | you are home at power-on |
 | **Speaker** | **silent** | no auto-play; only overlays (alarm/warning) may make sound |
-| **Baseline** | up (BME log, BirdNET, dashboards, Netdata) | always on, no choice |
+| **Baseline** | up (BME log, BirdNET, Netdata) | always on, no choice |
 
-Rationale: the box boots quiet and dark, the daily-driver table light still triggers on
-presence, and nothing startles with sound or brightness. The one genuinely open cell is
-the SDR default (off vs. a silent ADS-B idle), tied to the SDR-idle-default question in
-§9.
+Rationale: the box boots into a **visible-but-calm** state (the ticker shows it lives),
+present-aware (camera on gesture), and quiet (no sound, no radio). The one genuinely open
+cell is the SDR default (off vs. a silent ADS-B idle), tied to the SDR-idle-default
+question in §9.
 
 ## 8. Data flow (MQTT)
 
@@ -312,7 +361,7 @@ InfluxDB/Grafana.
 1. **Overlay priority (§5)** — confirm the ordering, especially safety-warning vs
    intercom.
 2. **SDR idle default** — decide whether the SDR default (on boot and when no radio
-   feature is on) is *off* or a silent ADS-B/Scanner idle, so the flight ticker (U3.2)
+   feature is on) is *off* or a silent ADS-B/SIGINT idle, so the flight ticker (U3.2)
    and sensor net (U13) can stay live. Also sets the §7 Panel/SDR power-on default.
 3. **Build order** — which use case to implement first (the user's sequencing call).
 4. **Per-mode settings and optional app presets** — the concrete submode lists and their

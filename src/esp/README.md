@@ -33,15 +33,15 @@ button **focus** (the subsystems keep running in parallel, it does not stop them
 
 | Element | Planned function |
 |---|---|
-| Button 1 | cycle main mode / focus (Licht / Radio / Scanner / Away); long press → automatic |
-| Button 2 | cycle submode within the focus, incl. an explicit **off** (Licht → off/scene…; Radio → off/FM/DAB/airband) |
+| Button 1 | cycle main mode / focus (LUMEN / COMMS / SIGINT / SENTRY); long press → automatic |
+| Button 2 | cycle submode within the focus, incl. an explicit **off** (LUMEN → off/scene…; COMMS → off/FM/DAB/airband) |
 | Button 3 | cycle sub-submode (station / frequency / preset; inert if none) |
 | Button 4 | reserve |
 | Encoder turn | adjust the current target (brightness **or** volume) |
 | Encoder push | toggle the target (light ↔ audio); panel shows which |
 
 The old "scene cozy/party", "on/off" and "encoder push = off" button roles go away:
-scenes become Licht submodes on Button 2, and the whole device is switched at the mains.
+scenes become LUMEN submodes on Button 2, and the whole device is switched at the mains.
 
 ## Prerequisites
 
