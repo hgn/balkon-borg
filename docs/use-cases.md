@@ -549,27 +549,32 @@ is BirdNET, clap and the visualiser FFT only (`../src/architecture.md` §8).
 1. Decode 433/868 MHz neighbourhood sensor traffic (weather stations, smart-home
    devices) via `rtl_433`.
 2. Decode TPMS (tire-pressure sensor) transmissions from passing cars.
-3. **Observation only** — no persistence, no downstream trigger. Decoded readings are
-   broadcast live over MQTT and forgotten; nothing is logged or stored (consistent with
-   the U4 no-telemetry-DB line).
+3. **Observation only, no downstream trigger** — a live technical curiosity feed, not a
+   data product that drives anything else. No DB (consistent with the U4/§8 no-telemetry
+   line); the RAM ring buffer below is the general SIGINT pattern, not persistence.
 
 **Value:** a passive curiosity window into the neighbourhood's ISM traffic — other
 people's weather stations, smart-home sensors, and the odd passing car's tire sensors —
-purely as a live technical spectacle, not a data product. Nothing to maintain, nothing to
-grow unbounded.
+purely as a live technical spectacle. Nothing to maintain, nothing to grow unbounded, and
+still browsable in one go thanks to the shared SIGINT ring-buffer pattern (`architecture.md`
+§4) rather than only a fire-and-forget single event.
 
 **Implementation:**
 - **Decoder:** `rtl_433` on the SDR, SIGINT submode "ISM/rtl_433". A single capture at
   433.92 MHz covers both ISM sensors and TPMS (same European band), so no separate
   sub-submode split is needed — one run decodes everything `rtl_433`'s device table
   recognises.
-- **Interface — two separate MQTT topics** (`balkon/ism/events`,
-  `balkon/tpms/events`, `docs/network.md`), split because they are functionally
-  different signals to a consumer (a neighbour's weather reading vs. "a car just passed") —
-  not one topic with a type field. Fire-and-forget: no consumer is required to exist yet.
-- **No storage, no trigger.** Purely a live broadcast; if a future use case wants to act on
-  it (e.g. a TPMS hit twitching a light), it subscribes independently — U13 itself stays a
-  dumb decode-and-publish source.
+- **Live data (general SIGINT pattern, `architecture.md` §4):** an in-RAM ring buffer of
+  the last ~50 entries, split into **two separate streams** — ISM sensors and TPMS are
+  functionally different signals to a consumer (a neighbour's weather reading vs. "a car
+  just passed"), not one stream with a type field.
+- **Interface:** two retained MQTT snapshot topics, `balkon/ism/recent` and
+  `balkon/tpms/recent` (`docs/network.md`) — a freshly subscribed client gets the current
+  ~50-entry backlog immediately, not just the next live event. When LUMEN's info-ticker is
+  active and SIGINT is on ISM/rtl_433, the ticker shows this same feed.
+- **No trigger.** If a future use case wants to act on a hit (e.g. a TPMS reading twitching
+  a light), it subscribes independently — U13 itself stays a dumb decode-and-publish
+  source.
 
 ---
 
@@ -588,10 +593,25 @@ grow unbounded.
 ## U15 — APRS tracker
 
 **Requirements:**
-1. Decode and ticker passing balloons/hikers/IGates.
+1. Decode passing APRS traffic — high-altitude balloons, hikers, digipeaters/IGates.
+2. Keep the last ~50 heard stations live and browsable, not just the newest single
+   packet — both on the LUMEN ticker and for any MQTT client that connects.
 
-**Value:** _TBD_
-**Implementation:** _TBD_
+**Value:** a live picture of who's currently on the air nearby — a balloon overhead, a
+hiker's tracker, the local digipeater network — readable at a glance on the ticker or in
+the app, not just a blip that flashes past and is gone.
+
+**Implementation:**
+- **Decoder:** `multimon-ng` or `direwolf` on the SDR, SIGINT submode "APRS".
+- **Live data (general SIGINT pattern, `architecture.md` §4):** an in-RAM ring buffer of
+  the last ~50 heard stations (callsign, position, last-heard time).
+- **Interface:** a retained MQTT snapshot topic, `balkon/aprs/recent` (`docs/network.md`)
+  — payload is the full buffer, newest first, rewritten on every new packet; a freshly
+  subscribed client gets the whole backlog immediately, not just the next live hit. When
+  LUMEN's info-ticker is active and SIGINT is on APRS, the ticker shows this same feed
+  (station callsign + distance/bearing if derivable from position).
+- **No persistence beyond the RAM buffer** — consistent with the no-telemetry-DB line;
+  this is a live picture of current traffic, not a station log.
 
 ---
 

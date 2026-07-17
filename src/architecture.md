@@ -275,6 +275,20 @@ The only cells still genuinely open are edge refinements (e.g. should the panel 
 *segmented* so a tiny status row coexists with a main program — deferred; one program
 per panel for now).
 
+**SIGINT live-data pattern** (general, applies to every SIGINT decode submode — U5, U13,
+U15, U16, U17, U20): each decoder keeps a small **in-RAM ring buffer** of its last ~50
+entries (not a DB — falls under the live-only rule, §8). Two consumers read the same
+buffer:
+- The **LUMEN info-ticker**, when active, shows the data of whichever SIGINT submode is
+  currently running (the flight line under ADS-B, stations under APRS, etc.) — content
+  follows focus, not a fixed layout.
+- **MQTT**, for the app/dashboards: the ring buffer is published as a **retained snapshot**
+  (one topic per submode, e.g. `balkon/aprs/recent`, `balkon/ism/recent`,
+  `balkon/tpms/recent`, payload = the full array, newest first), rewritten on every new
+  entry. Because MQTT delivers a topic's retained message immediately on subscribe, a
+  freshly connected client sees the full last-~50 backlog at once, not just the next live
+  event — one topic, one mechanism, no separate history API.
+
 ---
 
 ## 5. Overlay priority model

@@ -14,6 +14,38 @@ split into src/") for why.
 
 ---
 
+## 2026-07-17 — U15: APRS tracker, live picture via the general SIGINT pattern
+
+Decode passing APRS traffic (balloons, hikers, digipeaters/IGates) via `multimon-ng` /
+`direwolf` on the SDR, SIGINT submode "APRS". Uses the general SIGINT live-data pattern
+(next entry): RAM ring buffer of the last ~50 heard stations, retained MQTT snapshot
+(`balkon/aprs/recent`), shown on the LUMEN ticker when APRS is the focused submode. No
+persistence beyond the RAM buffer.
+
+## 2026-07-17 — General SIGINT live-data pattern: RAM ring buffer + retained MQTT snapshot
+
+**Context:** while speccing U15 (APRS), the user rejected the U13-style "fire-and-forget
+single event, nothing remembered" approach — a freshly connected MQTT client (or the panel
+switching *into* a SIGINT submode) should immediately see the recent picture, not just wait
+for the next live hit.
+
+**Decision (general, applies to every SIGINT decode submode — U5, U13, U15, U16, U17,
+U20):** each decoder keeps an **in-RAM ring buffer** of its last **~50** entries (still
+falls under the live-only/no-telemetry-DB rule, §8 — it's RAM, not a store) and publishes
+it as a **retained MQTT snapshot** (one topic per submode/feed, rewritten on every new
+entry). MQTT delivers a retained message immediately on subscribe, so a new client gets
+the full backlog in one shot — no separate history API needed. The **LUMEN info-ticker**,
+when active, shows whichever SIGINT submode is currently focused (already the ticker's
+established behaviour for ADS-B, generalised here to every submode).
+
+Rejected alternatives: per-station retained topics (`.../station/<id>`, right for "current
+known set" but wrong semantics for "last 50 events"); a separate HTTP backlog endpoint
+(two protocols for one job).
+
+**Consequence:** retrofitted **U13** to this pattern (dropped its "no backlog" framing);
+its topics became `balkon/ism/recent` / `balkon/tpms/recent`, retained. Recorded in
+`architecture.md` §4 as a general note, not per-use-case.
+
 ## 2026-07-17 — U13: ISM/TPMS sniffer, observation-only, split MQTT topics
 
 **Scope:** `rtl_433` on the SDR (SIGINT "ISM/rtl_433" submode) decodes both neighbourhood
