@@ -251,18 +251,47 @@ COMMS listening is selected, the tuner runs ADS-B in the background, so this is 
 baseline watch.
 
 **Requirements:**
-1. ADS-B reception via readsb/tar1090 (approach MUC, optional feed).
-2. **Low-overflight-over-Laim filter**: highlight/announce aircraft that are actually
-   *over us* and *low* — within a small radius of Laim and below an altitude ceiling —
-   not the high cruisers at FL350. This is what makes ADS-B interesting as the idle
-   default; the announcement/ticker fires for the low ones.
-3. Spoken/matrix announcement on such an overflight (airline/flight number).
-4. Special alert for a rare aircraft (military/government/A380/first-seen registration).
+1. ADS-B reception via readsb/tar1090 (approach MUC; optional feed to a network).
+2. Two **alert triggers**, both kept rare on purpose:
+   a. **Low overflight over Laim** — an aircraft within a small radius of Laim **and**
+      below a (deliberately low) altitude ceiling: something you can look up and actually
+      see. Rarity is tuned by keeping the ceiling low.
+   b. **Special aircraft overhead** — regardless of altitude: military, government/VIP,
+      an emergency squawk, a rare/heavy type, a rescue helicopter, or a first-seen
+      registration.
+3. **Panel ticker** on any trigger (airline + flight number + what makes it special).
+4. **Spoken TTS** (+ a brief panel flash) on the *special* triggers only, so the everyday
+   overflight stays quiet on the panel and only the genuinely cool stuff talks.
 
-**Value:** _TBD_
-**Implementation:** _TBD_ — note: the Laim coordinates + radius + altitude ceiling are
-tunable config (`src/shared/`); exact thresholds calibrated on site (how much low traffic
-actually passes over Laim).
+**Value:** the balcony watches the sky as its baseline — ADS-B is the SDR idle, so it is
+always on — and speaks up only for something worth looking up for: a low jet right
+overhead, or a genuinely special aircraft (the government A350, an A380, a rescue heli, an
+emergency squawk). tar1090's map is there to browse, but the point is not another
+flight-tracker tab; it is being *told* about the interesting ones without watching a
+screen. The low altitude ceiling keeps it a treat, not noise.
+
+**Implementation:**
+- **readsb** decodes 1090 MHz; **tar1090** gives the map UI and bundles the **offline
+  aircraft database** (hex → registration → type → operator) that readsb/tar1090 already
+  ship — so type/operator/registration enrichment is local, no lookup service.
+- The arbiter reads readsb's `aircraft.json` (position, altitude, callsign, hex, squawk)
+  and applies the trigger rules: *low overflight* = distance(aircraft, Laim) < R **and**
+  altitude < ceiling; *special* = hex in a military range, or callsign prefix (e.g. GAF),
+  or type in a rare set (A388 / B74x / An-124 / rotorcraft …), or squawk ∈ {7700, 7600,
+  7500}, or a registration not in a small persisted "seen" set (first-seen — a tiny list,
+  not a data grave).
+- Airline + flight number come from the callsign (ICAO airline prefix → name, e.g. DLH →
+  Lufthansa). The ticker text and the TTS line are built from that + the DB enrichment.
+- Announcement channels per requirement 3/4: ticker on WLED (via the arbiter), TTS via the
+  speaker chain for the special triggers (subject to the overlay priority, §5), plus a
+  short LUMEN flash.
+- **Config** in `src/shared/`: Laim lat/lon, radius, altitude ceiling, and the
+  special-aircraft rule set — all tunable.
+- Runs whenever the tuner is on ADS-B (the SDR idle default), i.e. whenever COMMS
+  listening is not selected.
+
+**Open before building:** the altitude ceiling and radius (how much low traffic actually
+passes over Laim) — start low, raise on site if it is too quiet.
 
 ---
 
