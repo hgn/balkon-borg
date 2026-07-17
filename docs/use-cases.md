@@ -28,7 +28,7 @@ reserve.
 | **LUMEN** (the panel) | off · ambient · full · cozy · distance-auto · info-ticker · disco · strobe · police · visualiser | U1, U3 |
 | **COMMS** (SDR, listen) | off · FM+RDS · DAB+ · Shortwave · Airband | U10.1/.2/.3, U20.2; U10.4 (DAB+ EWF) as a monitor under DAB |
 | **SIGINT** (SDR, decode) | off · ADS-B · ISM/rtl_433 · APRS · Radiosonde · Spectrum · Pager · LoRa *(later)* · scheduled captures | U5, U13, U15, U16, U17, U20.1, U14; U8 *(deferred)* |
-| **SENTRY** (security) | off · armed | U11 (auto-triggered by absence/geofence) |
+| **SENTRY** (security) | off · armed | U11 (armed explicitly, no auto-trigger) |
 
 *Night* is treated as a **modifier**, not its own main mode — it shifts thresholds and
 scenes (dimmer, warmer, quieter). The former **Party** main mode is dissolved: its effects
@@ -46,12 +46,12 @@ always-valuable): U4 (live environment), U6 (BirdNET bird log),
 U18 (daily time-lapse frame).
 
 **Shared services** (consumed *by* modes, not modes themselves): U7 (camera/Frigate,
-radar-gated — used by SENTRY and by the U2.3 gesture input), and the speaker/audio-out
-path (used by U9, U10, U12, …).
+radar-gated — used by SENTRY and by the U2.3 gesture input, and its go2rtc live view by
+U21), and the speaker/audio-out path (used by U9, U10, U21, …).
 
 **Overlays / interrupts** (event-driven, cut across whatever mode is active, need a
-priority rule — TBD): U9 (audio/TTS feedback), the U11 alarm, U12 (intercom, grabs
-mic+speaker), U19 (presence ghost, ambient matrix overlay), U9.3 (storm warning).
+priority rule — TBD): U9 (audio/TTS feedback), the U11 alarm, U21 (talk-down, grabs the
+speaker), U19 (presence ghost, ambient matrix overlay), U9.3 (storm warning).
 
 **Control surface** (not a mode): U2 (buttons / clap / gesture) is how modes are
 changed and light is controlled.
@@ -326,8 +326,9 @@ device), and the normalisation is exactly what keeps the stats meaningful despit
 - **Always-open mic (fan-out):** the USB mic is a **PipeWire** source (the modern Pi OS
   default; consumers reach it via PipeWire's ALSA/Pulse compatibility), so several
   consumers read it **simultaneously and continuously** without locking the device —
-  BirdNET (always), the clap detector (U2.2), the visualiser FFT (U3.4), the intercom
-  (U12). BirdNET never stops; the others attach when their feature is active.
+  BirdNET (always), the clap detector (U2.2), the visualiser FFT (U3.4). BirdNET never
+  stops; the others attach when their feature is active. (U21 talk-down is one-way, phone →
+  speaker, and does **not** tap the mic.)
 
 **Database:** **SQLite** — BirdNET-Go already uses it, one file, no server, and event data
 (species + timestamp) suits a relational log far better than a time-series DB. This is the
@@ -386,6 +387,12 @@ footage and without handing a balcony camera to a cloud vendor.
   Frigate's own web UI shows the live view and the clip archive (behind the optional
   reverse proxy, `src/architecture.md` §9). SENTRY (U11) consumes the events to raise
   alarms / pushes; U18 (time-lapse) takes plain frames, not detections.
+- **Live view over HTTP (for U21):** the raw camera is restreamed by **go2rtc** (bundled
+  with Frigate) as an always-available MJPEG/snapshot endpoint, independent of which
+  detector holds the Vision axis — so the app can watch the live image whenever the Borg
+  is on, whether MediaPipe (present) or Frigate (absent) is the active consumer. The
+  owner's own live view is **unmasked** (the U7 masks gate *detection/recording* triggers,
+  not what you may look at yourself). Consumed by U21.
 - **Time source:** clip and event timestamps depend on NTP being synced (no RTC battery);
   until the first sync, treat timestamps as untrusted (`src/pi/README.md`).
 
@@ -414,16 +421,16 @@ module was considered and rejected — the user wants it on the SDR if at all.
 
 U9 is the device's **voice** — and the **audio-overlay arbiter**: it owns the speaker and
 decides what plays when several things want it (U5 announcements, U6 bird TTS, U11 alarm,
-U12 intercom, storm/EWF warnings).
+U21 talk-down, storm/EWF warnings).
 
 **Requirements:**
 1. **Short clips** for quick, wordless feedback (a chime on detection, a "hallo" greeting
    on arrival).
 2. **Spoken TTS** for content: bird name (U6), aircraft (U5), warnings (U9.3).
 3. **Priority ladder** at the speaker (higher pre-empts / ducks lower):
-   **alarm** (U11) > **safety warning** (storm / DAB EWF) > **intercom** (U12) >
+   **alarm** (U11) > **safety warning** (storm / DAB EWF) > **talk-down** (U21) >
    **event TTS** (bird / flight) > ambient (visual only, no sound). A safety warning cuts
-   into a live intercom call (safety over comfort); the alarm re-asserts until the
+   into a live talk-down (safety over comfort); the alarm re-asserts until the
    condition clears.
 4. **Storm warning** — spoken, on a fast BME pressure drop.
 
@@ -440,10 +447,10 @@ alarm, and a storm warning never waits behind a radio track.
 - **Audio path:** USB sound card → PAM8403 amp → Visaton BF 45 (the hardware chain,
   `power-distribution.md`).
 - **The arbiter owns the speaker.** Every audio request — clip, TTS line, COMMS radio
-  audio, intercom — goes through a small **priority mixer**: the highest-priority active
+  audio, talk-down — goes through a small **priority mixer**: the highest-priority active
   source plays, lower ones **duck** (radio/media volume drops under a talk-over) or
   **queue** (event-TTS waits for a gap). The alarm pre-empts and re-asserts; a safety
-  warning pre-empts intercom and media; event-TTS plays only when nothing above is active.
+  warning pre-empts talk-down and media; event-TTS plays only when nothing above is active.
 - **Storm trigger** (U9.3): the arbiter watches the BME pressure ring buffer (U4); a fast
   drop over a short window → a TTS warning + a red panel flash.
 - This is the concrete implementation of the audio overlays in the mode model
@@ -480,27 +487,56 @@ path.
 
 ---
 
-## U11 — Security suite
+## U11 — Security suite (SENTRY)
 
 **Requirements:**
-1. Intruder alarm: nobody home + radar/camera motion at night → push + recording +
-   deterrent strobe.
-2. Remote voice warning to intruders via the app.
-3. Radar-gated camera/recording wake (efficient perimeter watch).
+1. **Explicit arming** — SENTRY is armed by selecting the mode (panel Button 1 → SENTRY,
+   submode *armed*, or via the app). **No** geofence, **no** automatic absence trigger.
+2. **Two-phase detection:** radar wakes the camera, and only a **Frigate person
+   confirmation** raises the alarm. Cat / wind / rain wake the camera but do not alarm.
+3. On a confirmed person while armed: **Effector 1** (a single, brief deterrent) +
+   **recording** + **push** to the phone.
+4. Live voice warning to the intruder: **manual**, via the app (see U21 talk-down).
 
-**Value:** _TBD_
-**Implementation:** _TBD_
+**Value:** a self-contained perimeter watch you turn on when you leave — no phone,
+geofence or cloud in the arming loop. The radar → camera → person gate keeps it from crying
+wolf at every gust or stray cat, so a push actually means *a human is on the terrace*. It
+records the evidence off-site and lets you look and talk back from anywhere, without a
+siren-grade escalation you never wanted.
+
+**Implementation:**
+- **Arming (U11.1):** SENTRY *armed* is just a submode like any other (`architecture.md`
+  §3) — explicit, human-set. No auto-trigger. The old "absence/geofence" note is dropped.
+- **Detection (U11.2):** the LD2410B radar is the cheap always-on wake; on motion it wakes
+  the camera (the U7 radar-gated path), and **Frigate must classify a person** before the
+  alarm fires. Two-factor kills the LD2410B's wind/cat/rain false positives. No day/night
+  distinction — you armed it deliberately; the Night modifier may only tune strobe
+  brightness, not whether it fires.
+- **Response (U11.3):** on a confirmed person —
+  - **Effector 1 (one-shot):** a short LUMEN flash + police (blue/red) pattern and a short
+    speaker **peep**. Mild "I see you", no escalation ladder, no siren.
+  - **Recording:** a U7 event clip, off-site to the nas-Pi (fires immediately on confirm).
+  - **Push:** to the phone immediately on confirm, deep-linking into the U21 live view.
+  - A short **cooldown** after Effector 1 so a lingering person doesn't strobe/peep on a
+    loop; re-fires only after the scene clears or the cooldown lapses.
+- **Voice warning (U11.4):** not automatic — you get the push, open U21, watch the live
+  image and press-to-talk. Reuses the U21 talk-down path (speaker at the intercom priority,
+  `architecture.md` §5); U11 does not add its own audio path.
+- **Entry handling:** first confirmed person starts a **~20–30 s entry grace**; disarm in
+  that window (panel now reachable, or app) and nothing fires — so you don't push/record
+  yourself every time you come home. Miss the window and Effector 1 + push + recording run.
+- **Alarm priority:** the security alarm sits at the **top** of the U9 speaker ladder
+  (above talk-down and media); it re-asserts until the condition clears (`architecture.md`
+  §5).
 
 ---
 
-## U12 — Intercom
+## U12 — Intercom *(removed — not needed)*
 
-**Requirements:**
-1. Full-duplex (baby/room monitor).
-2. One-way call ("dinner's ready").
-
-**Value:** _TBD_
-**Implementation:** _TBD_
+Dropped. The full-duplex baby/room monitor is not wanted, and the one-way "dinner's ready"
+call is covered by **U21** (app push-to-talk → speaker). The number is kept as a tombstone
+so U13–U20 don't shift. Consequence: the Pi mic no longer feeds any intercom — its fan-out
+is BirdNET, clap and the visualiser FFT only (`../src/architecture.md` §8).
 
 ---
 
@@ -586,3 +622,48 @@ path.
 
 **Value:** _TBD_
 **Implementation:** _TBD_
+
+---
+
+## U21 — Live view & talk-down (app)
+
+The phone's window into the Borg: watch the live camera and talk out of its speaker. It is
+not a mode — it is an app-facing capability on top of U7 (camera) and U9 (the speaker
+priority mixer), available whenever the Borg is on and surfaced by the U11 push.
+
+**Requirements:**
+1. **Live camera view over HTTP:** the Borg always serves the current camera image,
+   continuously refreshed; the app grabs it. Available whenever the Borg is on, and the
+   U11 alarm push deep-links straight into it.
+2. **Push-to-talk (talk-down):** hold a button in the app to record, release to send; the
+   clip is transmitted to the Pi and played out the speaker.
+3. **App-side voice effects:** the app can lay effects over the recorded WAV before sending
+   (voice changer / robot "Borg" voice / megaphone / pitch) — done **in the Android app**,
+   client-side; the Pi just plays the finished WAV.
+4. **Non-disruptive:** the talk-down only **temporarily** interrupts the speaker; whatever
+   was playing (e.g. DAB) resumes afterwards.
+
+**Value:** from anywhere you can see the terrace and speak through the box — greet a
+visitor, shoo the cat, warn off an intruder after a U11 push, or just call "dinner's
+ready". The effects make the talk-down as blunt or as fun as you like (a distorted Borg
+voice carries further and lands harder than a polite "hello"), and because it only ducks
+the radio for a moment, using it never means losing your station.
+
+**Implementation:**
+- **Live view (U21.1):** served by **go2rtc** (bundled with Frigate) restreaming the raw
+  camera — an always-available MJPEG/snapshot HTTP endpoint independent of the Vision
+  axis's active detector (see U7 "Live view over HTTP"). The app reads it behind the
+  reverse proxy (`src/architecture.md` §9); remotely via the nas-Pi. Owner view is
+  unmasked. No new persistent storage — it is a live pass-through.
+- **Talk-down (U21.2):** **record-then-send** (a walkie-talkie clip), not a live stream —
+  simple and robust over a flaky mobile link, and it is exactly the WAV playback U9 already
+  does. App holds → records WAV, releases → uploads to the Pi → the arbiter plays it
+  through the **priority mixer** at the **talk-down (intercom) level** of the U9 ladder
+  (`src/architecture.md` §5): it ducks/pre-empts COMMS radio, media and ambient, then they
+  resume (U21.4). A safety warning or alarm still cuts into it (safety over comfort).
+- **Effects (U21.3):** applied **client-side in the Android app** on the recorded WAV, so
+  the Pi stays a dumb player and the compute lives on the phone. Local only.
+- **One-way:** phone → speaker only. It does **not** use the Pi mic (the removed U12
+  full-duplex monitor did; U21 does not), so the mic fan-out is unaffected.
+- **Triggers:** the U11 alarm push (talk down an intruder) and a plain "announce" from the
+  app ("dinner's ready") are the two entry points into the same mechanism.

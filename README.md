@@ -102,12 +102,12 @@ runs off a shared 5 V feed and an MQTT/WiFi bus. The goal is a build that looks
 
 ## 3 · Use cases
 
-The unit's functions are specified as **20 use cases (U1–U20)** — table lighting,
+The unit's functions are specified as **21 use cases (U1–U21)** — table lighting,
 manual and gesture control, effect light, environment data, aircraft and bird
 reception, radio (FM/DAB+/shortwave), a scanner for ADS-B and ISM sensors, a security
-suite, an intercom, and more. Each with its requirements, value and planned
-implementation lives in [`docs/use-cases.md`](docs/use-cases.md), the binding list of
-what gets built.
+suite, a live camera view with app talk-down, and more. Each with its requirements, value
+and planned implementation lives in [`docs/use-cases.md`](docs/use-cases.md), the binding
+list of what gets built.
 
 ## 4 · System components (current state)
 

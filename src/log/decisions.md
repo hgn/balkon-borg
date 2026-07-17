@@ -14,6 +14,41 @@ split into src/") for why.
 
 ---
 
+## 2026-07-17 — U11 SENTRY specced; new U21 live-view + talk-down; U12 intercom removed
+
+**U11 (SENTRY security):**
+- **Arming is explicit** — you select the SENTRY mode (panel/app), full stop. Rejected the
+  earlier "auto-triggered by absence/geofence" note: no phone/geofence in the arming loop,
+  self-contained, consistent with "every main mode has an explicit off/armed submode".
+- **Two-phase detection:** radar wakes the camera (U7 radar-gated path), and a **Frigate
+  person** classification is required before the alarm fires. Kills LD2410B wind/cat/rain
+  false alarms. **No day/night distinction** (dropped — that was an artefact of the
+  auto-trigger world; you armed it deliberately).
+- **Response = one-shot Effector 1** (short LUMEN flash + police pattern + short peep) +
+  immediate off-site recording (U7 clip) + push. **No escalation ladder / siren** (user's
+  call — keep it mild). Short cooldown so a lingering person doesn't loop the deterrent.
+- **Entry grace ~20–30 s** before it fires, disarm via panel/app, so you don't push/record
+  yourself on arrival. (Applied as the sensible default; flagged to the user.)
+- Live voice warning is **manual** via U21, not automatic; U11 adds no own audio path.
+
+**U21 (new) — Live view & talk-down (app):** the phone's window into the box.
+- **Live camera over HTTP** served by **go2rtc** (bundled with Frigate) restreaming the raw
+  camera — always available, independent of which detector holds the Vision axis; owner
+  view unmasked. U7 gains this as a backend capability.
+- **Push-to-talk = record-then-send WAV** (walkie-talkie clip), not a live stream: simple,
+  robust over a flaky link, and exactly the WAV playback U9 already does. Plays through the
+  U9 priority mixer at the **talk-down (intercom) level** — ducks/pre-empts COMMS/media,
+  which then resume; a safety warning/alarm still cuts in.
+- **Voice effects applied client-side in the Android app** (voice changer / Borg voice /
+  megaphone) on the recorded WAV; the Pi stays a dumb player. Local only.
+- **One-way** (phone → speaker); does **not** use the Pi mic.
+
+**U12 (Intercom) removed** — full-duplex baby/room monitor not wanted; the one-way
+"dinner's ready" is covered by U21. Kept as a **tombstone number** (no renumber of U13–U20,
+which would ripple across use-cases/architecture/logs). Consequence: the **mic fan-out loses
+its intercom consumer** — now BirdNET + clap + visualiser FFT only. The §5 priority ladder's
+"intercom" rung is relabelled **talk-down (U21)**.
+
 ## 2026-07-16 — U8 (LoRa/Meshtastic RX) deferred; SDR path kept, dedicated module rejected
 
 **Decision:** U8 is **parked**, not part of the current build. The use-case number stays as

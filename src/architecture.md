@@ -236,7 +236,7 @@ Same information as the diagram, in the form that becomes the implementation. **
 exclusive resources** (● = needs it, one user at a time): **Panel** (the WLED LEDs, one
 visual program) · **SDR** tuner · **Vision** (camera + heavy CPU) · **Speaker** (one
 sound, priority-ducked per §5). **Shared** (○, never a conflict): **Mic** (fan-out to
-BirdNET + clap + FFT + intercom at once); BME/dashboards/logging need nothing scarce.
+BirdNET + clap + FFT at once); BME/dashboards/logging need nothing scarce.
 
 | Feature | Panel | SDR | Vision | Speaker | Mic |
 |---|:--:|:--:|:--:|:--:|:--:|
@@ -251,7 +251,7 @@ BirdNET + clap + FFT + intercom at once); BME/dashboards/logging need nothing sc
 | Gesture (U2) | | | ● | | |
 | Frigate / SENTRY (U7, U11) | | | ● | ●² | |
 | TTS feedback (U9) | | | | ● | |
-| Intercom (U12) | | | | ● | ○ |
+| Talk-down (U21) | | | | ● | |
 | BirdNET (U6), clap (U2) | | | | | ○ |
 | Env log (U4), time-lapse (U18) | | | | | |
 
@@ -266,7 +266,7 @@ disjoint = run in parallel):
   panel like any other, per the user ("für sich, in diesem Modus").
 - **SDR:** COMMS ⟂ SIGINT ⟂ full Info-ticker — the tuner is the dominant bottleneck.
 - **Vision:** Gesture ⟂ Frigate/SENTRY — never both.
-- **Speaker:** COMMS, TTS, intercom, alarm don't *hard*-clash — they queue by priority
+- **Speaker:** COMMS, TTS, talk-down, alarm don't *hard*-clash — they queue by priority
   (§5), one sound at a time.
 - **Across axes: free.** Disco (Panel) + airband (SDR+Speaker) + BirdNET (Mic) + env
   log, all at once — exactly the user's "Disko ist Disko, egal was der Empfänger tut."
@@ -286,7 +286,8 @@ and re-asserts until its condition clears:
    or acknowledged.
 2. **Safety warning** (U9.3 storm, U10.4 DAB EWF) — ducks/interrupts media + feedback;
    brief and time-sensitive.
-3. **Intercom** (U12) — two-way comms; ducks radio/media while a call is active.
+3. **Talk-down** (U21) — one-way app → speaker; ducks radio/media while active, which
+   then resumes.
 4. **Event feedback / TTS** (U9 bird name, flight) — plays only when nothing above is
    active; ducks radio for a couple of seconds.
 5. **Ambient** (U19 presence ghost) — visual only, never makes sound; yields the
@@ -295,7 +296,7 @@ and re-asserts until its condition clears:
 **Human override always wins:** an explicit app/button action is honoured immediately
 (it pins the mode, §6) — except the alarm, which re-asserts until the security
 condition itself is resolved. **Confirmed:** a safety warning (2) **cuts into a live
-intercom call** (3) — safety over comfort. TTS is **Piper** (local, offline); the arbiter
+talk-down** (3) — safety over comfort. TTS is **Piper** (local, offline); the arbiter
 runs the ducking/queue mixer (see `../docs/use-cases.md` U9).
 
 ---
@@ -360,15 +361,16 @@ stats can be **uptime-normalised** (detections ÷ on-hours).
 
 **Mic fan-out.** The USB mic is a **PipeWire** source (Pi OS default), read
 **simultaneously and continuously** by several consumers without locking the device:
-BirdNET (always), clap detection (U2.2), the visualiser FFT (U3.4), the intercom (U12).
-This is the "always-open mic" that the shared-resource row in §4 refers to.
+BirdNET (always), clap detection (U2.2), the visualiser FFT (U3.4). This is the
+"always-open mic" that the shared-resource row in §4 refers to. (U21 talk-down is one-way,
+phone → speaker, and does not tap the mic.)
 
 ---
 
 ## 9. Open questions / risks (ranked)
 
 1. **Overlay priority (§5)** — confirm the ordering, especially safety-warning vs
-   intercom.
+   talk-down.
 2. **Build order** — which use case to implement first (the user's sequencing call).
 3. **Per-mode settings and optional app presets** — the concrete submode lists and their
    settings per main mode, plus the automatic-trigger heuristics (the Vision presence
