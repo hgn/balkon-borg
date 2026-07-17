@@ -14,6 +14,21 @@ split into src/") for why.
 
 ---
 
+## 2026-07-17 — U13: ISM/TPMS sniffer, observation-only, split MQTT topics
+
+**Scope:** `rtl_433` on the SDR (SIGINT "ISM/rtl_433" submode) decodes both neighbourhood
+433/868 MHz sensor traffic and TPMS from passing cars in a **single capture** (both sit at
+433.92 MHz in Europe) — no separate sub-submode needed.
+
+**Observation only:** decoded readings are broadcast live over MQTT and **not persisted**,
+no downstream trigger wired up. Consistent with the U4 no-telemetry-DB line — this is a
+technical curiosity feed, not a data product.
+
+**Two separate MQTT topics** (`balkon/ism/events`, `balkon/tpms/events`), not one topic
+with a type field — the user's call: a neighbour's weather reading and "a car just
+passed" are functionally different signals to a future consumer, worth keeping separable
+from the start.
+
 ## 2026-07-17 — U11 SENTRY specced; new U21 live-view + talk-down; U12 intercom removed
 
 **U11 (SENTRY security):**

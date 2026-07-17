@@ -546,11 +546,30 @@ is BirdNET, clap and the visualiser FFT only (`../src/architecture.md` §8).
 ## U13 — ISM sniffer
 
 **Requirements:**
-1. 433/868 MHz neighbourhood sensor net (rtl_433).
-2. TPMS sniffing of passing cars.
+1. Decode 433/868 MHz neighbourhood sensor traffic (weather stations, smart-home
+   devices) via `rtl_433`.
+2. Decode TPMS (tire-pressure sensor) transmissions from passing cars.
+3. **Observation only** — no persistence, no downstream trigger. Decoded readings are
+   broadcast live over MQTT and forgotten; nothing is logged or stored (consistent with
+   the U4 no-telemetry-DB line).
 
-**Value:** _TBD_
-**Implementation:** _TBD_
+**Value:** a passive curiosity window into the neighbourhood's ISM traffic — other
+people's weather stations, smart-home sensors, and the odd passing car's tire sensors —
+purely as a live technical spectacle, not a data product. Nothing to maintain, nothing to
+grow unbounded.
+
+**Implementation:**
+- **Decoder:** `rtl_433` on the SDR, SIGINT submode "ISM/rtl_433". A single capture at
+  433.92 MHz covers both ISM sensors and TPMS (same European band), so no separate
+  sub-submode split is needed — one run decodes everything `rtl_433`'s device table
+  recognises.
+- **Interface — two separate MQTT topics** (`balkon/ism/events`,
+  `balkon/tpms/events`, `docs/network.md`), split because they are functionally
+  different signals to a consumer (a neighbour's weather reading vs. "a car just passed") —
+  not one topic with a type field. Fire-and-forget: no consumer is required to exist yet.
+- **No storage, no trigger.** Purely a live broadcast; if a future use case wants to act on
+  it (e.g. a TPMS hit twitching a light), it subscribes independently — U13 itself stays a
+  dumb decode-and-publish source.
 
 ---
 
