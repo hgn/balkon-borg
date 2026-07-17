@@ -16,24 +16,28 @@ through the list together — entries without them yet are marked `_TBD_`.
 How the use cases map onto the mode tree (`src/log/decisions.md`). This is the sort,
 not the detail — the *how* of each lives in its own section below.
 
-**Main modes** (exactly one active; Button 3 or the app cycles them):
+**Main modes** run **in parallel and independently** — each is **separately switchable
+on/off** and each always has an **active submode** (never "nothing"). Button 1 selects the
+*focus* (which one the buttons steer), Button 4 turns the focused main mode on/off, Button
+2 cycles its (always-defined) submode, Button 3 the sub-submode. So switching focus does
+not stop the others: the disco light keeps running while you focus Radio and tune a
+station. "Off" is the main-mode on/off level (Button 4), not a submode.
 
-| Main mode | Submodes | Use cases |
+| Main mode (focus) | Submodes (Button 2, always one active) | Use cases |
 |---|---|---|
-| **Licht** | Distance Detector · Info Ticker · normal · ambient · cozy | U1 (Distance Detector), U3.2/U3.3 (Info Ticker) |
-| **Party** | effect choice (which effect/visualiser) | U3.1 (effects/strobe), U3.4 (visualiser) |
+| **Licht** (the panel) | ambient · full · cozy · distance-auto · info-ticker · disco · strobe · police · visualiser | U1, U3 |
 | **Radio** (SDR, listen) | FM+RDS · DAB+ · Shortwave · Airband | U10.1/.2/.3, U20.2; U10.4 (DAB+ EWF) as a monitor under DAB |
 | **Scanner** (SDR, decode) | ADS-B · ISM/rtl_433 · APRS · Radiosonde · Spectrum · Pager · LoRa · scheduled captures | U5, U13, U15, U16, U17, U20.1, U8, U14 |
 | **Away** (security) | — | U11 (auto-triggered by absence/geofence) |
 
 *Night* is treated as a **modifier**, not its own main mode — it shifts thresholds and
-scenes (dimmer, warmer, quieter) within whatever main mode is active. Revisit if it
-grows its own behaviour.
+scenes (dimmer, warmer, quieter). Revisit if it grows its own behaviour. The former
+**Party** main mode is dissolved: its effects (disco/strobe/police/visualiser) are Licht
+submodes (one flat program list on Button 2).
 
-**Radio vs Scanner** are two separate main modes because the user chose to split
-active listening (audio out: FM/DAB/shortwave/airband) from data decoding
-(ADS-B/rtl_433/APRS/images). Both contend for the **single SDR tuner**, so they are
-mutually exclusive at the main-mode level — you're in one or the other, never both.
+**Parallel vs exclusive:** **Licht** (the panel) runs independently of the SDR — disco
+light + airband radio at once. **Radio** and **Scanner** both need the single SDR tuner,
+so those two are mutually exclusive with *each other* (one or the other, never both).
 
 **Baseline** (runs regardless of mode, while the borg-pi5 is powered — cheap or
 always-valuable): U4 (live environment), U6 (BirdNET bird log),
@@ -120,22 +124,25 @@ sit), not a value to guess from a datasheet.
 ## U2 — Manual light control without a phone
 
 **Requirements:**
-1. Physical controls: 4 illuminated buttons + rotary encoder, mapped to the mode system
+1. Physical controls: 4 illuminated buttons + rotary encoder, mapped to the mode
+   hierarchy — the three levels sit on the first three buttons in order
    (`src/log/decisions.md`):
-   - **Button 1** — on/off.
-   - **Button 2** — cycle the **submode** within the current main mode (e.g. Licht:
-     normal/ambient/cozy/distance-detector/ticker).
-   - **Button 3** — cycle the **main mode** (short press) / release a manual pin back to
-     automatic (long press).
-   - **Button 4** — cycle the **sub-submode** (the channel/station list within the
-     current submode, where one exists): Radio/FM → next station, Radio/airband →
-     Munich Tower / Approach / …, Scanner/ADS-B → filter preset. Inert where the submode
-     has no list (e.g. Panel/Disco).
+   - **Button 1 — main mode / focus**: which subsystem the buttons steer (Licht / Radio /
+     Scanner / Away). It switches focus only — the subsystems run in parallel, so the
+     disco light keeps running while you focus Radio and tune a station. Long press
+     releases a manual pin back to automatic.
+   - **Button 2 — submode** within the focused main mode (always one active): Licht → the
+     light scene (ambient / full / cozy / distance-auto / ticker / disco / strobe /
+     police / visualiser); Radio → FM / DAB / shortwave / airband.
+   - **Button 3 — sub-submode** within the submode, where one exists: Radio/FM → next
+     station, Radio/airband → Munich Tower / Approach / …, Scanner/ADS-B → filter preset.
+     Inert where the submode has no list.
+   - **Button 4 — on/off** the focused main mode (each runs independently: Licht on/off,
+     Radio on/off, …). "Off" lives here, not in the submode list.
    - **Encoder** — turn adjusts the current target (brightness *or* volume); **short
-     push toggles the target** (light ↔ audio), the panel briefly shows which. (The old
-     "push = light off" is dropped: Button 1 already does off, so the push is free to
-     switch what the knob controls — needed now that there are two continuous
-     quantities, brightness and volume.)
+     push toggles the target** (light ↔ audio), the panel briefly shows which. (Two
+     continuous quantities now, brightness and volume, so the knob's target is switchable
+     rather than a redundant "off".)
 2. Clap switch (2 claps) → toggle the light, as a lazy hands-free input.
 3. Hand-gesture control via the camera (MediaPipe): 5 fingers = on, fist = off,
    thumbs-up = scene, swipe = dim, finger count = preset number.
@@ -155,9 +162,9 @@ the phone is never *required* — it is one option among several, not the only w
   and can reflect state (active mode/pin).
 - **Clap** runs as a lightweight energy-spike / two-within-a-window detector on the Pi's
   mic stream (fan-out alongside BirdNET, cheap). **Gated to quiet contexts** — disabled
-  while the speaker is playing loud (Party main mode, or radio/media audio active) so it
-  neither false-triggers nor is masked. On a clean double clap it publishes a
-  light-toggle command.
+  while the speaker is playing loud (radio/media audio active, or a lively scene) so it
+  neither false-triggers nor is masked. On a clean double clap it publishes a light
+  on/off command.
 - **Gesture** is MediaPipe on the Pi, active only while present (the Vision axis's
   presence schedule, `src/log/decisions.md`); a recognised gesture publishes the matching
   command. Honest limit: it needs light to see the hand, so it works in daylight or once
@@ -173,12 +180,12 @@ the phone is never *required* — it is one option among several, not the only w
 3. Scrolling-text ticker: bird of the day.
 4. Audio-reactive visualiser (mic → FFT → matrix).
 
-**Mode placement (partial, rest TBD when we work through U3):** the ticker
-requirements (2, 3) are the **"Info Ticker" submode of the Licht main mode** — a
-sibling of U1's "Distance Detector" submode, which is why they never fight over the
-top row (only one Licht submode is active at a time). The effects/strobe/visualiser
-requirements (1, 4) most likely belong to a **Party** main mode, not Licht — to be
-confirmed when this use case is worked out.
+**Mode placement:** all of U3 lives under the **Licht** main mode as submodes on one flat
+program list (Button 2). There is **no separate Party main mode** — its effects are just
+Licht submodes. So the list is: ambient / full / cozy / distance-auto (U1) / info-ticker
+(U3.2/3) / disco / strobe / police / visualiser (U3.4) / … — exactly one active at a
+time, which is why the ticker, the distance bar and the effects never contend for the
+panel.
 
 **Value:** _TBD_
 **Implementation:** _TBD_

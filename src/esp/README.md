@@ -28,17 +28,20 @@ ESPHome.
 [`../log/decisions.md`](../log/decisions.md), 2026-07-16 entries, and `docs/use-cases.md`
 U2). Not yet in this YAML; no mode list is defined yet:
 
+The three mode levels sit on the first three buttons in order; Button 1 switches the
+button **focus** (the subsystems keep running in parallel, it does not stop them):
+
 | Element | Planned function |
 |---|---|
-| Button 1 | on/off |
-| Button 2 | cycle submode within the current main mode |
-| Button 3 | cycle main mode (short) / release pin to automatic (long) |
-| Button 4 | cycle sub-submode (station/frequency/preset within the submode; inert if none) |
+| Button 1 | cycle main mode / focus (Licht / Radio / Scanner / Away); long press → automatic |
+| Button 2 | cycle submode within the focus (Licht → light scene; Radio → FM/DAB/airband) |
+| Button 3 | cycle sub-submode (station / frequency / preset; inert if none) |
+| Button 4 | on/off the focused main mode (each runs independently) |
 | Encoder turn | adjust the current target (brightness **or** volume) |
 | Encoder push | toggle the target (light ↔ audio); panel shows which |
 
-The old "scene cozy/party" and "encoder push = off" roles go away: scenes become Licht
-submodes on Button 2, and off is Button 1.
+The old "scene cozy/party", "on/off" and "encoder push = off" button roles go away:
+scenes become Licht submodes on Button 2, and the whole device is switched at the mains.
 
 ## Prerequisites
 

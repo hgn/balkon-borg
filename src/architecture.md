@@ -66,10 +66,15 @@ So the real model is:
 - A rule: **two features are compatible iff their exclusive-resource sets are
   disjoint.** Conflicts are not arbitrary pairs — they fall out of the resource map.
 
-"Modes" (Licht / Party / Radio / Scanner / Away) survive only as **presets**: named,
-convenient bundles of feature toggles (e.g. Party = effects on + visualiser on). You
-start from a preset and can toggle individual features on/off, as long as the resource
-allocator permits. Buttons cycle presets; the app toggles individual features.
+The **main modes** (Licht / Radio / Scanner / Away) are the user-facing grouping of these
+features: **parallel and independent**, each separately on/off-able and each always in an
+active submode. They map to the buttons (Button 1 = focus/main mode, 2 = submode, 3 =
+sub-submode, 4 = on/off the focused main mode — see `docs/use-cases.md` U2). "Focus" is
+which main mode the buttons steer; the others keep running. There is no separate "Party"
+main mode — its effects (disco/strobe/police/visualiser) are Licht submodes, one flat
+program list. Named cross-axis *presets* (a one-tap "evening" that sets several at once)
+can still exist on top, app-driven; the resource allocator enforces the physical limits
+underneath (one SDR tuner, etc.).
 
 The right tool to figure out what clashes is therefore **not an N×N feature-vs-feature
 matrix** (large, and it hides *why* two things clash) but a **resource-allocation
@@ -299,8 +304,8 @@ InfluxDB/Grafana.
    feature is on) is *off* or a silent ADS-B/Scanner idle, so the flight ticker (U3.2)
    and sensor net (U13) can stay live. Also sets the §7 Panel/SDR power-on default.
 3. **Build order** — which use case to implement first (the user's sequencing call).
-4. **Presets** — define the named feature bundles (Licht/Party/Radio/Scanner/Away) and
-   the per-feature settings, plus the automatic-trigger heuristics (the Vision axis's
+4. **Per-mode settings and optional app presets** — the concrete submode lists and their
+   settings per main mode, plus the automatic-trigger heuristics (the Vision axis's
    presence schedule is already defined; the rest are not).
 5. **Reverse proxy** for the several web UIs (Netdata, tar1090, Frigate, BirdNET-Go) —
    nice-to-have, minor.

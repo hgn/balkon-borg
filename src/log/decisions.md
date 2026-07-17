@@ -14,6 +14,35 @@ split into src/") for why.
 
 ---
 
+## 2026-07-16 — Buttons = the three mode levels in order; main mode is the focus
+
+**Supersedes the button assignments** in the two entries below (Button 3 = main mode,
+Button 2 = submode, Button 4 = sub-submode). User's call, specifying U2/U3.
+
+- The three mode levels sit on the **first three buttons in order**: **Button 1 = main
+  mode, Button 2 = submode, Button 3 = sub-submode.** **Button 4 = on/off the focused
+  main mode.**
+- **Main modes are parallel and independent**, each **separately switchable on/off**
+  (Button 4) and each **always in an active submode** (never null). Button 1 is the
+  *focus* — which subsystem the buttons steer (Licht / Radio / Scanner / Away) — not an
+  exclusive state: switching focus to Radio does **not** stop the disco light, it just
+  moves what Button 2/3/4 control. This reconciles the button hierarchy with the
+  parallel-axes model and the user's "Disko ist Disko, egal was der Empfänger tut": Panel
+  (light) and SDR (radio) run at once; Button 1 chooses the one you adjust. "Off" is the
+  main-mode on/off level (Button 4), **not** a submode — the submode list never contains
+  "off". Long-press Button 1 releases a manual pin to automatic. (Resource exclusivity is
+  still enforced underneath: Radio and Scanner share the one tuner, so turning one on
+  forces the other off — the parallel model is the UI layer, the arbiter arbitrates.)
+- **No device on/off button.** Button 1 used to be light on/off; the user switches the
+  whole unit at the mains (power strip), so a device toggle is pointless and a light
+  toggle is redundant (the scene list has "off", the radar auto-ons in the evening).
+  Button 1 is repurposed to the main mode; the light-off is a Licht submode.
+- **Panel/light is one flat program list** (Party main mode dissolved): under focus
+  Licht, Button 2 cycles ambient / full / cozy / distance-auto / ticker / disco / strobe
+  / police / … / off. The former "Party" effects are just Licht submodes. Encoder and
+  clap/gesture unchanged from the "Control map refined" entry (turn = brightness/volume,
+  push toggles target; clap gated; full gesture vocabulary).
+
 ## 2026-07-16 — Control map refined: Button 4 = sub-submode, encoder does volume too
 
 **Refines the button map** from the earlier mode-switch entries (Button 4 was "free",
