@@ -14,6 +14,23 @@ split into src/") for why.
 
 ---
 
+## 2026-07-16 — borg-pi5 needs a reliable time source (NTP + retry, RTC coin cell)
+
+**Context:** the Pi has no battery-backed clock by default, and the unit is all-on/all-off
+(boots cold, often after being off for a while). Correct wall-clock time is **load-bearing**
+for the SQLite bird log (U6 — sighting timestamps drive the seasonal stats), aircraft
+events (U5), mode/event logging, and the ticker's clock line.
+
+**Requirement:** on boot, sync time **fast** via NTP; if the network/NTP isn't up yet,
+**keep retrying a list of NTP servers** on a recurring schedule until it syncs (don't give
+up after one failed attempt), and only trust timestamps once synced. Standard
+`systemd-timesyncd` (or chrony) with a **pool of servers** covers this; nothing exotic.
+
+**Bridge the boot gap (hardware option):** the **Pi 5 has an on-board RTC with a coin-cell
+connector** (J5) — a ~1 € cell holds the time across power-off, so timestamps are already
+roughly right *before* NTP catches up. NTP stays the authoritative sync; the cell just
+bridges. Cheap, worth adding. (Hardware note for the parts list.)
+
 ## 2026-07-16 — U6: persist bird sightings in SQLite; always-open mic fan-out
 
 **Persist bird detections** (species + timestamp + confidence) — the user wants a real
