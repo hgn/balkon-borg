@@ -27,7 +27,7 @@ reserve.
 |---|---|---|
 | **LUMEN** (the panel) | off · ambient · full · cozy · distance-auto · info-ticker · disco · strobe · police · visualiser | U1, U3 |
 | **COMMS** (SDR, listen) | off · FM+RDS · DAB+ · Shortwave · Airband | U10.1/.2/.3, U20.2; U10.4 (DAB+ EWF) as a monitor under DAB |
-| **SIGINT** (SDR, decode) | off · ADS-B · ISM/rtl_433 · APRS · Radiosonde · Spectrum · Pager · LoRa · scheduled captures | U5, U13, U15, U16, U17, U20.1, U8, U14 |
+| **SIGINT** (SDR, decode) | off · ADS-B · ISM/rtl_433 · APRS · Radiosonde · Spectrum · Pager · LoRa *(later)* · scheduled captures | U5, U13, U15, U16, U17, U20.1, U14; U8 *(deferred)* |
 | **SENTRY** (security) | off · armed | U11 (auto-triggered by absence/geofence) |
 
 *Night* is treated as a **modifier**, not its own main mode — it shifts thresholds and
@@ -391,14 +391,22 @@ footage and without handing a balcony camera to a cloud vendor.
 
 ---
 
-## U8 — Passive radio listening
+## U8 — Passive radio listening *(deferred — not in current scope)*
 
-**Requirements:**
-1. LoRa/Meshtastic RX over the SDR (no active transmit node).
+**Status:** parked. Not part of the current build; the number stays as a placeholder so
+U9–U20 don't shift. May return later.
+
+**If it returns:**
+1. LoRa/Meshtastic RX **over the SDR** (decided path — no dedicated LoRa module), receive
+   only, **no active transmit node** (`log/decisions.md`).
 2. Surface received mesh messages on the matrix or via the speaker.
 
-**Value:** _TBD_
-**Implementation:** _TBD_
+**Why deferred:** LoRa is chirp-spread-spectrum and awkward to demod from the RTL-SDR, and
+listening would camp the one tuner continuously (Meshtastic traffic is sporadic), blocking
+every other SDR use. Not worth it now; revisit when there's appetite. A dedicated LoRa
+module was considered and rejected — the user wants it on the SDR if at all.
+
+**Value / Implementation:** _to be written if/when U8 is picked up._
 
 ---
 

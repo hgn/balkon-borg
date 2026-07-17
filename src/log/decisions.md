@@ -14,6 +14,23 @@ split into src/") for why.
 
 ---
 
+## 2026-07-16 — U8 (LoRa/Meshtastic RX) deferred; SDR path kept, dedicated module rejected
+
+**Decision:** U8 is **parked**, not part of the current build. The use-case number stays as
+a placeholder (U9–U20 keep their numbers). LoRa stays listed as a **SIGINT submode marked
+"later"**, not an active feature.
+
+**Reception path (for if/when it returns): SDR**, per the user — no dedicated LoRa module.
+A dedicated SX126x/Heltec node (native demod, always-on, off the tuner, low-solder) was
+**considered and rejected**; the user prefers it on the RTL-SDR if at all. This keeps the
+old hardware-log bullet (`../../log/decisions.md`: "LoRa receive only over the RTL-SDR, no
+active Meshtastic transmit node") valid — just vertagt.
+
+**Why deferred:** LoRa is chirp-spread-spectrum and awkward to demod from the RTL-SDR
+(marginal sensitivity, timing-sensitive), and RX would camp the one tuner continuously
+(Meshtastic traffic is sporadic), blocking ADS-B/airband/rtl_433/everything else. Low value
+for the cost right now; revisit later.
+
 ## 2026-07-16 — U7: shared vision service (Frigate), event clips off-site to nas-Pi
 
 **Context:** U7 is the camera-and-recognition layer, not a mode. It sits on the Vision axis

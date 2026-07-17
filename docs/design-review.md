@@ -165,7 +165,7 @@ unless noted. Gaps are flagged, not fixed.
   **quadlet does not exist yet** (§8.2).
 - **Camera → Frigate (U7):** CSI → Pi → MQTT events + storage. CSI, no USB contention.
   Quadlet pending.
-- **Mic → BirdNET (U6) / SDR → tar1090 (U5,U8):** USB → Pi → stats/map. Quadlets pending.
+- **Mic → BirdNET (U6) / SDR → tar1090 (U5):** USB → Pi → stats/map. Quadlets pending.
   **SF2 [gap]:** the RTL-SDR should sit on a **USB2** port (USB3 radiates on 1090 MHz);
   note it in the build. Pi 5 has enough ports for SDR + mic + speaker.
 - **Speaker → audio feedback (U9):** event → Pi → play wav. Hardware fine, but **SF3

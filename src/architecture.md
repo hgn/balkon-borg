@@ -247,7 +247,7 @@ BirdNET + clap + FFT + intercom at once); BME/dashboards/logging need nothing sc
 | Music visualiser (U3) | ● | | | | ○ |
 | Presence ghost (U19) | ● | | | | |
 | COMMS listen — FM/DAB/SW/airband (U10, U20.2) | | ● | | ● | |
-| SIGINT decode — ADS-B/rtl_433/APRS/… (U5,U13,U15,U16,U8) | | ● | | | |
+| SIGINT decode — ADS-B/rtl_433/APRS/… (U5,U13,U15,U16; U8 later) | | ● | | | |
 | Gesture (U2) | | | ● | | |
 | Frigate / SENTRY (U7, U11) | | | ● | ●² | |
 | TTS feedback (U9) | | | | ● | |
