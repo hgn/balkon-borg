@@ -89,8 +89,8 @@ Each exclusive resource is really an **axis**: you pick at most one value on it,
 axes are independent, so they combine freely. There are four:
 
 - **Panel** (the WLED LEDs — they *are* both the ambient lamp and the 2D matrix, so it
-  runs one visual program at a time): Ambient · Distance-light+bar · Ticker · Disco ·
-  Visualiser · Ghost.
+  runs one visual program at a time): off · ambient · full · cozy · distance-auto ·
+  ticker · disco · strobe · police · visualiser.
 - **SDR tuner**: off · Listen (FM/DAB+/shortwave/airband) · Scanner (ADS-B/rtl_433/
   APRS/…).
 - **Vision** (camera + heavy CPU): off · MediaPipe (gesture) · Frigate (security).
@@ -108,69 +108,78 @@ doing (user: *"Disko ist Disko, egal ob ich Radio, Flugfunk oder live singe"*). 
 are just convenient one-tap settings across several axes at once. Plus an always-on
 **baseline** (BME log, BirdNET, time-lapse) that has no choice to make.
 
-Because the axes are concurrent and each is internally exclusive, the natural picture is
-a **state diagram with parallel regions** — which directly answers "can we draw this as
-mermaid?": yes, and this orthogonal-region form *is* the honest one (parallelism between
-regions = features combine; one active state per region = the resource is exclusive):
+The same picture, drawn in the **user-facing mode vocabulary** so the modes are easy to
+read: a **state diagram with parallel regions**, one region per main mode, each starting
+at its explicit **off**. Parallelism between regions = the modes run at once (Licht +
+Radio together); one active state per region = a mode is in exactly one submode. **Radio
+and Scanner share the one SDR tuner, so they are two branches of a single region** — you
+can be on a Radio station *or* a Scanner function *or* SDR-off, never two at once: that is
+the displacement, shown natively. Button 1 picks the focus (which region the buttons
+steer), Button 2 the submode, Button 3 the sub-submode (station / frequency).
 
 ```mermaid
 stateDiagram-v2
-  [*] --> Off
-  Off --> Unit : power on
-  Unit --> Off : power off
+  [*] --> Unit : mains on
+  Unit --> [*] : mains off
   state Unit {
-    state "Panel (WLED) — one visual program" as Panel {
-      [*] --> Ambient
-      Ambient --> DistanceLight
-      DistanceLight --> Ticker
-      Ticker --> Disco
-      Disco --> Visualiser
-      Visualiser --> Ghost
-      Ghost --> Ambient
+    state "Licht (Panel)" as Licht {
+      [*] --> Loff
+      Loff --> ambient
+      ambient --> full
+      full --> cozy
+      cozy --> distance
+      distance --> ticker
+      ticker --> disco
+      disco --> strobe
+      strobe --> police
+      police --> visualiser
+      visualiser --> Loff
     }
     --
-    state "SDR tuner — one function" as SDR {
-      [*] --> SDR_off
-      SDR_off --> Listen
-      SDR_off --> Scanner
-      Listen --> SDR_off
-      Scanner --> SDR_off
-      state Listen {
+    state "Radio / Scanner (one SDR tuner)" as SDR {
+      [*] --> SDRoff
+      SDRoff --> Radio
+      Radio --> Scanner
+      Scanner --> SDRoff
+      state Radio {
         [*] --> FM
-        FM --> DABp
-        DABp --> Shortwave
-        Shortwave --> Airband
+        FM --> DAB
+        DAB --> SW
+        SW --> Airband
+        Airband --> FM
       }
       state Scanner {
         [*] --> ADSB
         ADSB --> rtl433
         rtl433 --> APRS
+        APRS --> ADSB
       }
     }
     --
-    state "Vision — camera + CPU" as Vision {
-      [*] --> Vision_off
-      Vision_off --> Frigate
-      Vision_off --> Gesture
-      Frigate --> Vision_off
-      Gesture --> Vision_off
+    state "Camera (presence-scheduled)" as Vision {
+      [*] --> Voff
+      Voff --> Gesture
+      Gesture --> Security
+      Security --> Voff
     }
     --
-    state "Speaker — one sound, priority ducked" as Speaker {
-      [*] --> Silent
-      Silent --> Playing
-      Playing --> Silent
-    }
-    --
-    state "Baseline — always, no choice" as Base {
+    state "Baseline (always)" as Base {
       [*] --> Running
     }
   }
+  note right of Unit
+    Button 1 = focus (which mode you steer)
+    Button 2 = submode, Button 3 = sub-submode
+    (station / frequency), Button 4 = reserve.
+    Modes run in parallel; only Radio and
+    Scanner share the tuner, so one region.
+  end note
 ```
 
-The within-region arrows are just the button-cycle order; the app can jump any region to
-any state directly. The state names (FM, Airband, ADS-B, …) are the "Subzustände" —
-substates of the Listen/Scanner composite states.
+Within-region arrows are the Button-2 cycle order; the app can jump to any state. The
+deepest names (FM stations, airband frequencies) are the Button-3 sub-submodes. The
+**Camera** region is presence-scheduled (gesture while present, security/Away while
+absent), not button-cycled; the speaker is an output (volume on the encoder), not a mode.
 
 ---
 
