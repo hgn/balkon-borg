@@ -362,13 +362,42 @@ implementation constraint carried over from the mode-architecture discussion.
 
 ## U9 — Audio feedback
 
-**Requirements:**
-1. Speaker plays a short clip / greeting when something is detected.
-2. Spoken TTS event feedback: bird name, flight number.
-3. Spoken storm warning on a fast pressure drop.
+U9 is the device's **voice** — and the **audio-overlay arbiter**: it owns the speaker and
+decides what plays when several things want it (U5 announcements, U6 bird TTS, U11 alarm,
+U12 intercom, storm/EWF warnings).
 
-**Value:** _TBD_
-**Implementation:** _TBD_
+**Requirements:**
+1. **Short clips** for quick, wordless feedback (a chime on detection, a "hallo" greeting
+   on arrival).
+2. **Spoken TTS** for content: bird name (U6), aircraft (U5), warnings (U9.3).
+3. **Priority ladder** at the speaker (higher pre-empts / ducks lower):
+   **alarm** (U11) > **safety warning** (storm / DAB EWF) > **intercom** (U12) >
+   **event TTS** (bird / flight) > ambient (visual only, no sound). A safety warning cuts
+   into a live intercom call (safety over comfort); the alarm re-asserts until the
+   condition clears.
+4. **Storm warning** — spoken, on a fast BME pressure drop.
+
+**Value:** the box tells you what matters out loud, so you don't watch a screen — the name
+of the bird you just heard, a plane worth looking up for, "storm coming, bring the
+cushions in", a greeting when you arrive. The priority ladder means the important things
+are never buried under the trivial: a bird chirp announcement never talks over a security
+alarm, and a storm warning never waits behind a radio track.
+
+**Implementation:**
+- **TTS: Piper** (local neural TTS, offline) on the Pi — good German + English voices, fast
+  on the Pi 5, no cloud (privacy + no external dependency). Cloud TTS rejected on those
+  grounds. Clips are small pre-recorded WAVs.
+- **Audio path:** USB sound card → PAM8403 amp → Visaton BF 45 (the hardware chain,
+  `power-distribution.md`).
+- **The arbiter owns the speaker.** Every audio request — clip, TTS line, COMMS radio
+  audio, intercom — goes through a small **priority mixer**: the highest-priority active
+  source plays, lower ones **duck** (radio/media volume drops under a talk-over) or
+  **queue** (event-TTS waits for a gap). The alarm pre-empts and re-asserts; a safety
+  warning pre-empts intercom and media; event-TTS plays only when nothing above is active.
+- **Storm trigger** (U9.3): the arbiter watches the BME pressure ring buffer (U4); a fast
+  drop over a short window → a TTS warning + a red panel flash.
+- This is the concrete implementation of the audio overlays in the mode model
+  (`../src/architecture.md` §5).
 
 ---
 

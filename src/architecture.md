@@ -277,10 +277,10 @@ per panel for now).
 
 ---
 
-## 5. Overlay priority model  **[NEW – confirm]**
+## 5. Overlay priority model
 
-Overlays interrupt whatever is playing. Proposed order, highest wins the speaker and
-re-asserts until its condition clears:
+Overlays interrupt whatever is playing. **Confirmed** order (U9), highest wins the speaker
+and re-asserts until its condition clears:
 
 1. **Alarm** (U11 security) — interrupts everything; keeps re-asserting until cleared
    or acknowledged.
@@ -294,8 +294,9 @@ re-asserts until its condition clears:
 
 **Human override always wins:** an explicit app/button action is honoured immediately
 (it pins the mode, §6) — except the alarm, which re-asserts until the security
-condition itself is resolved. The exact ordering of 2 vs 3 (does a storm warning cut
-into a live intercom call?) is the main thing to confirm here.
+condition itself is resolved. **Confirmed:** a safety warning (2) **cuts into a live
+intercom call** (3) — safety over comfort. TTS is **Piper** (local, offline); the arbiter
+runs the ducking/queue mixer (see `../docs/use-cases.md` U9).
 
 ---
 

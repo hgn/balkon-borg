@@ -14,7 +14,20 @@ split into src/") for why.
 
 ---
 
-## 2026-07-16 — borg-pi5 needs a reliable time source (NTP + retry, RTC coin cell)
+## 2026-07-16 — U9: local TTS (Piper) + confirmed speaker priority ladder
+
+**TTS = Piper** (local neural TTS, offline) — good DE/EN voices, fast on the Pi 5, no
+cloud. Rejected cloud TTS (privacy + external dependency, against the local ethos).
+
+**Speaker priority ladder confirmed** (resolves the §5 [NEW-confirm]): **alarm** > **safety
+warning** (storm / DAB EWF) > **intercom** > **event TTS** (bird / flight) > ambient.
+Higher pre-empts / ducks lower; the alarm re-asserts until cleared. The one open pair is
+decided by the user: **a safety warning cuts into a live intercom call** (safety over
+comfort). U9 is the audio-overlay arbiter that owns the speaker (a priority mixer:
+duck/queue), the concrete implementation of the §5 overlays. Human app/button actions
+override immediately, except the alarm.
+
+## 2026-07-16 — borg-pi5 needs a reliable time source (NTP only, no battery)
 
 **Context:** the Pi has no battery-backed clock by default, and the unit is all-on/all-off
 (boots cold, often after being off for a while). Correct wall-clock time is **load-bearing**
@@ -26,10 +39,11 @@ events (U5), mode/event logging, and the ticker's clock line.
 up after one failed attempt), and only trust timestamps once synced. Standard
 `systemd-timesyncd` (or chrony) with a **pool of servers** covers this; nothing exotic.
 
-**Bridge the boot gap (hardware option):** the **Pi 5 has an on-board RTC with a coin-cell
-connector** (J5) — a ~1 € cell holds the time across power-off, so timestamps are already
-roughly right *before* NTP catches up. NTP stays the authoritative sync; the cell just
-bridges. Cheap, worth adding. (Hardware note for the parts list.)
+**No RTC battery (user's call): NTP only, must work without a coin cell.** Consequence: on
+a cold boot the clock is wrong until NTP syncs, so **timestamps are untrusted until the
+first sync**. The arbiter gates timestamped writes (U6 bird detections, U5 events) on the
+sync status — hold/queue events (or mark them provisional) until time is valid, rather
+than persisting a wrong timestamp. Fast sync + the retry above keep that window short.
 
 ## 2026-07-16 — U6: persist bird sightings in SQLite; always-open mic fan-out
 
