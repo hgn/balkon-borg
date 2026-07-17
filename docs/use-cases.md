@@ -16,28 +16,30 @@ through the list together — entries without them yet are marked `_TBD_`.
 How the use cases map onto the mode tree (`src/log/decisions.md`). This is the sort,
 not the detail — the *how* of each lives in its own section below.
 
-**Main modes** run **in parallel and independently** — each is **separately switchable
-on/off** and each always has an **active submode** (never "nothing"). Button 1 selects the
-*focus* (which one the buttons steer), Button 4 turns the focused main mode on/off, Button
-2 cycles its (always-defined) submode, Button 3 the sub-submode. So switching focus does
-not stop the others: the disco light keeps running while you focus Radio and tune a
-station. "Off" is the main-mode on/off level (Button 4), not a submode.
+**Main modes** run **in parallel and independently**, and each always sits in an **active
+submode** — and every submode list includes an explicit **off**. So you turn a main mode
+off by selecting its *off* submode; the others keep running (Licht off + Radio on, or the
+reverse, in any combination). Button 1 selects the *focus* (which main mode the buttons
+steer), Button 2 cycles its submode (including off), Button 3 the sub-submode; Button 4 is
+reserve.
 
-| Main mode (focus) | Submodes (Button 2, always one active) | Use cases |
+| Main mode (focus) | Submodes (Button 2, incl. explicit *off*) | Use cases |
 |---|---|---|
-| **Licht** (the panel) | ambient · full · cozy · distance-auto · info-ticker · disco · strobe · police · visualiser | U1, U3 |
-| **Radio** (SDR, listen) | FM+RDS · DAB+ · Shortwave · Airband | U10.1/.2/.3, U20.2; U10.4 (DAB+ EWF) as a monitor under DAB |
-| **Scanner** (SDR, decode) | ADS-B · ISM/rtl_433 · APRS · Radiosonde · Spectrum · Pager · LoRa · scheduled captures | U5, U13, U15, U16, U17, U20.1, U8, U14 |
-| **Away** (security) | — | U11 (auto-triggered by absence/geofence) |
+| **Licht** (the panel) | off · ambient · full · cozy · distance-auto · info-ticker · disco · strobe · police · visualiser | U1, U3 |
+| **Radio** (SDR, listen) | off · FM+RDS · DAB+ · Shortwave · Airband | U10.1/.2/.3, U20.2; U10.4 (DAB+ EWF) as a monitor under DAB |
+| **Scanner** (SDR, decode) | off · ADS-B · ISM/rtl_433 · APRS · Radiosonde · Spectrum · Pager · LoRa · scheduled captures | U5, U13, U15, U16, U17, U20.1, U8, U14 |
+| **Away** (security) | off · armed | U11 (auto-triggered by absence/geofence) |
 
 *Night* is treated as a **modifier**, not its own main mode — it shifts thresholds and
-scenes (dimmer, warmer, quieter). Revisit if it grows its own behaviour. The former
-**Party** main mode is dissolved: its effects (disco/strobe/police/visualiser) are Licht
-submodes (one flat program list on Button 2).
+scenes (dimmer, warmer, quieter). The former **Party** main mode is dissolved: its effects
+(disco/strobe/police/visualiser) are Licht submodes (one flat program list on Button 2).
 
-**Parallel vs exclusive:** **Licht** (the panel) runs independently of the SDR — disco
-light + airband radio at once. **Radio** and **Scanner** both need the single SDR tuner,
-so those two are mutually exclusive with *each other* (one or the other, never both).
+**Displacement on resource conflict only:** most main modes coexist (Licht + Radio at
+once — different resources). Where two need the *same* exclusive resource, turning one on
+**displaces** the other: **Radio** and **Scanner** both need the single SDR tuner, so
+switching one on drops the other to *off*. This is the arbiter enforcing the resource
+table (§4 of `../src/architecture.md`); it only happens when such a conflict actually
+exists.
 
 **Baseline** (runs regardless of mode, while the borg-pi5 is powered — cheap or
 always-valuable): U4 (live environment), U6 (BirdNET bird log),
@@ -131,14 +133,15 @@ sit), not a value to guess from a datasheet.
      Scanner / Away). It switches focus only — the subsystems run in parallel, so the
      disco light keeps running while you focus Radio and tune a station. Long press
      releases a manual pin back to automatic.
-   - **Button 2 — submode** within the focused main mode (always one active): Licht → the
-     light scene (ambient / full / cozy / distance-auto / ticker / disco / strobe /
-     police / visualiser); Radio → FM / DAB / shortwave / airband.
+   - **Button 2 — submode** within the focused main mode; each list includes an explicit
+     **off** (that is how a main mode is switched off): Licht → off / ambient / full /
+     cozy / distance-auto / ticker / disco / strobe / police / visualiser; Radio → off /
+     FM / DAB / shortwave / airband. The main modes run independently, so Licht off +
+     Radio on (or the reverse) is fine.
    - **Button 3 — sub-submode** within the submode, where one exists: Radio/FM → next
      station, Radio/airband → Munich Tower / Approach / …, Scanner/ADS-B → filter preset.
      Inert where the submode has no list.
-   - **Button 4 — on/off** the focused main mode (each runs independently: Licht on/off,
-     Radio on/off, …). "Off" lives here, not in the submode list.
+   - **Button 4** — reserve.
    - **Encoder** — turn adjusts the current target (brightness *or* volume); **short
      push toggles the target** (light ↔ audio), the panel briefly shows which. (Two
      continuous quantities now, brightness and volume, so the knob's target is switchable
@@ -175,10 +178,11 @@ the phone is never *required* — it is one option among several, not the only w
 ## U3 — Effect / party light
 
 **Requirements:**
-1. WLED 2D effects + strobe.
+1. WLED 2D effects: disco (colourful), strobe (with colour bursts), rotating
+   blue-red police.
 2. Scrolling-text ticker: time / temperature / next flight / welcome message.
 3. Scrolling-text ticker: bird of the day.
-4. Audio-reactive visualiser (mic → FFT → matrix).
+4. Audio-reactive visualiser — a simple level/beat pulse (not a full spectrum).
 
 **Mode placement:** all of U3 lives under the **Licht** main mode as submodes on one flat
 program list (Button 2). There is **no separate Party main mode** — its effects are just
@@ -187,8 +191,26 @@ Licht submodes. So the list is: ambient / full / cozy / distance-auto (U1) / inf
 time, which is why the ticker, the distance bar and the effects never contend for the
 panel.
 
-**Value:** _TBD_
-**Implementation:** _TBD_
+**Value:** the same 8×25 panel that does the everyday table light also turns the balcony
+into a proper little light installation on demand — calm warm glow to full-on party board
+(disco, strobe, rotating police blue-red) and a pulse that moves with the music. It makes
+the unit feel intentional and fun, not a utilitarian lamp, without any extra hardware.
+
+**Implementation:**
+- The effect scenes are **WLED presets** on the Athom controller — WLED's built-in 2D
+  effect engine (no custom firmware): disco = a colourful 2D effect, strobe = strobe with
+  colour, police = a blue-red rotating preset. The arbiter selects the preset over MQTT
+  (`wled/balkon/api {ps: N}`) when Button 2 lands on that Licht submode.
+- The **info-ticker** (U3.2/3) uses WLED's 2D scrolling text: time/temperature from the
+  BME ring buffer (U4), next flight from the Scanner if it is running (the flight line is
+  only fresh while the SDR is on ADS-B — the tuner conflict from the mode overview),
+  bird-of-the-day from BirdNET, a welcome message. Content rotates or is arbiter-pushed.
+- The **visualiser** (U3.4) is deliberately simple: the Pi measures the mic's amplitude/
+  beat (lightweight, fan-out from the mic stream alongside BirdNET) and publishes a
+  level/beat over MQTT; the arbiter maps it to a WLED effect's intensity/brightness so the
+  panel pulses to the music. No per-pixel streaming — a full FFT-spectrum bar display
+  (Pi → DDP realtime pixels) was rejected as too much effort for the payoff on an 8×25.
+- Exactly one Licht submode runs at a time (Button 2), with an explicit *off*.
 
 ---
 

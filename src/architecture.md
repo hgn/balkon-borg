@@ -67,14 +67,16 @@ So the real model is:
   disjoint.** Conflicts are not arbitrary pairs — they fall out of the resource map.
 
 The **main modes** (Licht / Radio / Scanner / Away) are the user-facing grouping of these
-features: **parallel and independent**, each separately on/off-able and each always in an
-active submode. They map to the buttons (Button 1 = focus/main mode, 2 = submode, 3 =
-sub-submode, 4 = on/off the focused main mode — see `docs/use-cases.md` U2). "Focus" is
-which main mode the buttons steer; the others keep running. There is no separate "Party"
-main mode — its effects (disco/strobe/police/visualiser) are Licht submodes, one flat
-program list. Named cross-axis *presets* (a one-tap "evening" that sets several at once)
-can still exist on top, app-driven; the resource allocator enforces the physical limits
-underneath (one SDR tuner, etc.).
+features: **parallel and independent**, each always in an active submode, and **every
+submode list includes an explicit off** (that is how a main mode is switched off). They
+map to the buttons (Button 1 = focus/main mode, 2 = submode incl. off, 3 = sub-submode,
+4 = reserve — see `docs/use-cases.md` U2). "Focus" is which main mode the buttons steer;
+the others keep running (Licht off + Radio on, or the reverse). There is no separate
+"Party" main mode — its effects (disco/strobe/police/visualiser) are Licht submodes, one
+flat program list. **Displacement on resource conflict only:** where two main modes need
+the same exclusive resource (Radio and Scanner on the one tuner), turning one on displaces
+the other to off; otherwise they coexist. Named cross-axis *presets* (a one-tap "evening")
+can still exist on top, app-driven.
 
 The right tool to figure out what clashes is therefore **not an N×N feature-vs-feature
 matrix** (large, and it hides *why* two things clash) but a **resource-allocation

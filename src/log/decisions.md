@@ -14,25 +14,38 @@ split into src/") for why.
 
 ---
 
+## 2026-07-16 — U3 specified: effects as WLED presets, simple visualiser
+
+**Decision:** the effect scenes (disco / strobe / rotating blue-red police) are **WLED
+built-in presets** on the Athom controller — no custom firmware; the arbiter selects the
+preset over MQTT when Button 2 lands on that Licht submode. The **visualiser is a simple
+level/beat pulse**: the Pi measures the mic amplitude/beat and publishes it, the arbiter
+maps it to a WLED effect's intensity so the panel pulses to the music. **Rejected:** a
+full FFT-spectrum bar display streamed as realtime pixels (Pi → DDP/E1.31) — too much
+effort (pixel streaming, latency tuning, bypassing WLED's engine) for the payoff on an
+8×25 panel. All U3 lives as Licht submodes (no Party main mode). Full write-up in
+`docs/use-cases.md` U3.
+
 ## 2026-07-16 — Buttons = the three mode levels in order; main mode is the focus
 
 **Supersedes the button assignments** in the two entries below (Button 3 = main mode,
 Button 2 = submode, Button 4 = sub-submode). User's call, specifying U2/U3.
 
 - The three mode levels sit on the **first three buttons in order**: **Button 1 = main
-  mode, Button 2 = submode, Button 3 = sub-submode.** **Button 4 = on/off the focused
-  main mode.**
-- **Main modes are parallel and independent**, each **separately switchable on/off**
-  (Button 4) and each **always in an active submode** (never null). Button 1 is the
-  *focus* — which subsystem the buttons steer (Licht / Radio / Scanner / Away) — not an
-  exclusive state: switching focus to Radio does **not** stop the disco light, it just
-  moves what Button 2/3/4 control. This reconciles the button hierarchy with the
-  parallel-axes model and the user's "Disko ist Disko, egal was der Empfänger tut": Panel
-  (light) and SDR (radio) run at once; Button 1 chooses the one you adjust. "Off" is the
-  main-mode on/off level (Button 4), **not** a submode — the submode list never contains
-  "off". Long-press Button 1 releases a manual pin to automatic. (Resource exclusivity is
-  still enforced underneath: Radio and Scanner share the one tuner, so turning one on
-  forces the other off — the parallel model is the UI layer, the arbiter arbitrates.)
+  mode, Button 2 = submode, Button 3 = sub-submode.** **Button 4 = reserve.**
+- **Main modes are parallel and independent**, each always in an **active submode**, and
+  **every submode list includes an explicit "off"** — that is how a main mode is switched
+  off (Button 2 to *off*), not a separate button. So Licht off + Radio on, or the reverse,
+  in any combination. Button 1 is the *focus* — which subsystem the buttons steer (Licht /
+  Radio / Scanner / Away) — not an exclusive state: switching focus to Radio does **not**
+  stop the disco light, it just moves what Button 2/3 control. Reconciles the button
+  hierarchy with the parallel-axes model and "Disko ist Disko, egal was der Empfänger
+  tut". Long-press Button 1 releases a manual pin to automatic.
+- **Displacement on resource conflict only.** Most main modes coexist (different
+  resources). Where two need the same exclusive resource — Radio and Scanner both need
+  the one SDR tuner — turning one on **displaces** the other to *off*. The arbiter
+  enforces the §4 resource table; displacement happens only when such a conflict exists
+  ("falls es diesen Fall gibt").
 - **No device on/off button.** Button 1 used to be light on/off; the user switches the
   whole unit at the mains (power strip), so a device toggle is pointless and a light
   toggle is redundant (the scene list has "off", the radar auto-ons in the evening).
