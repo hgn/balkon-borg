@@ -18,7 +18,7 @@ only the nas-Pi5 is truly always-on.
 | **Mode arbiter** ("the brain") | borg-pi5 — Python, host systemd service | with unit | owns `balkon/mode`, resolves pin-vs-auto, applies the YAML config, starts/stops the service quadlets to enforce exclusivity |
 | **MQTT broker** (Mosquitto) | borg-pi5 | with unit | the bus everything talks over |
 | **System monitor:** Netdata | borg-pi5 | with unit | CPU/temp/health, own UI (watch the thermals under vision load) |
-| **Frigate** | borg-pi5 | with unit | security surveillance (~2 FPS while absent); own UI |
+| **Frigate** | borg-pi5 | with unit | security surveillance (~2 FPS while absent), event clips off-site to nas-Pi; own UI |
 | **MediaPipe** | borg-pi5 | with unit | gesture input while present |
 | **readsb/tar1090 + radio decoders** | borg-pi5 | with unit | the single SDR tuner's consumers (COMMS xor SIGINT) |
 | **BirdNET-Go** | borg-pi5 | with unit | bird-call log, own UI |

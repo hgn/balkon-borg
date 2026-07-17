@@ -14,6 +14,29 @@ split into src/") for why.
 
 ---
 
+## 2026-07-16 — U7: shared vision service (Frigate), event clips off-site to nas-Pi
+
+**Context:** U7 is the camera-and-recognition layer, not a mode. It sits on the Vision axis
+(presence-scheduled): MediaPipe (gesture, U2.3) while present, Frigate (security) while
+absent — never both, so the one CPU is time-shared, not contended. Within the absent
+window Frigate is **radar-gated** (LD2410B motion wakes the detector; empty scene idles),
+which is what makes CPU-only Frigate at ~2 FPS trivial.
+
+**Decision (recording):** Frigate records **event clips only** (object-triggered, short
+pre/post roll), **not** 24/7, and stores them + snapshots on the **always-on nas-Pi**
+(off-site from the enclosure Pi, its "occasional image storage" role) with **short
+retention** (~14 days, tunable) auto-pruned. Rejected: (a) snapshot-only — loses the "what
+happened" review U11 wants; (b) continuous NVR — heavy storage, near a data grave, and the
+unit isn't 24/7 on anyway. Off-site because the record must survive someone grabbing the
+box. Event-triggered + TTL keeps this consistent with the U4 no-telemetry-DB line: security
+evidence with an expiry, not a log to mine.
+
+**Decision (scope + privacy):** classes limited to **person / animal** (COCO), no cars.
+Frigate detection/motion **masks** restrict recognition to the own terrace and black out
+neighbours' windows / the public path (privacy + fewer false triggers). **Local-only**
+inference and storage — no cloud ever sees the camera. Consumers: SENTRY (U11) reads
+`balkon/cam/events`; U18 time-lapse takes plain frames, not detections.
+
 ## 2026-07-16 — U9: local TTS (Piper) + confirmed speaker priority ladder
 
 **TTS = Piper** (local neural TTS, offline) — good DE/EN voices, fast on the Pi 5, no

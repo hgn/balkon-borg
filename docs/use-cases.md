@@ -338,14 +338,56 @@ live-only in RAM.
 
 ## U7 — Camera + local recognition
 
-**Requirements:**
-1. Camera Module 3 → Frigate (people/animals) on the Pi 5 CPU.
+U7 is the **shared vision service**: one camera, one Frigate instance, feeding whoever
+needs to see. It is not a mode of its own — it sits on the **Vision axis** (§3 of
+`src/architecture.md`) and is consumed by SENTRY (U11) for security and, via MediaPipe,
+by the gesture input (U2.3). This use case defines the camera-and-recognition layer
+those build on.
 
-**Value:** _TBD_
-**Implementation:** _TBD_ — note: Frigate should be radar-gated (only run at full
-tilt when the radar sees someone approach) rather than continuous, to coexist with
-MediaPipe gesture detection (U2.3) on the same CPU; not a separate use case, just an
-implementation constraint carried over from the mode-architecture discussion.
+**Requirements:**
+1. Camera Module 3 → **Frigate** (object detection: person / animal) on the Pi 5 CPU.
+2. **Presence-scheduled, radar-gated:** never both vision tools at once. While present
+   (radar + 30-min hold) the Vision axis runs MediaPipe (gesture, U2.3); while absent it
+   runs Frigate for security. Within the absent window the radar still **gates** the
+   heavy detector — a static empty scene costs nothing, motion wakes the full pipeline.
+3. **Event clips off-site:** on a detection while absent, record a short clip and store it
+   on the **always-on nas-Pi** (off the enclosure Pi), auto-expired after a short
+   retention. No 24/7 recording.
+4. **Local only:** no cloud service ever sees the camera; detection and storage stay on
+   the two Pis.
+
+**Value:** the box can *see*, without becoming a surveillance liability. One camera does
+double duty — read your hand gestures when you are there (U2.3), watch the terrace when
+you are not (U11) — and the two never fight for the CPU because presence decides which
+one runs. Because it only records short event clips to the nas-Pi and keeps everything
+local, you get "what moved out there while I was gone" without a hard drive full of empty
+footage and without handing a balcony camera to a cloud vendor.
+
+**Implementation:**
+- **Detector:** Frigate on the Pi 5 CPU (no Coral/NPU), COCO model, classes limited to
+  **person** and **animal** (cat / bird / dog) — the balcony cares about people and the
+  odd cat, not cars. CPU-only is fine because it runs **~2 FPS while absent** and is
+  **radar-gated**: the LD2410B "someone/something moving" signal wakes the detector, an
+  empty static scene lets it idle. This is what keeps Frigate and MediaPipe (U2.3) from
+  clashing on the same CPU — the Vision axis is time-shared by presence, never parallel
+  (`src/architecture.md` §3, §4).
+- **Recording (U7.3):** Frigate records **event clips only** (object-triggered, with a
+  few seconds pre/post roll), not continuously. Clips + snapshots are written to storage
+  on the **nas-Pi** (its "occasional image storage" role, `docs/network.md`), off the
+  enclosure Pi so the record survives even if someone grabs the box. **Short retention**
+  (e.g. ~14 days, tunable), auto-pruned by Frigate — event-triggered + auto-expiry keeps
+  it lean, not a data grave (consistent with the U4 no-telemetry-DB line: this is
+  security evidence with a TTL, not a log to mine).
+- **Privacy masking:** the camera looks forward and down at the own terrace (~24° tilt,
+  CAD). Frigate **motion/detection masks** restrict recognition to the own area and black
+  out anything reaching a neighbour's window or the public path — both for privacy and to
+  cut false triggers. Local-only inference (no cloud) is the other half of this.
+- **Interfaces:** detections publish on **`balkon/cam/events`** (MQTT, `docs/network.md`);
+  Frigate's own web UI shows the live view and the clip archive (behind the optional
+  reverse proxy, `src/architecture.md` §9). SENTRY (U11) consumes the events to raise
+  alarms / pushes; U18 (time-lapse) takes plain frames, not detections.
+- **Time source:** clip and event timestamps depend on NTP being synced (no RTC battery);
+  until the first sync, treat timestamps as untrusted (`src/pi/README.md`).
 
 ---
 
