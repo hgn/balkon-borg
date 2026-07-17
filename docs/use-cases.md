@@ -297,11 +297,42 @@ passes over Laim) — start low, raise on site if it is too quiet.
 
 ## U6 — Bird-call log
 
-**Requirements:**
-1. USB microphone → BirdNET → species statistics over the season.
+Baseline (always running while the unit is powered). The mic is an always-open stream and
+BirdNET is one of its continuous consumers.
 
-**Value:** _TBD_
-**Implementation:** _TBD_
+**Requirements:**
+1. USB microphone → BirdNET → **persistent detection log**: which species, when
+   (timestamp + confidence).
+2. **Seasonal statistics, normalised by uptime** — the unit isn't 24/7, so raw counts are
+   biased by when it was on; dividing detections by on-time gives a fair "how often is
+   this bird around" rate and an honest trend over the season.
+3. Live **"bird of the day" ticker** + optional **TTS** ("that was a blackbird").
+
+**Value:** over a season you build a real picture of who visits the balcony — which
+species, when, how the mix shifts month to month — from a device that was only ever on in
+the evenings, made honest by normalising against uptime. Plus the live delight of being
+told the name of the bird you just heard. The dawn chorus is missed (this is an evening
+device), and the normalisation is exactly what keeps the stats meaningful despite that.
+
+**Implementation:**
+- **BirdNET-Go** runs continuously, classifying the mic audio, and **persists detections
+  in its own SQLite database** (a single file, its native store). This is *not* the
+  InfluxDB/Grafana "data grave" dropped for live telemetry — discrete bird sightings are
+  what a small event log is for, and they're wanted. BirdNET-Go's own UI browses the log;
+  the arbiter also queries the SQLite for the ticker/TTS and the normalised stats.
+- **Uptime normalisation:** the arbiter logs the unit's on-intervals (a tiny table); a
+  species' rate = detections ÷ on-hours in the window, so the gaps don't distort the
+  trend.
+- **Always-open mic (fan-out):** the USB mic is a **PipeWire** source (the modern Pi OS
+  default; consumers reach it via PipeWire's ALSA/Pulse compatibility), so several
+  consumers read it **simultaneously and continuously** without locking the device —
+  BirdNET (always), the clap detector (U2.2), the visualiser FFT (U3.4), the intercom
+  (U12). BirdNET never stops; the others attach when their feature is active.
+
+**Database:** **SQLite** — BirdNET-Go already uses it, one file, no server, and event data
+(species + timestamp) suits a relational log far better than a time-series DB. This is the
+**one persistent store** in the stack; everything else (env, presence, mode) stays
+live-only in RAM.
 
 ---
 

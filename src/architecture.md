@@ -351,8 +351,16 @@ settings map is a central declarative config (likely `shared/`, format TBD).
 on MQTT; the arbiter keeps a short **in-RAM ring buffer** for recent trends (e.g. the
 BME pressure trend for U4). The **app is the live dashboard**; each capture service keeps
 its own UI (tar1090, BirdNET-Go, Frigate) and Netdata covers system health. Persisting
-this data would be a data grave across the unit's downtime, so there is deliberately no
-InfluxDB/Grafana.
+that live telemetry would be a data grave across the unit's downtime, so there is
+deliberately no InfluxDB/Grafana. **The one persistent store** is **BirdNET-Go's own
+SQLite** bird log (U6) — discrete species-sighting *events*, the service's native file
+store, not our infra; the arbiter also records the unit's on-intervals there so bird
+stats can be **uptime-normalised** (detections ÷ on-hours).
+
+**Mic fan-out.** The USB mic is a **PipeWire** source (Pi OS default), read
+**simultaneously and continuously** by several consumers without locking the device:
+BirdNET (always), clap detection (U2.2), the visualiser FFT (U3.4), the intercom (U12).
+This is the "always-open mic" that the shared-resource row in §4 refers to.
 
 ---
 

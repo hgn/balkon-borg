@@ -14,6 +14,25 @@ split into src/") for why.
 
 ---
 
+## 2026-07-16 — U6: persist bird sightings in SQLite; always-open mic fan-out
+
+**Persist bird detections** (species + timestamp + confidence) — the user wants a real
+seasonal log and stats, not live-only. **DB = SQLite**, which BirdNET-Go already uses
+natively (one file, no server). This is a deliberate **exception** to the "no telemetry
+DB / no data grave" line: discrete sighting *events* are exactly what a small relational
+log is for and are genuinely wanted, unlike the gappy live telemetry (env/presence) that
+stays in RAM. Not InfluxDB (time-series metrics model doesn't fit event data).
+
+**Uptime normalisation** (user's idea): the unit isn't 24/7, so raw counts are biased by
+when it was on. The arbiter logs on-intervals; a species' rate = detections ÷ on-hours,
+giving an honest trend despite the gaps (and despite missing the dawn chorus — this is an
+evening device).
+
+**Always-open mic fan-out** (user): the USB mic is a **PipeWire** source read
+simultaneously/continuously by several consumers without locking the device — BirdNET
+(always), clap (U2.2), visualiser FFT (U3.4), intercom (U12). Recorded in `architecture.md`
+§8; `docs/use-cases.md` U6 written up.
+
 ## 2026-07-16 — Per-mode power-on defaults + Munich station lists
 
 **Power-on defaults** (each region boots into a chosen submode, highlighted amber in the
