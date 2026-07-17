@@ -17,24 +17,28 @@ split into src/") for why.
 ## 2026-07-16 — Per-mode power-on defaults + Munich station lists
 
 **Power-on defaults** (each region boots into a chosen submode, highlighted amber in the
-§3 diagram): **LUMEN → ticker** (visible it's on, not distracting), **SDR → off**,
-**Camera → gesture** (you're present when you flip the mains), **SENTRY → off**, speaker
-silent. Boots visible-but-calm, present-aware, quiet.
+§3 diagram): **LUMEN → ticker** (visible it's on, not distracting), **SDR → SIGINT/ADS-B
+idle** (silent; keeps the flight ticker live, filtered to low overflights near Laim, U5 —
+turning COMMS on displaces it), **Camera → gesture** (you're present when you flip the
+mains), **SENTRY → off**, speaker silent.
 
-**Munich station lists** (Button 3 sub-submodes under COMMS, real frequencies, default
-first): **FM** — Bayern 3 · 97.3 (default) / Antenne Bayern · 101.3 / Gong · 96.3 /
-Energy · 93.3 / Charivari · 95.5. **DAB+** — Deutschlandfunk (default) / Bayern 3 / BR24.
-**Shortwave** — free tune, no list. **Airband** (EDDM, Laim-receivable, picked for
-"where the action is") — ATIS · 123.13 (default, always-on loop) / Approach · 127.95
-(busiest, aircraft transmit from altitude so it reaches the city) / Director · 118.82 /
-Tower · 118.7. Lists live in the mode config (`src/shared/`), editable without code.
+**SDR idle default = ADS-B (resolved).** The user's earlier open point: when no COMMS
+listening is on, the tuner runs ADS-B, filtered to **low overflights over Laim** (not
+high cruisers). This keeps U3.2's flight ticker / U13's sensor net fresh without a
+separate always-on stick.
+
+**Munich station lists** (Button 3 sub-submodes under COMMS; COMMS itself defaults to
+DAB+): **DAB+** (default submode) — Deutschlandfunk (default) / egoFM / BR-Klassik.
+**FM** — Bayern 3 · 97.3 (default) / Antenne Bayern · 101.3 / Gong · 96.3 / Energy · 93.3
+/ Charivari · 95.5. **Shortwave** — free tune, no list. **Airband** (EDDM, Laim-
+receivable) — Approach · 127.95 (default, the busiest — aircraft transmit from altitude
+so it reaches the city) / ATIS · 123.13 (always-on loop) / Director · 118.82 / Tower ·
+118.7. Lists live in the mode config (`src/shared/`), editable without code.
 
 **Diagram:** the deep 5-level nesting (region → SDR → COMMS → FM → station) broke mermaid
 ("rank" error), so the station detail is a **second, focused COMMS diagram** (3 levels)
-beside the main mode diagram; both validated. Defaults are marked with a `classDef` amber
-highlight rather than only the initial-state arrow. **Still open:** the SDR idle default
-(off vs. a silent ADS-B) and the SIGINT/ADS-B behaviour for low overflights near Laim —
-to clarify.
+beside the main mode diagram; both validated. Defaults marked with a `classDef` amber
+highlight, not only the initial-state arrow.
 
 ## 2026-07-16 — Mode names: LUMEN / COMMS / SIGINT / SENTRY (ops/tactical)
 

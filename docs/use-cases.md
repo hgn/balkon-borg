@@ -57,11 +57,10 @@ mic+speaker), U19 (presence ghost, ambient matrix overlay), U9.3 (storm warning)
 changed and light is controlled.
 
 **Consequences to resolve later:**
-- **SDR data freshness.** With COMMS and SIGINT as distinct modes (and neither the
-  idle default), SDR-derived data is only fresh *while SIGINT runs*. That starves
-  U3.2's "next flight" ticker line and U13's sensor net whenever you're in LUMEN/
-  COMMS. Open: should ADS-B (or SIGINT) be the tuner's idle default when no
-  interactive mode is active, so those tickers stay live? Deferred.
+- **SDR idle default = ADS-B (resolved).** When no COMMS listening is selected, the tuner
+  runs **SIGINT / ADS-B** as its silent idle (filtered to low overflights near Laim, U5),
+  so the "next flight" ticker (U3.2) and the sensor net stay live. Turning COMMS on
+  displaces it (single tuner); turning COMMS off returns the tuner to ADS-B idle.
 - **DAB+ EWF (U10.4)** can only catch emergency warnings while the tuner is actually
   on DAB — it cannot monitor in the background during COMMS-FM/SIGINT/etc. A real
   limitation of the single tuner, not a bug to fix; the app/cell-broadcast remain the
@@ -247,14 +246,23 @@ warning); U4 is display-only.
 
 ## U5 — Aircraft reception
 
+This is the **SIGINT** main mode's ADS-B function — and the **SDR idle default**: when no
+COMMS listening is selected, the tuner runs ADS-B in the background, so this is the sky's
+baseline watch.
+
 **Requirements:**
 1. ADS-B reception via readsb/tar1090 (approach MUC, optional feed).
-2. Spoken/matrix announcement on aircraft approach (airline/flight number).
-3. Special alert for a rare aircraft (military/government/A380/first-seen
-   registration).
+2. **Low-overflight-over-Laim filter**: highlight/announce aircraft that are actually
+   *over us* and *low* — within a small radius of Laim and below an altitude ceiling —
+   not the high cruisers at FL350. This is what makes ADS-B interesting as the idle
+   default; the announcement/ticker fires for the low ones.
+3. Spoken/matrix announcement on such an overflight (airline/flight number).
+4. Special alert for a rare aircraft (military/government/A380/first-seen registration).
 
 **Value:** _TBD_
-**Implementation:** _TBD_
+**Implementation:** _TBD_ — note: the Laim coordinates + radius + altitude ceiling are
+tunable config (`src/shared/`); exact thresholds calibrated on site (how much low traffic
+actually passes over Laim).
 
 ---
 
@@ -309,11 +317,13 @@ implementation constraint carried over from the mode-architecture discussion.
 This is the **COMMS** main mode's listening side; each submode has a Munich station list
 on Button 3 (the sub-submode). Default station highlighted.
 
+COMMS defaults to **DAB+** (the cleanest signal), so its default station is
+Deutschlandfunk.
+
 **Requirements:**
-1. **FM + RDS** — Button 3 cycles the top Munich stations:
-   **Bayern 3 · 97.3** (default) · Antenne Bayern · 101.3 · Gong · 96.3 · Energy · 93.3 ·
-   Charivari · 95.5.
-2. **DAB+** — **Deutschlandfunk** (default) · Bayern 3 · BR24.
+1. **DAB+** (COMMS default submode) — **Deutschlandfunk** (default) · egoFM · BR-Klassik.
+2. **FM + RDS** — the top Munich stations: **Bayern 3 · 97.3** (default) · Antenne
+   Bayern · 101.3 · Gong · 96.3 · Energy · 93.3 · Charivari · 95.5.
 3. **Shortwave / world-band** — a free tune (no preset list), for evening DX.
 4. **DAB+ Emergency Warning Functionality (EWF)** — auto-play a warning when tuned to DAB.
 

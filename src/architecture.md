@@ -113,8 +113,8 @@ read: a **state diagram with parallel regions**, one region per main mode. Paral
 between regions = the modes run at once (LUMEN + COMMS together); one active state per
 region = a mode is in exactly one submode. Each region's **power-on default is
 highlighted** (amber, §7): LUMEN boots into *ticker* (you see it's on, but it isn't
-distracting), the SDR into *off*, the camera into *gesture* (you are present when you
-switch the unit on). **COMMS and SIGINT share the one SDR tuner, so they are two branches
+distracting), the SDR into **SIGINT / ADS-B idle** (so the flight ticker stays live),
+the camera into *gesture* (you are present when you switch the unit on). **COMMS and SIGINT share the one SDR tuner, so they are two branches
 of a single region** — a COMMS station *or* a SIGINT function *or* off, never two at once:
 the displacement, shown natively. Button 1 picks the focus, Button 2 the submode, Button 3
 the sub-submode (station / frequency), Button 4 is reserve.
@@ -139,16 +139,16 @@ stateDiagram-v2
     }
     --
     state "COMMS / SIGINT (one SDR tuner)" as SDR {
-      [*] --> SDRoff
+      [*] --> SIGINT
+      SIGINT --> SDRoff
       SDRoff --> COMMS
       COMMS --> SIGINT
-      SIGINT --> SDRoff
       state COMMS {
-        [*] --> FM
-        FM --> DAB
-        DAB --> SW
+        [*] --> DAB
+        DAB --> FM
+        FM --> SW
         SW --> Airband
-        Airband --> FM
+        Airband --> DAB
       }
       state SIGINT {
         [*] --> ADSB
@@ -170,21 +170,31 @@ stateDiagram-v2
     }
   }
   classDef boot fill:#fff3cd,stroke:#e0a800,stroke-width:3px
-  class ticker,SDRoff,Gesture boot
+  class ticker,ADSB,Gesture boot
 ```
 
-The SDR-listen submodes (COMMS) carry a **Munich station list** on Button 3, with the
-default highlighted (Bayern 3 / Deutschlandfunk / ATIS). Shortwave is a free tune, no
-preset list:
+The SDR-listen submodes (COMMS) carry a **Munich station list** on Button 3, each
+submode's default highlighted (DAB+ → Deutschlandfunk, FM → Bayern 3, airband →
+Approach); COMMS itself defaults to **DAB+ / Deutschlandfunk**. Shortwave is a free tune,
+no preset list:
 
 ```mermaid
 stateDiagram-v2
-  [*] --> FM
-  FM --> DAB
-  DAB --> SW
+  [*] --> DAB
+  DAB --> FM
+  FM --> SW
   SW --> Airband
-  Airband --> FM
-  state "FM  (Button 3 = station)" as FM {
+  Airband --> DAB
+  state "DAB+  (Button 3 = station)" as DAB {
+    state "Deutschlandfunk" as Dlf
+    state "egoFM" as egoFM
+    state "BR-Klassik" as BRKlassik
+    [*] --> Dlf
+    Dlf --> egoFM
+    egoFM --> BRKlassik
+    BRKlassik --> Dlf
+  }
+  state "FM" as FM {
     state "Bayern 3 · 97.3" as Bayern3
     state "Antenne Bayern · 101.3" as Antenne
     state "Gong · 96.3" as Gong
@@ -197,29 +207,20 @@ stateDiagram-v2
     EnergyM --> Charivari
     Charivari --> Bayern3
   }
-  state "DAB+" as DAB {
-    state "Deutschlandfunk" as Dlf
-    state "Bayern 3" as BR3
-    state "BR24" as BR24
-    [*] --> Dlf
-    Dlf --> BR3
-    BR3 --> BR24
-    BR24 --> Dlf
-  }
   state "SW (free tune)" as SW
   state "Airband · Munich EDDM" as Airband {
-    state "ATIS · 123.13" as ATIS
     state "Approach · 127.95" as Approach
+    state "ATIS · 123.13" as ATIS
     state "Director · 118.82" as Director
     state "Tower · 118.7" as Tower
-    [*] --> ATIS
-    ATIS --> Approach
-    Approach --> Director
+    [*] --> Approach
+    Approach --> ATIS
+    ATIS --> Director
     Director --> Tower
-    Tower --> ATIS
+    Tower --> Approach
   }
   classDef boot fill:#fff3cd,stroke:#e0a800,stroke-width:3px
-  class Bayern3,Dlf,ATIS boot
+  class Bayern3,Dlf,Approach boot
 ```
 
 Within-region arrows are the Button-2 (and Button-3) cycle order; the app can jump to any
@@ -327,16 +328,15 @@ These defaults are the **amber-highlighted states** in the §3 diagram.
 |---|---|---|
 | Mode / pin | **automatic**, sensor-driven, no pinned mode | a stale pin never outlives a power cycle |
 | **LUMEN** (light) | **ticker** (info-ticker) | you can see the unit is on, but it isn't distracting — not a garish flash, not dark |
-| **COMMS / SIGINT** (SDR) | **off** | no radio/audio on boot until asked (open: or a silent ADS-B/SIGINT idle so the flight ticker / sensor net stay live — §9) |
+| **COMMS / SIGINT** (SDR) | **SIGINT / ADS-B idle** (silent) | ADS-B is the tuner's idle default so the flight ticker (U3.2) and sensor net stay live; no audio (SIGINT is data-only). Filtered to **low overflights near Laim**, not high cruisers (U5). Turning COMMS on displaces it. |
 | **Camera** (Vision) | **gesture** (MediaPipe) | you are present when you flip the mains, so it comes up ready to read hand gestures; it hands over to security only after the absence hold |
 | **SENTRY** (security) | **off** | you are home at power-on |
 | **Speaker** | **silent** | no auto-play; only overlays (alarm/warning) may make sound |
 | **Baseline** | up (BME log, BirdNET, Netdata) | always on, no choice |
 
 Rationale: the box boots into a **visible-but-calm** state (the ticker shows it lives),
-present-aware (camera on gesture), and quiet (no sound, no radio). The one genuinely open
-cell is the SDR default (off vs. a silent ADS-B idle), tied to the SDR-idle-default
-question in §9.
+present-aware (camera on gesture), quiet (no sound), and already watching the sky (ADS-B
+idle) — which also keeps the flight ticker fresh.
 
 ## 8. Data flow (MQTT)
 
@@ -360,15 +360,15 @@ InfluxDB/Grafana.
 
 1. **Overlay priority (§5)** — confirm the ordering, especially safety-warning vs
    intercom.
-2. **SDR idle default** — decide whether the SDR default (on boot and when no radio
-   feature is on) is *off* or a silent ADS-B/SIGINT idle, so the flight ticker (U3.2)
-   and sensor net (U13) can stay live. Also sets the §7 Panel/SDR power-on default.
-3. **Build order** — which use case to implement first (the user's sequencing call).
-4. **Per-mode settings and optional app presets** — the concrete submode lists and their
-   settings per main mode, plus the automatic-trigger heuristics (the Vision axis's
-   presence schedule is already defined; the rest are not).
-5. **Reverse proxy** for the several web UIs (Netdata, tar1090, Frigate, BirdNET-Go) —
+2. **Build order** — which use case to implement first (the user's sequencing call).
+3. **Per-mode settings and optional app presets** — the concrete submode lists and their
+   settings per main mode, plus the automatic-trigger heuristics (the Vision presence
+   schedule and the SDR idle default are defined; the rest are not).
+4. **Reverse proxy** for the several web UIs (Netdata, tar1090, Frigate, BirdNET-Go) —
    nice-to-have, minor.
+
+*Resolved:* the **SDR idle default** — ADS-B (SIGINT), silent, filtered to low overflights
+near Laim, so the flight ticker stays live and turning COMMS on displaces it.
 
 *Resolved:* the Pi-power coupling worry (§2, unit is all-on/all-off); the combinable-
 feature model + resource table (§3–4); the software stack (Python arbiter as a host
