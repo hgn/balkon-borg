@@ -27,8 +27,9 @@ split into src/") for why.
 - **Response = one-shot Effector 1** (short LUMEN flash + police pattern + short peep) +
   immediate off-site recording (U7 clip) + push. **No escalation ladder / siren** (user's
   call — keep it mild). Short cooldown so a lingering person doesn't loop the deterrent.
-- **Entry grace ~20–30 s** before it fires, disarm via panel/app, so you don't push/record
-  yourself on arrival. (Applied as the sensible default; flagged to the user.)
+- **Entry grace 30 s** before it fires (user-confirmed), disarm via panel/app, so you don't
+  push/record yourself on arrival. During the grace the panel gives a **gentle blink/pulse**
+  as a soft "still armed, disarm me" reminder — not the Effector 1 deterrent yet.
 - Live voice warning is **manual** via U21, not automatic; U11 adds no own audio path.
 
 **U21 (new) — Live view & talk-down (app):** the phone's window into the box.

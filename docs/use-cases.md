@@ -522,9 +522,12 @@ siren-grade escalation you never wanted.
 - **Voice warning (U11.4):** not automatic — you get the push, open U21, watch the live
   image and press-to-talk. Reuses the U21 talk-down path (speaker at the intercom priority,
   `architecture.md` §5); U11 does not add its own audio path.
-- **Entry handling:** first confirmed person starts a **~20–30 s entry grace**; disarm in
-  that window (panel now reachable, or app) and nothing fires — so you don't push/record
-  yourself every time you come home. Miss the window and Effector 1 + push + recording run.
+- **Entry handling:** first confirmed person starts a **30 s entry grace**. During it the
+  panel gives a **gentle blink/pulse** — a soft reminder that SENTRY is armed and you still
+  have to disarm — *not* the Effector 1 deterrent yet. Disarm in that window (the panel is
+  now reachable, or the app) and nothing else fires, so you don't push/record yourself
+  every time you come home. Let the 30 s lapse and the full Effector 1 + push + recording
+  run.
 - **Alarm priority:** the security alarm sits at the **top** of the U9 speaker ladder
   (above talk-down and media); it re-asserts until the condition clears (`architecture.md`
   §5).
