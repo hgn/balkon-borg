@@ -73,8 +73,13 @@ class _BorgShellState extends State<BorgShell> with WidgetsBindingObserver {
                 padding: const EdgeInsets.symmetric(horizontal: 22),
                 child: AnimatedSwitcher(
                   duration: balkonScreenEnterDuration,
-                  switchInCurve: balkonScreenEnterCurve,
-                  switchOutCurve: balkonScreenEnterCurve,
+                  // Staggered intervals instead of a plain cross-fade: the
+                  // outgoing screen is fully gone within the first ~35% of
+                  // the switch, the incoming one only starts after that —
+                  // the two screens barely overlap (user feedback: the
+                  // 450ms cross-fade showed both too visibly).
+                  switchInCurve: const Interval(0.35, 1.0, curve: balkonScreenEnterCurve),
+                  switchOutCurve: const Interval(0.65, 1.0),
                   transitionBuilder: (child, animation) => FadeTransition(
                     opacity: animation,
                     child: AnimatedBuilder(

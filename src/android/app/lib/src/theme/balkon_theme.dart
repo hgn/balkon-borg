@@ -150,7 +150,12 @@ const Duration balkonSpringDuration = Duration(milliseconds: 300);
 
 /// Screen/tab-content enter transition (fade + rise + scale), motion.md §3.
 const Curve balkonScreenEnterCurve = Cubic(0.22, 1.0, 0.36, 1.0);
-const Duration balkonScreenEnterDuration = Duration(milliseconds: 450);
+
+/// Tab-switch duration. motion.md says 450ms, but on-device the cross-fade
+/// overlap of two screens was too visible (user feedback 2026-07-17) —
+/// shortened, with the switcher's in/out intervals staggered in shell.dart
+/// so the outgoing screen is gone before the incoming one appears.
+const Duration balkonScreenEnterDuration = Duration(milliseconds: 280);
 
 /// Bottom-sheet slide-up, motion.md §2.
 const Curve balkonSheetCurve = Cubic(0.22, 1.1, 0.36, 1.0);
