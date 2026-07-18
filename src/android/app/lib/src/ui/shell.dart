@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../services/watch_window.dart';
 import '../state/app_state.dart';
 import '../state/settings.dart';
 import '../theme/balkon_theme.dart';
@@ -9,7 +12,7 @@ import 'home_screen.dart';
 import 'log_screen.dart';
 import 'radio_screen.dart';
 import 'settings_screen.dart';
-import 'widgets/borg_sheet.dart';
+import 'widgets/health_sheet.dart';
 
 /// The app shell: header (eyebrow/wordmark/theme toggle/health dot/settings)
 /// + floating bottom nav + animated tab content (components.md, motion.md §3).
@@ -20,8 +23,9 @@ class BorgShell extends StatefulWidget {
   State<BorgShell> createState() => _BorgShellState();
 }
 
-class _BorgShellState extends State<BorgShell> {
+class _BorgShellState extends State<BorgShell> with WidgetsBindingObserver {
   int _index = 0;
+  static const _watchWindow = WatchWindowService();
 
   static const _tabs = [
     HomeScreen(),
@@ -29,6 +33,30 @@ class _BorgShellState extends State<BorgShell> {
     RadioScreen(),
     LogScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _armWatchWindow(); // app start (src/shared/README.md notification model).
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _armWatchWindow(); // app resume.
+  }
+
+  /// Fire-and-forget: a no-op in demo mode (no real broker to watch — the
+  /// Settings screen's status row is the discoverable hint for that, chosen
+  /// over a SnackBar here so the default demo-mode-on first launch doesn't
+  /// greet the user with an unsolicited notice).
+  void _armWatchWindow() => unawaited(_watchWindow.arm(context.read<Settings>()));
 
   @override
   Widget build(BuildContext context) {
@@ -171,7 +199,7 @@ class _ThemeTogglePill extends StatelessWidget {
 }
 
 /// Aggregate health status dot (D1): green/amber/red, grey while
-/// disconnected. Tap opens a placeholder health sheet (full design in E6).
+/// disconnected. Tap opens the health sheet (widgets/health_sheet.dart, E6).
 class _HealthDot extends StatelessWidget {
   const _HealthDot();
 
@@ -186,48 +214,13 @@ class _HealthDot extends StatelessWidget {
       AggregateHealth.unknown => scheme.outline,
     };
     return GestureDetector(
-      onTap: () => _showHealthSheet(context, state),
+      onTap: () => showHealthSheet(context, state),
       child: Container(
         width: 12,
         height: 12,
         margin: const EdgeInsets.symmetric(horizontal: 2),
         decoration: BoxDecoration(color: color, shape: BoxShape.circle),
       ),
-    );
-  }
-
-  void _showHealthSheet(BuildContext context, AppState state) {
-    showBorgSheet<void>(
-      context: context,
-      builder: (sheetContext) {
-        final textTheme = Theme.of(sheetContext).textTheme;
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(22, 10, 22, 30),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const BorgSheetGrabber(),
-              const SizedBox(height: 18),
-              const BorgSheetHeader(title: 'Health'),
-              const SizedBox(height: 12),
-              if (state.health.isEmpty)
-                Text('no health data yet', style: textTheme.bodyMedium)
-              else
-                for (final entry in state.health.entries)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Row(
-                      children: [
-                        Expanded(child: Text(entry.key, style: textTheme.bodyLarge)),
-                        Text(entry.value.state.name, style: textTheme.bodyMedium),
-                      ],
-                    ),
-                  ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

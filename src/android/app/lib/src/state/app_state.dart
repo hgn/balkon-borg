@@ -131,13 +131,8 @@ class AppState extends ChangeNotifier {
       health[topic.substring(Topics.healthPrefix.length)] =
           CapabilityHealth.fromJson(json);
     } else if (topic == Topics.eventRecent) {
-      final list = json['events'];
-      if (list is List) {
-        recentEvents = [
-          for (final e in list)
-            if (e is Map<String, dynamic>) BorgEvent.fromJson(e),
-        ];
-      }
+      final parsed = BorgEvent.tryParseRing(json);
+      if (parsed != null) recentEvents = parsed;
     } else if (topic == Topics.envRecent) {
       final list = json['samples'];
       if (list is List) {

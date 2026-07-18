@@ -5,6 +5,10 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!-- U21 push-to-talk recording (Camera screen). -->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <!-- Watch-window foreground service (E6): keeps the periodic MQTT event
+         check alive while the app is backgrounded, for up to the 6 h window. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
     <application
         android:label="Balkon-Borg"
         android:name="${applicationName}"
@@ -37,6 +41,20 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- flutter_foreground_task (E6 watch-window service). Android 14+
+             requires foregroundServiceType on the manifest declaration;
+             dataSync fits the "periodically fetch from the broker" nature of
+             the check better than any of the media/location/etc. types.
+             stopWithTask stays false (default): the whole point of the watch
+             window is to keep checking after the app is swiped away, up to
+             the 6 h window (src/shared/README.md).
+             Warning (upstream plugin docs): do not change the service name. -->
+        <service
+            android:name="com.pravera.flutter_foreground_task.service.ForegroundService"
+            android:foregroundServiceType="dataSync"
+            android:stopWithTask="false"
+            android:exported="false" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

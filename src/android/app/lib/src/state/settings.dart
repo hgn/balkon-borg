@@ -39,6 +39,25 @@ class Settings extends ChangeNotifier {
   bool notify(EventCategory c) =>
       _prefs.getBool('notify_${c.name}') ?? (c == EventCategory.security);
 
+  /// End of the current watch window (`WatchWindowService`, E6), or `null`
+  /// if not armed. Persisted (not just in-memory) so a restarted app and the
+  /// foreground-task background isolate agree on the same deadline without
+  /// talking to each other directly — both just read this via
+  /// `Settings.load()`/`SharedPreferences`.
+  DateTime? get watchWindowArmedUntil {
+    final ms = _prefs.getInt('watch_window_armed_until');
+    return ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms);
+  }
+
+  Future<void> setWatchWindowArmedUntil(DateTime? until) async {
+    if (until == null) {
+      await _prefs.remove('watch_window_armed_until');
+    } else {
+      await _prefs.setInt('watch_window_armed_until', until.millisecondsSinceEpoch);
+    }
+    notifyListeners();
+  }
+
   Future<void> setBroker({
     String? host,
     int? port,

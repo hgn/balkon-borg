@@ -26,6 +26,12 @@ dependencies:
   # RECORD_AUDIO runtime permission itself, so no separate permission_handler
   # dependency is needed.
   record: ^7.1.1
+  # Watch-window local notifications (E6, src/shared/README.md "Notification
+  # model — no push server").
+  flutter_local_notifications: ^22.0.1
+  # Watch-window background execution while the app is backgrounded: a
+  # visible low-priority foreground service ("Borg wacht · bis HH:MM").
+  flutter_foreground_task: ^10.0.0
 
 dev_dependencies:
   flutter_test:

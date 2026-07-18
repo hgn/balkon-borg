@@ -34,14 +34,23 @@ browse + sideload; the app checks `version.json` for updates).
 
 ## Notification model (no push server)
 
-Any app use arms a **6-hour watch window**: the app periodically checks MQTT (default
-30 s, configurable in settings) and raises **local notifications** from new entries in
-the retained `balkon/event/recent` ring — per-category switchable (security defaults
-on). After 6 idle hours the app does zero background work until used again. The watch
-window service itself is not built yet; settings and the event model are in place.
+Any app use (start or resume) arms a **6-hour watch window**
+(`lib/src/services/watch_window.dart`): a `flutter_foreground_task` background isolate
+periodically checks MQTT (default 30 s, configurable in Settings), diffs the retained
+`balkon/event/recent` ring against the last-seen timestamp
+(`lib/src/services/event_differ.dart`, unit-tested), and raises local notifications
+(`flutter_local_notifications`) for new entries in enabled categories — security
+defaults on. A low-priority "Borg wacht · bis HH:MM" notification with a "Beenden"
+action stays visible while armed, honestly reflecting the background work. After 6 idle
+hours the service stops itself; zero background work until the next app use re-arms it.
+Demo mode is a no-op (no real broker) — shown as a status line in Settings rather than
+firing anything.
 
 ## Status
 
-Skeleton: MQTT service (auto-reconnect), typed contract models, Provider state,
-placeholder status UI (connection, modes, health, events) and a settings screen.
-Next: apply the design, live view (WebRTC), talk-down, the watch-window service.
+E1–E6 done: theme, shell (header/health-dot/settings gear), all four tabs (Home/
+Kamera/Radio/Log) in the design style, the settings + health screens restyled, and the
+watch-window notification service. Live view (WebRTC against go2rtc) stays deferred
+until go2rtc runs on the Pi (D5); talk-down (`/api/talkdown`) is wired but untested
+against a real arbiter. Demo mode (`DemoSource`) keeps every screen developable without
+the Pi broker.

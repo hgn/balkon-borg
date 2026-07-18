@@ -28,4 +28,18 @@ class BorgEvent {
   final DateTime ts;
   final EventCategory category;
   final String text;
+
+  /// Parses the `{"v":1,"events":[...]}` payload of `balkon/event/recent`.
+  /// Returns `null` (not an empty list) when `events` is missing/malformed,
+  /// so callers can tell "no ring in this payload" from "empty ring" and
+  /// leave prior state untouched — shared by `AppState` and the watch-window
+  /// service (`services/watch_window.dart`) so the two never drift.
+  static List<BorgEvent>? tryParseRing(Map<String, dynamic> json) {
+    final list = json['events'];
+    if (list is! List) return null;
+    return [
+      for (final e in list)
+        if (e is Map<String, dynamic>) BorgEvent.fromJson(e),
+    ];
+  }
 }

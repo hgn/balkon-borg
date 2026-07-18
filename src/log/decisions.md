@@ -14,6 +14,52 @@ split into src/") for why.
 
 ---
 
+## 2026-07-17 — Android app E6: watch-window service built (settings/health restyled, E1–E6 done)
+
+Stage E6 (the last one) implemented: settings/health screens in the design style, plus
+the watch-window service the notification model has been waiting on since M1.
+
+- **`flutter_local_notifications` + `flutter_foreground_task`** (only new deps, as
+  scoped): the foreground task shows a visible "Borg wacht · bis HH:MM" notification
+  with a "Beenden" action while armed — an honest low-priority presence rather than a
+  hidden background job. Requires `android:foregroundServiceType="dataSync"` on the
+  service (Android 14+) and `FOREGROUND_SERVICE`/`FOREGROUND_SERVICE_DATA_SYNC` in the
+  manifest; `flutter_local_notifications` additionally needs core library desugaring
+  enabled in `app/build.gradle.kts` (`isCoreLibraryDesugaringEnabled` +
+  `desugar_jdk_libs`), not documented anywhere obvious until the release build failed
+  on it.
+- **No AlarmManager**: the periodic check rides the foreground service's own repeat
+  timer (`ForegroundTaskEventAction.repeat`), not exact alarms. A foreground service's
+  timer drifts negligibly for a 10 s–5 min interval while the process is alive, which
+  covers the whole 6 h window; exact alarms would add the `SCHEDULE_EXACT_ALARM`
+  permission and Google Play policy friction for no real benefit here.
+- **Isolate split**: `WatchWindowTaskHandler` runs in `flutter_foreground_task`'s
+  background isolate, which shares no memory with the main isolate (no
+  `BuildContext`/`Provider`). It re-derives everything from `SharedPreferences`
+  (`Settings.load()`, same as the main isolate) and a fresh short-lived `MqttService`
+  connection per check — connect, catch the retained `balkon/event/recent` message
+  (8 s timeout), disconnect. Simpler and more battery-honest than holding a persistent
+  MQTT connection open for up to 6 h.
+- **First-run notification-bomb cap**: a fresh install (or cleared last-seen marker)
+  has no baseline, so every entry in the ~20-item retained ring would look "new" the
+  first time the watch window connects. Decision: cap first-run notifications to the
+  newest 3 ring entries (`EventDiffer.firstRunNotifyCap`), while the persisted
+  last-seen timestamp still always advances to the ring's newest entry regardless —
+  nothing is ever notified twice, and nothing older is notified retroactively either.
+  Rejected: notifying nothing on first run — rejected because a security event sitting
+  in the ring exactly when the app is freshly installed/reopened is the case the watch
+  window exists for.
+- **Demo-mode hint moved from a SnackBar to a Settings status line**: the plan sketched
+  a SnackBar on arm-in-demo-mode, but arming fires on every app start/resume and demo
+  mode defaults **on**, so a literal SnackBar would greet every first-time user
+  unsolicited on first launch. Settings' "Watch-Window" status row reads
+  `settings.demoMode` directly instead ("Demo-Modus — kein Watch-Window") — accurate,
+  discoverable where the user would look, and doesn't fire from `initState`.
+- **App version is a hardcoded const** (`0.1.0 (1)`, mirroring `pubspec.yaml`) rather
+  than a `package_info_plus` dependency — E6 scope didn't otherwise need runtime
+  version introspection; revisit if the app ever needs to compare itself against the
+  borg-pi's `/apk/version.json`.
+
 ## 2026-07-17 — Android app build plan agreed (see android/implementation-plan.md)
 
 Design system delivered to `src/android/design/` (tokens, ready ThemeData, component
