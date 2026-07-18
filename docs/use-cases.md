@@ -715,10 +715,34 @@ picking a specific decoder first.
 ## U18 — Seasonal time-lapse
 
 **Requirements:**
-1. One camera frame a day → end-of-season GIF.
+1. Capture one camera frame **every 30 minutes**, persisted on the **borg-pi itself**
+   (not the nas-Pi) — the unit is only powered for roughly a season (~90 days) anyway, so
+   the archive is naturally bounded and doesn't need off-site survivability.
+2. Compile the frames into a time-lapse GIF.
 
-**Value:** _TBD_
-**Implementation:** _TBD_
+**Value:** a season's worth of the balcony's light and life compressed into a few
+seconds — sunrises drifting, plants growing, weather rolling through — building up for as
+long as the unit happens to be on, without needing to babysit a separate camera setup.
+
+**Implementation:**
+- **Capture:** every 30 minutes, a **plain frame** (not a Frigate detection) from the same
+  camera U7 uses — reuses the hardware, doesn't touch the Vision axis's detector choice.
+  At this cadence a season (~90 days) is roughly 4,300 small JPEGs, on the order of a few
+  hundred MB — trivial for the SD card, and the write rate (twice an hour) is not a wear
+  concern.
+- **Storage:** local filesystem on the borg-pi, a season-scoped directory. Naturally
+  bounded (unlike U7's 24/7 concern) because the unit itself is only on for a season, so
+  no separate retention/pruning logic is needed beyond starting a fresh directory per
+  season.
+- **Compilation:** the GIF is rebuilt/extended periodically (e.g. daily) from the frames
+  so far, not only once "the season" is declared over — the app can see the time-lapse
+  building up throughout, not just as a final reveal. Compiling a new season (or wrapping
+  up the current one) is a **manual action**, not a calendar trigger — simplest, and
+  matches the unit's own informal on/off rhythm rather than inventing season-boundary
+  logic.
+- **Delivery:** same shape as U14's images — the GIF is not meant to live only on the Pi
+  long-term; expose it for the app to fetch (retained MQTT pointer + HTTP, as in U14) so
+  it ends up saved on the phone too, not solely dependent on the Pi's own SD card.
 
 ---
 

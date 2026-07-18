@@ -78,6 +78,7 @@ Topic scheme (target):
 | `balkon/noaa/image` **(retained)** | borg-pi5 → app | NOAA APT image ready (U14): id/timestamp/HTTP URL, image not archived on the Pi |
 | `balkon/iss/sstv/image` **(retained)** | borg-pi5 → app | ISS SSTV image ready (U14): id/timestamp/HTTP URL |
 | `balkon/meteor/recent` **(retained)** | borg-pi5 → dashboards | GRAVES meteor-scatter pings (U14), last ~50 |
+| `balkon/timelapse/gif` **(retained)** | borg-pi5 → app | seasonal time-lapse GIF ready (U18): id/timestamp/HTTP URL |
 
 (The ESP32 currently uses ESPHome MQTT discovery for its own sensor topics, plus the
 explicit `wled/balkon` topics.)

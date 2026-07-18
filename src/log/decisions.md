@@ -14,6 +14,20 @@ split into src/") for why.
 
 ---
 
+## 2026-07-17 — U18: seasonal time-lapse, stored on the borg-pi, every 30 min
+
+**Storage — on the borg-pi itself, not the nas-Pi** (user's call, against the earlier U7/
+U14-style off-site instinct): the unit is only powered roughly a season (~90 days), so the
+archive is naturally bounded without needing off-site survivability, and local storage is
+simplest. **Capture cadence: every 30 minutes** (not once a day as first drafted) — at
+that rate a season is ~4,300 small JPEGs, a few hundred MB, no SD wear concern at twice an
+hour.
+
+**GIF compilation is a manual action**, not a calendar trigger, and rebuilds/extends
+periodically rather than waiting for "the season" to end — matches the unit's informal
+on/off rhythm instead of inventing season-boundary logic. Delivery reuses U14's shape
+(retained MQTT pointer + HTTP fetch) so the compiled GIF ends up saved in the app too.
+
 ## 2026-07-17 — U4: env trend buffer gets a retained MQTT snapshot too
 
 Sampling confirmed at roughly **once a minute**. The existing in-RAM ring buffer (a few
