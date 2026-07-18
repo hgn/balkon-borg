@@ -14,6 +14,30 @@ split into src/") for why.
 
 ---
 
+## 2026-07-17 — Android app skeleton: Provider, minSdk 33, net.jauu.balkonborg
+
+The Flutter app skeleton is built (`src/android/app/`). Decisions, with the user:
+
+- **State management: Provider** — Riverpod and Bloc considered, user chose the simpler
+  classic; the app is small enough that Provider's fewer concepts win.
+- **minSdk 33** (Android 13+): modern notification APIs without legacy paths; the user's
+  phone is recent.
+- **Application ID `net.jauu.balkonborg`** (domain-reversed, no underscore — the Dart
+  *package* name is `balkon_borg` because pub requires snake_case; Dart files also
+  follow the Dart snake_case convention, an accepted exception to the global
+  hyphen-filename rule, like importable Python modules).
+- **Cleartext explicitly allowed** (`usesCleartextTraffic="true"`): Android blocks plain
+  HTTP by default since API 28 — this flag is the app-side half of the no-TLS decision.
+- **Design lands in `src/android/design/`** (from the user's Claude-Design session);
+  the current UI is a deliberate placeholder (status/health/modes/events + settings)
+  until that design is applied.
+- **Toolchain in `src/android/env/`** (Java 21, SDK 34+36, Flutter 3.44.6), activated
+  via `env.sh` (bash), git-ignored; `setup-env.sh` rebuilds it. Makefile wraps every
+  target through it (`make apk/check/run`).
+- `lib/src/contract/topics.dart` mirrors `shared/README.md` — the two change together.
+  The event-ring element schema (`{ts, category, text}`) is now explicit in the
+  contract.
+
 ## 2026-07-17 — No TLS ever; ntfy dropped for an app self-wake model; APK self-hosted
 
 **No TLS/HTTPS anywhere** (user's call): plain MQTT + HTTP, LAN + WireGuard only, low

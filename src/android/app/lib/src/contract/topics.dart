@@ -1,0 +1,54 @@
+/// The MQTT/HTTP interface contract, mirrored from `src/shared/README.md`.
+/// That file is authoritative; keep this in sync with it.
+library;
+
+/// Main modes, also path segments in mode/cmd topics.
+enum MainMode { lumen, comms, sigint, sentry }
+
+abstract final class Topics {
+  // State (retained, arbiter-owned).
+  static String mode(MainMode m) => 'balkon/mode/${m.name}';
+  static const modeFocus = 'balkon/mode/focus';
+  static const stateKnob = 'balkon/state/knob';
+
+  // Commands (fire-and-forget; the state topic echo is the ack).
+  static String cmdMode(MainMode m) => 'balkon/cmd/mode/${m.name}';
+  static const cmdFocus = 'balkon/cmd/focus';
+  static const cmdBrightness = 'balkon/cmd/brightness';
+  static const cmdVolume = 'balkon/cmd/volume';
+
+  // Health (retained).
+  static const health = 'balkon/health';
+  static const healthPrefix = 'balkon/health/';
+
+  // Events (event/recent is the retained ring the watch window diffs against).
+  static const eventRecent = 'balkon/event/recent';
+  static const eventPrefix = 'balkon/event/';
+
+  // Telemetry / feeds.
+  static const envRecent = 'balkon/env/recent';
+  static const presence = 'balkon/presence';
+
+  // Media pointers (retained).
+  static const noaaImage = 'balkon/noaa/image';
+  static const sstvImage = 'balkon/iss/sstv/image';
+  static const timelapseVideo = 'balkon/timelapse/video';
+
+  /// Everything the app subscribes to.
+  static const subscription = 'balkon/#';
+}
+
+abstract final class BorgHttp {
+  /// Default host; overridable in the app settings.
+  static const defaultHost = 'borg-pi';
+  static const defaultMqttPort = 1883;
+
+  static Uri statusPage(String host) => Uri.http(host, '/');
+  static Uri healthJson(String host) => Uri.http(host, '/health.json');
+  static Uri talkdown(String host) => Uri.http(host, '/api/talkdown');
+  static Uri apkVersion(String host) => Uri.http(host, '/apk/version.json');
+
+  /// go2rtc MJPEG fallback; the primary live-view path is WebRTC (flutter_webrtc).
+  static Uri liveMjpeg(String host) =>
+      Uri.http('$host:1984', '/api/stream.mjpeg', {'src': 'cam'});
+}

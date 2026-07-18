@@ -1,0 +1,32 @@
+name: balkon_borg
+description: "Balkon-Borg companion app: mode control, live view, health and events."
+publish_to: 'none'
+
+# versionName + versionCode; served as /apk/version.json on the borg-pi.
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  # State management (project decision: Provider, not Riverpod/Bloc).
+  provider: ^6.1.2
+  # MQTT client for the balkon/* contract (plain MQTT, no TLS).
+  mqtt_client: ^10.8.0
+  # U21 live view: WebRTC against go2rtc (MJPEG as fallback).
+  flutter_webrtc: ^1.2.0
+  # Media/APK fetch over plain HTTP.
+  http: ^1.2.2
+  # Settings persistence (broker host, intervals, notification toggles).
+  shared_preferences: ^2.3.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

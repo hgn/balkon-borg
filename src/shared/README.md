@@ -124,7 +124,7 @@ without restart.
 | `balkon/event/bird` | U6 bird-of-the-day / notable detection |
 | `balkon/event/storm` | U9.3 pressure-drop warning |
 | `balkon/event/security` | U11 confirmed person (alarm) |
-| `balkon/event/recent` | **retained** ring of the last ~20 events (`{"v":1,"events":[…]}`), so a periodically-waking client can diff against what it last saw instead of having to be online at fire time |
+| `balkon/event/recent` | **retained** ring of the last ~20 events, so a periodically-waking client can diff against what it last saw instead of having to be online at fire time. Payload: `{"v":1,"events":[{"ts":…,"category":"aircraft"\|"bird"\|"storm"\|"security"\|"tpms","text":"…"},…]}`, newest first |
 
 **Notification model — no push server.** There is no ntfy/FCM/UnifiedPush. Instead the
 **app self-wakes**: any use of the app arms a **6-hour watch window**; within it the app
