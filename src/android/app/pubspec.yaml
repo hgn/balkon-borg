@@ -30,3 +30,26 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/fonts/Manrope-OFL.txt
+    - assets/fonts/SpaceGrotesk-OFL.txt
+
+  # Bundled offline (D3): variable TTFs from the google/fonts OFL repo, each
+  # weight entry pointing at the same variable-font file (Flutter's supported
+  # way to use a variable font without a runtime download).
+  fonts:
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope-Variable.ttf
+          weight: 600
+        - asset: assets/fonts/Manrope-Variable.ttf
+          weight: 700
+        - asset: assets/fonts/Manrope-Variable.ttf
+          weight: 800
+    - family: SpaceGrotesk
+      fonts:
+        - asset: assets/fonts/SpaceGrotesk-Variable.ttf
+          weight: 600
+        - asset: assets/fonts/SpaceGrotesk-Variable.ttf
+          weight: 700

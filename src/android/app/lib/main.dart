@@ -4,7 +4,8 @@ import 'package:provider/provider.dart';
 import 'src/services/mqtt_service.dart';
 import 'src/state/app_state.dart';
 import 'src/state/settings.dart';
-import 'src/ui/home_screen.dart';
+import 'src/theme/balkon_theme.dart';
+import 'src/ui/shell.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,15 +27,18 @@ class BalkonBorgApp extends StatelessWidget {
           create: (_) => AppState(MqttService(), settings)..connect(),
         ),
       ],
-      child: MaterialApp(
-        title: 'Balkon-Borg',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.tealAccent,
-            brightness: Brightness.dark,
-          ),
+      child: Consumer<Settings>(
+        builder: (context, settings, _) => MaterialApp(
+          title: 'Balkon-Borg',
+          theme: buildBalkonTheme(brightness: Brightness.light),
+          darkTheme: buildBalkonTheme(brightness: Brightness.dark),
+          themeMode: settings.themeMode,
+          // Light/dark crossfade (motion.md §5): MaterialApp already wraps
+          // its child in an AnimatedTheme, driven by these two knobs.
+          themeAnimationDuration: balkonThemeCrossfadeDuration,
+          themeAnimationCurve: balkonThemeCrossfadeCurve,
+          home: const BorgShell(),
         ),
-        home: const HomeScreen(),
       ),
     );
   }

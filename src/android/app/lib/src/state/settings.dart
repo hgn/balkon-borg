@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -19,6 +20,15 @@ class Settings extends ChangeNotifier {
   String get username => _prefs.getString('username') ?? 'app';
   String get password => _prefs.getString('password') ?? '';
 
+  // Theme (E1): dark is the native/default tone, light is user-selectable
+  // via the header toggle pill (binary — no "system" option in the design).
+  ThemeMode get themeMode =>
+      _prefs.getString('theme_mode') == 'light' ? ThemeMode.light : ThemeMode.dark;
+
+  // Demo mode (D2): feeds AppState with realistic fake data instead of the
+  // real MQTT broker. Default on until the Pi broker (M1) exists.
+  bool get demoMode => _prefs.getBool('demo_mode') ?? true;
+
   // Watch window (self-wake notification model, src/shared/README.md):
   // any app use arms 6 h of periodic MQTT checks; interval is configurable.
   static const watchWindow = Duration(hours: 6);
@@ -39,6 +49,16 @@ class Settings extends ChangeNotifier {
     if (port != null) await _prefs.setInt('port', port);
     if (username != null) await _prefs.setString('username', username);
     if (password != null) await _prefs.setString('password', password);
+    notifyListeners();
+  }
+
+  Future<void> setThemeMode(ThemeMode mode) async {
+    await _prefs.setString('theme_mode', mode == ThemeMode.light ? 'light' : 'dark');
+    notifyListeners();
+  }
+
+  Future<void> setDemoMode(bool on) async {
+    await _prefs.setBool('demo_mode', on);
     notifyListeners();
   }
 
