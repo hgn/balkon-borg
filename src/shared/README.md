@@ -14,6 +14,9 @@ here for the first time.
 
 ## Conventions
 
+- **Plain HTTP and plain MQTT — no TLS, ever.** LAN + WireGuard only, low security
+  needs (user's call). Longevity and stability beat transport encryption here: no
+  certificate infrastructure that expires and breaks the unit years later.
 - **Payloads are JSON**, UTF-8, with a schema version field `"v": 1` (bump on breaking
   change). Consumers ignore unknown fields (forward compatibility).
 - **Timestamps** `ts`: ISO-8601 with offset (`2026-07-18T21:14:03+02:00`). While the
@@ -120,11 +123,17 @@ without restart.
 | `balkon/event/aircraft` | U5 trigger fired (low overflight / special) — `{"v":1,"ts":…,"kind":…,"text":…}` |
 | `balkon/event/bird` | U6 bird-of-the-day / notable detection |
 | `balkon/event/storm` | U9.3 pressure-drop warning |
-| `balkon/event/security` | U11 confirmed person (alarm) — mirrored to push |
+| `balkon/event/security` | U11 confirmed person (alarm) |
+| `balkon/event/recent` | **retained** ring of the last ~20 events (`{"v":1,"events":[…]}`), so a periodically-waking client can diff against what it last saw instead of having to be online at fire time |
 
-Events drive UI toasts and TTS; **push delivery** (ntfy on the nas-Pi + UnifiedPush,
-switchable in the app) mirrors `event/security` always and other events per the app's
-settings. ntfy topics: `borg-security`, `borg-events`.
+**Notification model — no push server.** There is no ntfy/FCM/UnifiedPush. Instead the
+**app self-wakes**: any use of the app arms a **6-hour watch window**; within it the app
+periodically checks MQTT (default every 30 s, configurable in the app) and raises
+**local Android notifications** from new entries in `balkon/event/recent` — security
+always, other categories (tire sensor, aircraft, bird, storm) per the app's notification
+settings. After 6 h without use the app goes strictly idle (zero background work) until
+the next use re-arms the window. Honest consequence: an alarm reaches the phone only
+inside a watch window — accepted (U11).
 
 ## HTTP — borg-pi endpoints and ports
 
@@ -132,21 +141,25 @@ All LAN/WireGuard only; nothing is internet-exposed.
 
 | Port | Service | Purpose |
 |---|---|---|
-| **80** | arbiter (aiohttp) | status page `/`, `GET /health.json`, `GET /media/…`, `POST /api/talkdown` |
+| **80** | arbiter (aiohttp) | status page `/`, `GET /health.json`, `GET /media/…`, `GET /apk/…`, `POST /api/talkdown` |
 | 1883 | Mosquitto | MQTT |
-| 1984 | go2rtc | live camera: MJPEG/WebRTC stream API (U21 live view) |
+| 1984 | go2rtc | live camera: WebRTC/MJPEG stream API (U21 live view) |
 | 8971 | Frigate | UI + clip archive |
 | 8078 | tar1090 | ADS-B map |
 | 8080 | BirdNET-Go | bird log UI |
 | 8073 | OpenWebRX | spectrum waterfall (U17) |
 | 19999 | Netdata | system health (host metrics) |
-| — | ntfy on **nas-pi** | push server (port fixed at deployment) |
 
 - **`POST /api/talkdown`** — body: WAV (≤ ~30 s, ≤ 5 MB), response `202 {"id":…}`; the
   arbiter plays it at talk-down priority (U21); whatever was ducked resumes.
-- **Live view (U21):** the app uses go2rtc's stream URLs directly
-  (`http://borg-pi:1984/api/stream.mjpeg?src=cam` or WebRTC for lower latency).
+- **Live view (U21):** the app talks to go2rtc directly — **WebRTC** via
+  `flutter_webrtc` against go2rtc's WebRTC endpoint (low latency, the primary path),
+  MJPEG (`http://borg-pi:1984/api/stream.mjpeg?src=cam`) as the dumb fallback.
 - **Status page** (port 80) renders the same data as `balkon/health/*`.
+- **APK self-hosting:** the latest app build lives at
+  `http://borg-pi/apk/balkon-borg.apk`, next to `GET /apk/version.json`
+  (`{"version":"x.y.z","ts":…}`) so the app can check for updates. Installing on a new
+  phone = browse to borg-pi, download, install (sideload).
 
 ## Storage — where media lives
 
@@ -157,6 +170,7 @@ All LAN/WireGuard only; nothing is internet-exposed.
 | U18 time-lapse video | `/srv/borg/media/timelapse/<season>.webm` | `http://borg-pi/media/timelapse/…` |
 | U6 bird log (SQLite) | BirdNET-Go volume `/srv/borg/birdnet/` | BirdNET-Go UI (:8080) |
 | U7/U11 event clips | **nas-Pi** storage, NFS-mounted at `/srv/borg/clips/` | Frigate UI (:8971) while the unit is on |
+| App APK (latest build) | `/srv/borg/apk/` | `http://borg-pi/apk/balkon-borg.apk` + `version.json` |
 
 Clips deliberately live on the nas-Pi (survivability, U7); the NFS export on the nas-Pi
 is a provisioning step. Open point: browsing clips while the borg-pi is *off* (the files

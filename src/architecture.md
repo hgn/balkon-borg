@@ -429,8 +429,12 @@ phone → speaker, and does not tap the mic.)
 near Laim, so the flight ticker stays live and turning COMMS on displaces it.
 
 *Resolved:* **remote access = WireGuard** (already in place, phone tunnels straight into
-the home network; no port forwarding, remote ≡ local for the app). **Push = ntfy on the
-nas-Pi + UnifiedPush** in the app (no FCM), switchable in the app (`docs/network.md`).
+the home network; no port forwarding, remote ≡ local for the app). **Notifications = the
+app's self-wake watch window** (no push server — ntfy/FCM dropped): app use arms 6 h of
+periodic MQTT checks (~30 s, configurable) against the retained `balkon/event/recent`
+ring → local Android notifications, per-category switchable; idle after that
+(`shared/README.md`). **No TLS anywhere** — plain MQTT/HTTP on LAN + WireGuard;
+longevity over certificate infrastructure (user's call).
 
 *Resolved:* the Pi-power coupling worry (§2, unit is all-on/all-off); the combinable-
 feature model + resource table (§3–4); the software stack (Python arbiter as a host

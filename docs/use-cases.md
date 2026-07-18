@@ -558,11 +558,13 @@ siren-grade escalation you never wanted.
   - **Effector 1 (one-shot):** a short LUMEN flash + police (blue/red) pattern and a short
     speaker **peep**. Mild "I see you", no escalation ladder, no siren.
   - **Recording:** a U7 event clip, off-site to the nas-Pi (fires immediately on confirm).
-  - **Push:** to the phone immediately on confirm, deep-linking into the U21 live view.
-    Delivered via **ntfy self-hosted on the nas-Pi** (always on, so pushes work even
-    though the borg-pi5 isn't 24/7 the moment it fires one) + **UnifiedPush** in the
-    Flutter app — no Google/FCM cloud in the loop. Push is **user-switchable in the app**
-    (a settings toggle; per category at minimum security vs. event pushes).
+  - **Push:** a notification on the phone, deep-linking into the U21 live view. **No
+    push server** (ntfy/FCM dropped, user's call): the event lands in the retained
+    `balkon/event/recent` ring, and the **app's self-wake watch window** (armed for 6 h
+    by any app use, checking MQTT every ~30 s, configurable) turns it into a local
+    Android notification. Honest limit: the alarm reaches the phone only inside a watch
+    window. Notifications are **switchable in the app**, per category (security always
+    recommended on; tire sensor / aircraft / bird / storm individually).
   - A short **cooldown** after Effector 1 so a lingering person doesn't strobe/peep on a
     loop; re-fires only after the scene clears or the cooldown lapses.
 - **Voice warning (U11.4):** not automatic — you get the push, open U21, watch the live

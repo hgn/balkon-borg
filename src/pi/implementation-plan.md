@@ -65,7 +65,7 @@ Concretely, the arbiter keeps a **health registry**:
 | **M1** | Mosquitto quadlet (+ auth) · arbiter skeleton: retained `balkon/mode/*` defaults, **health registry + status page (:80)**, user unit · deploy loop | `mosquitto_sub`, browser |
 | **M2** | Audio chain: USB card, PipeWire, Piper, mixer skeleton → "Borg online" on boot; audio capability health | speaker only |
 | **M3** | Ring-buffer framework + retained snapshots (`env/recent`, …) — ESP topics as optional source, empty is fine | fake publisher |
-| **M4+** | Services by value, one per step, each with its health probe: BirdNET-Go → readsb/tar1090 → Frigate+go2rtc → SIGINT extras → U14/U18 → ntfy | per hardware |
+| **M4+** | Services by value, one per step, each with its health probe: BirdNET-Go → readsb/tar1090 → Frigate+go2rtc → SIGINT extras → U14/U18 → APK hosting (`/apk/`) | per hardware |
 
 ## Known unknowns (defaults + pivot signals)
 

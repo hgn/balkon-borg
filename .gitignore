@@ -23,6 +23,9 @@ pcb/*.png
 src/esp/secrets.yaml
 src/esp/.esphome/
 
+# Android/Flutter local toolchain (Java, SDK, Flutter checkout - not repo content)
+/src/android/env/
+
 # Crash dumps, logs, reports (generated)
 **/core.*
 skidl.erc

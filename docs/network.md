@@ -49,12 +49,15 @@ So: **borg-pi5 → WiFi repeater → (cable) → Fritz!Box → nas-Pi5.**
 - **Remote access** from outside the home is **WireGuard** (already in place; the phone
   connects directly into the home network through the tunnel). No port forwarding of MQTT,
   camera or web UIs — from the app's point of view, remote is identical to being on the
-  home WiFi. The always-on **nas-Pi5** additionally holds occasionally-stored images/data
-  and runs the **ntfy push server** (see below).
-- **Push notifications** (U11 alarm, optional event pushes) go through a **self-hosted
-  ntfy server on the nas-Pi5** (always on — a push must be deliverable the moment the
-  borg-pi5 fires it) with **UnifiedPush** in the Android app. No Google/FCM. Pushes are
-  switchable in the app.
+  home WiFi. The always-on **nas-Pi5** additionally holds occasionally-stored images/data.
+- **Notifications — no push server** (ntfy/FCM were considered and dropped): the **app
+  self-wakes** — any use arms a 6-hour watch window in which it periodically checks MQTT
+  (default 30 s, configurable) and raises local Android notifications from the retained
+  `balkon/event/recent` ring; after 6 h idle it does zero background work until used
+  again (`src/shared/README.md`).
+- **No TLS anywhere** (plain MQTT + HTTP): LAN + WireGuard only, and no certificate
+  infrastructure that can expire and break the unit years later — longevity over
+  transport encryption (user's call).
 
 ## Home network
 

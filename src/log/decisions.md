@@ -14,6 +14,29 @@ split into src/") for why.
 
 ---
 
+## 2026-07-17 — No TLS ever; ntfy dropped for an app self-wake model; APK self-hosted
+
+**No TLS/HTTPS anywhere** (user's call): plain MQTT + HTTP, LAN + WireGuard only, low
+security needs. Rationale is longevity — no certificate infrastructure that expires and
+breaks the unit years later. Stability over transport encryption.
+
+**ntfy/UnifiedPush dropped** (reverses part of the concept-review decision from earlier
+today; the nas-Pi keeps only its storage role). New notification model — **the app
+self-wakes**: any app use arms a **6-hour watch window**; inside it the app periodically
+checks MQTT (default **30 s, configurable in the app**) and raises **local Android
+notifications** from new events — security always recommended on, other categories (tire
+sensor, aircraft, bird, storm) individually switchable. After 6 h without use the app is
+strictly idle, zero background work; usage re-arms the window. Accepted consequence: an
+alarm reaches the phone only inside a watch window.
+**Contract consequence:** events alone are not retained, so a periodically-waking client
+would miss them → new retained ring `balkon/event/recent` (last ~20) to diff against.
+
+**Live view = go2rtc + WebRTC** confirmed for the app: `flutter_webrtc` against go2rtc's
+WebRTC endpoint as the primary path, MJPEG as fallback.
+
+**APK self-hosted on the borg-pi:** latest build at `http://borg-pi/apk/balkon-borg.apk`
+plus `version.json` for the app's update check; new-phone install = browse + sideload.
+
 ## 2026-07-17 — Interface contract fixed in src/shared/README.md; mode-topic triple superseded
 
 **The interface contract now lives in `src/shared/README.md`** (user's call; a separate
