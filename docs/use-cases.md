@@ -51,7 +51,7 @@ U21), and the speaker/audio-out path (used by U9, U10, U21, …).
 
 **Overlays / interrupts** (event-driven, cut across whatever mode is active, need a
 priority rule — TBD): U9 (audio/TTS feedback), the U11 alarm, U21 (talk-down, grabs the
-speaker), U19 (presence ghost, ambient matrix overlay), U9.3 (storm warning).
+speaker), U19 (presence ghost, ambient matrix overlay — *deferred*), U9.3 (storm warning).
 
 **Control surface** (not a mode): U2 (buttons / clap / gesture) is how modes are
 changed and light is controlled.
@@ -746,14 +746,19 @@ long as the unit happens to be on, without needing to babysit a separate camera 
 
 ---
 
-## U19 — Presence ghost
+## U19 — Presence ghost *(deferred — not in current scope)*
 
-**Requirements:**
-1. A partner's phone status/location drives a single, softly wandering pixel on the
-   matrix — passive, no message or sound.
+**Status:** parked, like U8. Not part of the current build; the number stays as a
+placeholder. May return later.
 
-**Value:** _TBD_
-**Implementation:** _TBD_
+**If it returns:** a partner's phone status/location drives a single, softly wandering
+pixel on the matrix — passive, no message or sound. Open question when picked back up:
+does the pixel's motion follow real distance/ETA (needs the partner's phone to share
+live-ish location) or just a binary home/away/approaching state from a geofence trigger
+(simpler, far less battery/privacy footprint, matches "softly wandering" as mood rather
+than a map) — leaning toward the latter, not decided.
+
+**Value / Implementation:** _to be written if/when U19 is picked up._
 
 ---
 

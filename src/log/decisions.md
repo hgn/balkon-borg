@@ -14,6 +14,19 @@ split into src/") for why.
 
 ---
 
+## 2026-07-17 — U19 (presence ghost) deferred
+
+**Decision:** U19 is **parked**, like U8. Not part of the current build; the number stays
+as a placeholder, marked "deferred" everywhere it's referenced (architecture.md's
+resource table, overlay list, use-cases.md's overlay summary).
+
+**Left open for when it returns:** whether the wandering pixel follows real distance/ETA
+(needs the partner's phone to share live-ish location — battery/privacy cost) or just a
+binary home/away/approaching state from a geofence trigger (simpler, "softly wandering" as
+mood rather than an actual map) — leaning toward the geofence version, not decided. Home
+Assistant's device_tracker isn't available (HA dropped earlier), so either way this would
+be the Flutter app's own geolocation/geofencing logic publishing over MQTT.
+
 ## 2026-07-17 — U18: seasonal time-lapse, stored on the borg-pi, every 30 min
 
 **Storage — on the borg-pi itself, not the nas-Pi** (user's call, against the earlier U7/

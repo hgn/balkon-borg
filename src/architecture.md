@@ -245,7 +245,7 @@ BirdNET + clap + FFT at once); BME/dashboards/logging need nothing scarce.
 | Info ticker (U3) | ● | reads¹ | | | |
 | Disco / effects (U3) | ● | | | | |
 | Music visualiser (U3) | ● | | | | ○ |
-| Presence ghost (U19) | ● | | | | |
+| Presence ghost (U19, deferred) | ● | | | | |
 | COMMS listen — FM/DAB/SW/airband (U10) | | ● | | ● | |
 | SIGINT decode — ADS-B/rtl_433/APRS/radiosonde/spectrum (U5,U13,U15,U16,U17; U8 later) | | ● | | | |
 | Gesture (U2) | | | ● | | |
@@ -304,8 +304,8 @@ and re-asserts until its condition clears:
    then resumes.
 4. **Event feedback / TTS** (U9 bird name, flight) — plays only when nothing above is
    active; ducks radio for a couple of seconds.
-5. **Ambient** (U19 presence ghost) — visual only, never makes sound; yields the
-   matrix to any submode/overlay that needs it.
+5. **Ambient** (U19 presence ghost, *deferred*) — visual only, never makes sound; yields
+   the matrix to any submode/overlay that needs it.
 
 **Human override always wins:** an explicit app/button action is honoured immediately
 (it pins the mode, §6) — except the alarm, which re-asserts until the security
