@@ -6,7 +6,7 @@
 
 FLUTTER := bash -c 'source $(CURDIR)/env.sh && cd $(CURDIR)/app && flutter $$0 $$@'
 APK     := app/build/app/outputs/flutter-apk/app-release.apk
-NAS_DIR := /mnt/nas/balkon-borg
+NAS_APK := /mnt/nas/borg.apk
 
 .PHONY: all apk check test analyze run clean distclean help
 
@@ -15,8 +15,7 @@ all: apk ## build the release APK
 apk: ## build the release APK (and copy it to the NAS share)
 	$(FLUTTER) build apk --release
 	@if [ -d /mnt/nas ]; then \
-		mkdir -p $(NAS_DIR) && cp -a $(APK) $(NAS_DIR)/balkon-borg.apk && \
-		echo "APK -> $(NAS_DIR)/balkon-borg.apk"; \
+		cp -a $(APK) $(NAS_APK) && echo "APK -> $(NAS_APK)"; \
 	else \
 		echo "warning: /mnt/nas not mounted, APK not copied" >&2; \
 	fi
