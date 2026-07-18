@@ -46,6 +46,16 @@ there isn't one. (This corrects an earlier assumption that WLED was independentl
 powered and ran its own presets while the Pi was off — it does not; when the unit is
 off, everything including WLED is off.)
 
+**Stability principle — robust with any subset of hardware.** The software never
+requires a device to exist: an unplugged SDR, a dead mic, an absent ESP degrade the
+affected capability, not the system. Each capability has a health probe and a state
+(`ok / degraded / missing / disabled`), published as retained MQTT
+(`balkon/health/<capability>` + an aggregate `balkon/health`) and rendered on a central
+status page at `http://borg-pi:80`. Capabilities re-probe periodically, so hardware
+plugged in later comes up without a restart. If hardware and kernel are fine, everything
+is usable; failures are messages, not crashes. (User's Grundsatz, 2026-07-17; the
+implementation is the arbiter's health registry, `pi/implementation-plan.md`.)
+
 ---
 
 ## 3. The mode model: combinable features, resource-gated  **[REVISED – confirm]**

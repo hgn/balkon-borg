@@ -1,8 +1,11 @@
 # src/pi — borg-pi5 software
 
-Not started. Will hold whatever orchestration/application logic the borg-pi5 needs
-beyond the third-party services in [`quadlets/`](quadlets/). See
-[`../README.md`](../README.md) for the open architecture questions this depends on.
+Orchestration/application logic for the borg-pi5, beyond the third-party services in
+[`quadlets/`](quadlets/). **The build plan is in
+[`implementation-plan.md`](implementation-plan.md)** (decided 2026-07-17: Python
+provisioning tool, system quadlets + user-session arbiter, pydantic config, health
+registry + status page, milestones M0–M4+). Code not started yet; M0 (provisioning) is
+first.
 
 ## Provisioning model
 

@@ -14,6 +14,33 @@ split into src/") for why.
 
 ---
 
+## 2026-07-17 — Pi implementation plan decided (see pi/implementation-plan.md)
+
+The build plan for the borg-pi5 software is fixed; full text in
+[`../pi/implementation-plan.md`](../pi/implementation-plan.md). The decisions, with the
+rejected alternatives:
+
+- **Provisioning: own Python tool** (`provision.py`, stdlib + ssh/rsync, idempotent
+  steps). Rejected Ansible: a heavy toolbox for exactly one host, and you end up
+  debugging Ansible instead of the system.
+- **Privileges pragmatic, not rootless-purist** (user: box is uncritical, protected, not
+  internet-facing): system quadlets (root) for containers — device access without
+  workarounds; arbiter + audio in the user session (PipeWire needs one, linger on);
+  port 80 via the `ip_unprivileged_port_start` sysctl.
+- **pydantic** for config validation (a `borg.yaml` typo fails at startup, not at
+  runtime). Rejected stdlib-only validation: hand-written validator for no gain.
+- **Deploy = rsync push** from the control machine, no git checkout on the Pi.
+- **Stability principle (user's Grundsatz): robust with any subset of hardware.** No
+  device is required for startup; missing/broken hardware degrades one capability and is
+  *reported*, never crashes. Health registry in the arbiter: probe per capability,
+  states ok/degraded/missing/disabled, retained `balkon/health/*` for the app + a
+  central status page at `http://borg-pi:80`, periodic re-probe (late plug-in comes up
+  without restart). Recorded in `architecture.md` §2.
+- **Milestones:** M0 provisioning base → M1 Mosquitto + arbiter skeleton (mode topics,
+  health, status page) → M2 audio/Piper ("Borg online" on boot) → M3 ring-buffer
+  framework (ESP optional) → M4+ one service per step (BirdNET → readsb → Frigate → …),
+  each with its health probe.
+
 ## 2026-07-17 — Concept review: gaps found and fixed across the use-case set
 
 Full cross-check of all 21 use cases against the hardware and architecture, after the
