@@ -15,7 +15,7 @@ only the nas-Pi5 is truly always-on.
 
 | Component | Host | Powered | Role |
 |---|---|---|---|
-| **Mode arbiter** ("the brain") | borg-pi5 — Python, host systemd service | with unit | owns `balkon/mode`, resolves pin-vs-auto, applies the YAML config, starts/stops the service quadlets to enforce exclusivity |
+| **Mode arbiter** ("the brain") | borg-pi5 — Python, host systemd service | with unit | owns `balkon/mode/*`, resolves pin-vs-auto, applies the YAML config, starts/stops the service quadlets to enforce exclusivity |
 | **MQTT broker** (Mosquitto) | borg-pi5 | with unit | the bus everything talks over |
 | **System monitor:** Netdata | borg-pi5 | with unit | CPU/temp/health, own UI (watch the thermals under vision load) |
 | **Frigate** | borg-pi5 | with unit | security surveillance (~2 FPS while absent), event clips off-site to nas-Pi; own UI |
@@ -344,15 +344,16 @@ layer. Same tie-breaker as audio: higher pre-empts lower, restore on clear.
 
 ## 6. Mode changes — who writes the mode
 
-- **Manual pin:** app or Button 3 sets `balkon/mode` explicitly → it stays until
-  changed or released (Button 3 long-press) back to automatic.
-- **Automatic:** with no active pin, the arbiter picks the mode from triggers (radar
-  pattern, time of day, presence/absence, geofence for SENTRY).
-- **One writer:** only the arbiter (on the borg-pi5) writes `balkon/mode`, to avoid
-  competing writers.
-- **Buttons vs app:** Button 3 cycles main modes, Button 2 cycles submodes within the
-  current main mode — a curated subset. The app addresses the full space, including
-  submodes with no button shortcut.
+- **Manual pin:** app or buttons set a submode explicitly → it stays pinned until
+  changed or released (Button 1 long-press) back to automatic.
+- **Automatic:** with no active pin, the arbiter picks submodes from triggers (radar
+  pattern, time of day, presence/absence). SENTRY is never automatic — armed only by
+  explicit user action (U11).
+- **One writer:** only the arbiter (on the borg-pi5) writes the `balkon/mode/*` state
+  topics, to avoid competing writers; everyone else sends `balkon/cmd/*`.
+- **Buttons vs app:** Button 1 cycles the focus, Button 2 the submode, Button 3 the
+  sub-submode — a curated subset. The app addresses the full space, including submodes
+  with no button shortcut.
 
 Priority answer to the old open question: **app/manual > automation** while pinned.
 
@@ -383,12 +384,15 @@ idle) — which also keeps the flight ticker fresh.
 
 ## 8. Data flow (MQTT)
 
-Topic scheme is in [`../docs/network.md`](../docs/network.md); the mode layer adds
-`balkon/mode` (main), `balkon/mode/sub` (submode) and `balkon/mode/chan` (the optional
-**third level** — the channel/station list within a submode, e.g. the FM station or the
-airband frequency; empty where a submode has no list). All three are written only by the
-arbiter, read by every mode-dependent service and by the app. The mode→per-service
-settings map is a central declarative config (likely `shared/`, format TBD).
+The **authoritative interface contract** (all MQTT topics + payloads, HTTP endpoints,
+media storage paths) is [`shared/README.md`](shared/README.md); `docs/network.md` keeps
+the physical picture. The mode layer publishes **one retained state topic per main
+mode** (`balkon/mode/lumen`/`comms`/`sigint`/`sentry`, each `{submode, chan, pinned}`)
+plus `balkon/mode/focus` — the earlier single `balkon/mode` + `/sub` + `/chan` triple is
+superseded (it could not represent four parallel main modes). All mode state is written
+only by the arbiter; clients send `balkon/cmd/*` and render the state echo. The
+mode→per-service settings map is a central declarative config (`shared/borg.yaml`,
+schema grows per service).
 
 **No telemetry database.** The unit's own live data (environment, presence, mode) stays
 on MQTT; the arbiter keeps a short **in-RAM ring buffer** for recent trends (e.g. the

@@ -14,7 +14,7 @@ anything in here, not the hardware log.
 | `pi/` | Software running on the borg-pi5 hub: orchestration/MQTT-side logic, plus the Podman quadlets in `pi/quadlets/` (Mosquitto, Frigate, readsb/tar1090, BirdNET-Go). |
 | `esp/` | The ESP32 application (moved from `firmware/esphome/`): ESPHome config reading the buttons/encoder/radar/BME280 and driving WLED over MQTT. |
 | `android/` | The phone app. |
-| `shared/` | Contracts both sides depend on (MQTT topic/payload schema, currently sketched in [`../docs/network.md`](../docs/network.md); formalise here once code needs it, not before). |
+| `shared/` | **The interface contract** ([`shared/README.md`](shared/README.md)): all MQTT topics/payloads, HTTP endpoints/ports, media storage paths — authoritative for arbiter, ESP, app and services. Runtime config (`borg.yaml`) joins it. |
 
 ## Architecture
 
@@ -27,11 +27,12 @@ per-decision reasoning is in [`log/decisions.md`](log/decisions.md).
 
 Concurrency/scheduling and the app-vs-automation priority question are resolved as a
 **mode mechanism** — see [`log/decisions.md`](log/decisions.md) (2026-07-16) for the
-full reasoning. Summary: one global mode value on MQTT (e.g. `balkon/mode`), read by
-every mode-dependent service; **manual selection (app/buttons) pins the mode**, and
-without an active pin **automatic triggers** (radar/time/presence) set it — so a manual
-choice always wins while pinned. One arbitration component on the **borg-pi5** owns
-writing the mode. A small **baseline** (BME logging, broker/dashboards, basic radar
+full reasoning. Summary: **one retained state topic per main mode** on MQTT
+(`balkon/mode/<main>` + `balkon/mode/focus`; the authoritative contract is
+[`shared/README.md`](shared/README.md)), read by every mode-dependent service;
+**manual selection (app/buttons) pins the mode**, and without an active pin
+**automatic triggers** (radar/time/presence) set it — so a manual choice always wins
+while pinned. One arbitration component on the **borg-pi5** owns writing the mode. A small **baseline** (BME logging, broker/dashboards, basic radar
 motion log) runs regardless of mode, but only while the borg-pi5 itself is powered (it
 is not 24/7). The mode → per-service mapping (WLED preset, SDR owner, gesture
 detection, Frigate intensity, ...) lives in one central declarative config, not

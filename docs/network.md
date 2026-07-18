@@ -65,7 +65,11 @@ separate device-to-device radio link.
 
 ## MQTT data flow
 
-Topic scheme (target):
+**The authoritative interface contract** (all topics with payload schemas, plus HTTP
+endpoints, ports and media storage paths) is
+[`../src/shared/README.md`](../src/shared/README.md) — on conflict, it wins. Summary of
+the data topics (the contract adds mode state per main mode, commands, inputs, health
+and events on top):
 
 | Topic | Publisher → subscriber | Payload |
 |---|---|---|

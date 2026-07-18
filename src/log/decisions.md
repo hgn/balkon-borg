@@ -14,6 +14,46 @@ split into src/") for why.
 
 ---
 
+## 2026-07-17 — Interface contract fixed in src/shared/README.md; mode-topic triple superseded
+
+**The interface contract now lives in `src/shared/README.md`** (user's call; a separate
+`src/interface/` was considered and dropped — shared/ was already designated for exactly
+this). It is authoritative for everything crossing a component boundary: MQTT topics +
+payload schemas, HTTP endpoints + port map, media storage paths, broker ACL.
+`docs/network.md` keeps the physical picture and defers to it.
+
+**Schema fix — one state topic per main mode.** The earlier `balkon/mode` + `/sub` +
+`/chan` triple (2026-07-16) could only represent **one** mode, but four main modes run in
+parallel, each always in a submode. Superseded by retained
+`balkon/mode/{lumen,comms,sigint,sentry}` (each `{submode, chan, pinned, since}`) plus
+`balkon/mode/focus`. SENTRY's lifecycle (off·arming·armed·grace·alarm) rides in the same
+submode field, so the app renders it from one topic.
+
+**New in the contract** (previously unspecified anywhere):
+- **Commands** `balkon/cmd/*` (fire-and-forget; the state echo is the ack — clients never
+  render optimistic state), **inputs** `balkon/input/*` (raw ESP button/encoder, arbiter
+  interprets).
+- **Conventions:** JSON with `"v":1`, ISO-8601 ts, SI units; QoS 1 state/cmd/events,
+  QoS 0 live telemetry; retained = state/snapshots/pointers/health only; one writer per
+  topic; unknown fields ignored.
+- **Health topics** (`balkon/health` + per capability, retained) incl. **arbiter LWT** →
+  the app distinguishes "arbiter dead" from "all quiet"; `clock` (NTP) is a capability.
+- **Events** `balkon/event/{aircraft,bird,storm,security}` (not retained), mirrored to
+  **ntfy** (`borg-security` always, `borg-events` per app setting).
+- **HTTP port map** (80 arbiter status/media/talk-down · 1984 go2rtc · 8971 Frigate ·
+  8078 tar1090 · 8080 BirdNET-Go · 8073 OpenWebRX · 19999 Netdata) and
+  `POST /api/talkdown` (WAV ≤ ~30 s/5 MB → 202, plays at talk-down priority).
+- **Storage map:** `/srv/borg/media/spacesky/` (tmpfs FIFO-50) and
+  `/srv/borg/media/timelapse/` served under `http://borg-pi/media/…`; U7/U11 clips on the
+  nas-Pi via **NFS mount** at `/srv/borg/clips/` (export = provisioning step); BirdNET
+  SQLite in its service volume.
+- **Broker ACL** per client (arbiter rw-all, esp writes env/presence/input/wled, app
+  writes cmd/# reads all); no TLS — LAN + WireGuard only.
+
+Also corrected while updating references: `architecture.md` §6 still described the old
+button mapping (Button 3 = main modes) and a SENTRY geofence trigger — both stale, now
+aligned with U2/U11.
+
 ## 2026-07-17 — Pi implementation plan decided (see pi/implementation-plan.md)
 
 The build plan for the borg-pi5 software is fixed; full text in

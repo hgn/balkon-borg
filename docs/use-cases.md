@@ -157,11 +157,12 @@ the phone is never *required* — it is one option among several, not the only w
 
 **Implementation:**
 - **Buttons/encoder** are on the ESP32 (ESPHome, wired per the carrier board). Each
-  press/turn becomes an MQTT message to the arbiter, which owns the mode state and the
-  brightness/volume targets; the arbiter applies the change (WLED preset/brightness, or
-  the audio volume). The three mode levels map to `balkon/mode`, `balkon/mode/sub` and a
-  third `balkon/mode/chan` (the sub-submode). Button LEDs are driven locally by the ESP
-  and can reflect state (active mode/pin).
+  press/turn becomes an MQTT message to the arbiter (`balkon/input/*`), which owns the
+  mode state and the brightness/volume targets; the arbiter applies the change (WLED
+  preset/brightness, or the audio volume) and publishes the per-main-mode state topics
+  (`balkon/mode/<main>` + `balkon/mode/focus` — the authoritative scheme is
+  `src/shared/README.md`). Button LEDs are driven locally by the ESP from the retained
+  state topics (active mode/pin).
 - **Clap** runs as a lightweight energy-spike / two-within-a-window detector on the Pi's
   mic stream (fan-out alongside BirdNET, cheap). **Gated to quiet contexts** — disabled
   while the speaker is playing loud (radio/media audio active, or a lively scene) so it
