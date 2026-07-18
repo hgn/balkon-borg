@@ -17,23 +17,22 @@ class _BootTiming {
 
   /// Overall ring/controller duration — drives the wave expansion; the
   /// reveal-band delays below are tuned to land inside it. History: 1300ms
-  /// (E7 spec) → 1950ms (E8, "langsamer") → 2950ms ("+1s") → back to
-  /// ~2s (user, 2026-07-17: "um 1 Sekunde kürzen" once the ring actually
-  /// swept the full screen — the perceived shortness had been the early
-  /// fade/clamp, not the duration).
-  static const total = Duration(milliseconds: 1950);
+  /// (E7 spec) → 1950ms (E8) → 2950ms → 1950ms (corner-clamp fixed) →
+  /// **1450ms** (user, 2026-07-17: effect confirmed good, "500ms schneller").
+  /// Everything below scales at ~0.75 of the 1950ms values.
+  static const total = Duration(milliseconds: 1450);
 
   // Reveal bands (header/content/nav uncovering as the wave sweeps past).
-  static const headerDelay = Duration(milliseconds: 300);
-  static const contentDelay = Duration(milliseconds: 525);
-  static const navDelay = Duration(milliseconds: 750);
-  static const revealFadeDuration = Duration(milliseconds: 630);
+  static const headerDelay = Duration(milliseconds: 225);
+  static const contentDelay = Duration(milliseconds: 390);
+  static const navDelay = Duration(milliseconds: 560);
+  static const revealFadeDuration = Duration(milliseconds: 470);
 
   // Logo fade-in / hold / scale-and-fade-out sequence.
-  static const logoFadeIn = Duration(milliseconds: 330);
-  static const logoHoldDelay = Duration(milliseconds: 225);
-  static const logoScale = Duration(milliseconds: 570);
-  static const logoFadeOut = Duration(milliseconds: 570);
+  static const logoFadeIn = Duration(milliseconds: 245);
+  static const logoHoldDelay = Duration(milliseconds: 170);
+  static const logoScale = Duration(milliseconds: 425);
+  static const logoFadeOut = Duration(milliseconds: 425);
 }
 
 /// "Radar-Welle" boot animation (E7, implementation-plan.md): on cold start a
