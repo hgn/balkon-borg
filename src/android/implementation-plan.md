@@ -36,6 +36,7 @@ before the next starts.
 | **E4** | Camera: SENTRY card + switch (subtle red border), live area, PTT + chips |
 | **E5** | Log: bird of the day + log list |
 | **E6** | Settings/health in the design style, watch-window foreground service (6 h window, configurable interval, local notifications) |
+| **E7** | Boot animation "Radar-Welle" (added 2026-07-17): logo on black, a deep-violet radar ring expands from the logo center across the screen (scaling circular container, border + blur), and the dashboard elements it sweeps over pop in staggered — as if the scan just discovered them. Fast (≤ 1.5 s), runs once per cold start. `flutter_animate` for the chained fade/scale sequences. |
 
 ## Known unknowns
 
