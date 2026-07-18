@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -209,7 +210,13 @@ class _RadarWave extends StatelessWidget {
                 // earlier `1 - t*1.15` killed it by half-time (user: "blendet
                 // bereits in halber Durchlauf aus").
                 final glowAlpha = ((1 - t) / 0.15).clamp(0.0, 1.0);
-                return Container(
+                // Over the last quarter the ring additionally hazes out —
+                // a mild blur ramp (0 → sigma 5), so the edge softens as it
+                // leaves instead of staying razor-sharp to the end. "Nur ein
+                // bisschen": deliberately not a full blur-out (user,
+                // 2026-07-17).
+                final blurSigma = ((t - 0.75) / 0.25).clamp(0.0, 1.0) * 5.0;
+                final ring = Container(
                   width: diameter,
                   height: diameter,
                   decoration: BoxDecoration(
@@ -231,6 +238,11 @@ class _RadarWave extends StatelessWidget {
                       ),
                     ],
                   ),
+                );
+                if (blurSigma == 0) return ring;
+                return ImageFiltered(
+                  imageFilter: ui.ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+                  child: ring,
                 );
               },
               ),
