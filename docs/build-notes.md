@@ -19,7 +19,12 @@ Complements `power-distribution.md`, `enclosure-sintering.md` and the log.
 - The SDR plugs into a Pi USB port and sticks out ~60 mm → the Pi keep-out in the
   enclosure is much larger. In the CAD it points towards +X (to the end wall),
   clear between the Pi edge (x≈124) and the power/status area.
-- **ADS-B is not used** (user decision) → no sky antenna needed.
+- **ADS-B is the SDR's idle default** (U5 — an earlier "not used" call was reversed
+  when the use cases were specced). No dedicated sky antenna: the short telescopic
+  whip is ~λ/4 at 1090 MHz, serviceable for approach traffic. The antenna is a manual,
+  one-size compromise across all bands — the mode switch retunes the tuner, not the
+  physical antenna (the user handles antenna length by hand; optionally the mode-change
+  TTS can hint "extend antenna to <n> cm" from a per-band table in the config).
 
 ## Flashing the ESP32
 

@@ -46,8 +46,15 @@ So: **borg-pi5 → WiFi repeater → (cable) → Fritz!Box → nas-Pi5.**
   broker-on-the-Pi placement costs nothing in practice, because there is no "Pi off but
   panel on" state. When the unit is off, everything is off (including WLED's own
   presets).
-- **Remote access** from outside the home goes through the always-on **nas-Pi5** via the
-  Fritz!Box, which also holds occasionally-stored images/data.
+- **Remote access** from outside the home is **WireGuard** (already in place; the phone
+  connects directly into the home network through the tunnel). No port forwarding of MQTT,
+  camera or web UIs — from the app's point of view, remote is identical to being on the
+  home WiFi. The always-on **nas-Pi5** additionally holds occasionally-stored images/data
+  and runs the **ntfy push server** (see below).
+- **Push notifications** (U11 alarm, optional event pushes) go through a **self-hosted
+  ntfy server on the nas-Pi5** (always on — a push must be deliverable the moment the
+  borg-pi5 fires it) with **UnifiedPush** in the Android app. No Google/FCM. Pushes are
+  switchable in the app.
 
 ## Home network
 
@@ -78,7 +85,7 @@ Topic scheme (target):
 | `balkon/noaa/image` **(retained)** | borg-pi5 → app | NOAA APT image ready (U14): id/timestamp/HTTP URL, image not archived on the Pi |
 | `balkon/iss/sstv/image` **(retained)** | borg-pi5 → app | ISS SSTV image ready (U14): id/timestamp/HTTP URL |
 | `balkon/meteor/recent` **(retained)** | borg-pi5 → dashboards | GRAVES meteor-scatter pings (U14), last ~50 |
-| `balkon/timelapse/gif` **(retained)** | borg-pi5 → app | seasonal time-lapse GIF ready (U18): id/timestamp/HTTP URL |
+| `balkon/timelapse/video` **(retained)** | borg-pi5 → app | seasonal time-lapse WebM ready (U18): id/timestamp/HTTP URL |
 
 (The ESP32 currently uses ESPHome MQTT discovery for its own sensor topics, plus the
 explicit `wled/balkon` topics.)

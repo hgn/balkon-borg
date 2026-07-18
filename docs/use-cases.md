@@ -336,11 +336,20 @@ device), and the normalisation is exactly what keeps the stats meaningful despit
   BirdNET (always), the clap detector (U2.2), the visualiser FFT (U3.4). BirdNET never
   stops; the others attach when their feature is active. (U21 talk-down is one-way, phone →
   speaker, and does **not** tap the mic.)
+- **Radio-bleed gate:** mic and speaker share one box, so whatever the speaker plays
+  (DAB/FM, TTS) reaches the mic — birdsong inside a radio programme would otherwise land
+  in the log as a real sighting and skew the season stats. Rule, same shape as the clap
+  gate (U2.2): **while the speaker is playing radio/media, BirdNET detections are
+  discarded** (or flagged, not counted) — bird logging effectively runs only when the box
+  itself is quiet. The discarded windows are also excluded from the uptime normalisation
+  (they count as "not listening", not as on-time with zero birds).
 
 **Database:** **SQLite** — BirdNET-Go already uses it, one file, no server, and event data
 (species + timestamp) suits a relational log far better than a time-series DB. This is the
-**one persistent store** in the stack; everything else (env, presence, mode) stays
-live-only in RAM.
+**one persistent database** in the stack; live telemetry (env, presence, mode) stays
+RAM-only. (A few tiny auxiliary files persist too and are fine: the U5 first-seen
+registration set, the U6 on-interval table, U18's time-lapse frames — small, bounded,
+purpose-built; the "no data grave" line is about unbounded telemetry logging, not these.)
 
 ---
 
@@ -358,6 +367,10 @@ those build on.
    (radar + 30-min hold) the Vision axis runs MediaPipe (gesture, U2.3); while absent it
    runs Frigate for security. Within the absent window the radar still **gates** the
    heavy detector — a static empty scene costs nothing, motion wakes the full pipeline.
+   **Exception:** while SENTRY is armed, Vision is **pinned to Frigate** regardless of
+   presence (otherwise an intruder's own presence would flip the axis to MediaPipe just
+   when the alarm needs Frigate — `src/architecture.md` §3). Gesture is unavailable
+   while armed.
 3. **Event clips off-site:** on a detection while absent, record a short clip and store it
    on the **always-on nas-Pi** (off the enclosure Pi), auto-expired after a short
    retention. No 24/7 recording.
@@ -495,9 +508,16 @@ Munich lists mean the common stations are one button away; the app reaches the r
 `welle.io`/`welle-cli`, shortwave through the RTL-SDR V4's built-in HF front end, airband
 via `rtl_fm` (NFM). The station list is data in the mode config (`src/shared/`), so it's
 editable without code. All of COMMS holds the single SDR tuner, so it displaces SIGINT
-(§ mode overview) — you can't listen and scan at once. EWF only fires while actually
-tuned to DAB (single-tuner limit, noted in the mode overview); the app/cell-broadcast stay
-the always-on warning path.
+(§ mode overview) — you can't listen and scan at once.
+- **EWF (U10.4) is best-effort, verify before promising:** open-source DAB stacks
+  (welle.io) most likely do **not** decode the German EWF signalling (a Fraunhofer-
+  specific pilot). If it turns out undecodable, U10.4 is dropped without replacement —
+  the app/cell-broadcast are the always-on warning path anyway, and EWF could only ever
+  fire while actually tuned to DAB (single-tuner limit).
+- **Antenna hint (optional):** the telescopic whip is one manual compromise across all
+  bands — the mode switch retunes the tuner, not the antenna. On a submode change the
+  mode-change TTS (U9) can announce *"extend antenna to <n> cm"* from a small per-band
+  length table in the config; purely a convenience, the user adjusts by hand.
 
 ---
 
@@ -521,6 +541,13 @@ siren-grade escalation you never wanted.
 **Implementation:**
 - **Arming (U11.1):** SENTRY *armed* is just a submode like any other (`architecture.md`
   §3) — explicit, human-set. No auto-trigger. The old "absence/geofence" note is dropped.
+  Arming **pins the Vision axis to Frigate** (overrides the presence schedule, see U7 /
+  `architecture.md` §3); gesture control is unavailable while armed.
+- **Exit handling:** arming while you are still standing there must not trip on yourself.
+  The armed state becomes **live only once the scene has been clear once** (radar sees
+  nobody, brief settle) or after a fallback **exit delay (~60 s)**, whichever comes first.
+  Until then the panel shows a calm "arming…" pulse and nothing detects. So you press
+  SENTRY, water the plants, walk out — and it arms behind you.
 - **Detection (U11.2):** the LD2410B radar is the cheap always-on wake; on motion it wakes
   the camera (the U7 radar-gated path), and **Frigate must classify a person** before the
   alarm fires. Two-factor kills the LD2410B's wind/cat/rain false positives. No day/night
@@ -531,6 +558,10 @@ siren-grade escalation you never wanted.
     speaker **peep**. Mild "I see you", no escalation ladder, no siren.
   - **Recording:** a U7 event clip, off-site to the nas-Pi (fires immediately on confirm).
   - **Push:** to the phone immediately on confirm, deep-linking into the U21 live view.
+    Delivered via **ntfy self-hosted on the nas-Pi** (always on, so pushes work even
+    though the borg-pi5 isn't 24/7 the moment it fires one) + **UnifiedPush** in the
+    Flutter app — no Google/FCM cloud in the loop. Push is **user-switchable in the app**
+    (a settings toggle; per category at minimum security vs. event pushes).
   - A short **cooldown** after Effector 1 so a lingering person doesn't strobe/peep on a
     loop; re-fires only after the scene clears or the cooldown lapses.
 - **Voice warning (U11.4):** not automatic — you get the push, open U21, watch the live
@@ -574,10 +605,14 @@ still browsable in one go thanks to the shared SIGINT ring-buffer pattern (`arch
 §4) rather than only a fire-and-forget single event.
 
 **Implementation:**
-- **Decoder:** `rtl_433` on the SDR, SIGINT submode "ISM/rtl_433". A single capture at
-  433.92 MHz covers both ISM sensors and TPMS (same European band), so no separate
-  sub-submode split is needed — one run decodes everything `rtl_433`'s device table
-  recognises.
+- **Decoder:** `rtl_433` on the SDR, SIGINT submode "ISM/rtl_433". **One `rtl_433`
+  instance, frequency-hopping** between the two European ISM bands (e.g.
+  `-f 433.92M -f 868.3M -H 60` — alternate every 60 s): TPMS and many cheap sensors sit
+  at 433.92 MHz, but most weather stations and smart-home gear transmit at **868 MHz** —
+  a single fixed capture would miss one of the two worlds. (Corrects the earlier "one
+  capture covers both" claim; the single tuner can only ever listen to one band at a
+  time, so hopping trades continuous coverage for full breadth.) Still one submode, no
+  sub-submode split — the hop is invisible to the consumer.
 - **Live data (general SIGINT pattern, `architecture.md` §4):** an in-RAM ring buffer of
   the last ~50 entries, split into **two separate streams** — ISM sensors and TPMS are
   functionally different signals to a consumer (a neighbour's weather reading vs. "a car
@@ -618,14 +653,19 @@ archive.
   the SDR tunes in only around known overpass/event windows, not continuously. Meteor
   scatter listens continuously whenever this submode has the tuner (no pass prediction
   needed — GRAVES runs 24/7).
-- **Image delivery:** on decode, the Pi writes the image to a small transient working
-  file (no growing archive) and publishes a **retained** MQTT message (id, timestamp,
-  type, HTTP URL) so a freshly opened app immediately knows the latest is available. The
-  app fetches over HTTP and appends it to its **own local FIFO-50 gallery** — permanent
-  storage lives on the phone, not the Pi. Deliberately different from U7 (whose event
-  clips need off-site survivability on the nas-Pi for security evidence): U14's images
-  have no such requirement, so client-side storage is simplest and keeps the Pi's own
-  footprint minimal.
+- **Image delivery:** on decode, the Pi writes the image to a **rolling FIFO of the last
+  ~50** in a transient working directory (tmpfs — mirrors the app's FIFO-50, so a phone
+  that was offline for days can still catch up on everything not yet rotated out; only
+  what falls off the end of the 50 is gone) and publishes a **retained** MQTT message
+  (id, timestamp, type, HTTP URL) so a freshly opened app immediately knows the latest is
+  available. The app fetches over HTTP and appends it to its **own local FIFO-50
+  gallery** — permanent storage lives on the phone, not the Pi. Deliberately different
+  from U7 (whose event clips need off-site survivability on the nas-Pi for security
+  evidence): U14's images have no such requirement, so client-side storage is simplest
+  and keeps the Pi's own footprint minimal.
+- **Ephemeris:** pass prediction needs periodically refreshed TLEs (a small download,
+  e.g. from CelesTrak, every few days via the home network) — a minor, non-critical
+  internet dependency; stale TLEs degrade gracefully (predictions drift by minutes).
 - **Meteor scatter (U14.3):** follows the general SIGINT live-data pattern
   (`architecture.md` §4) — an in-RAM ring buffer of the last ~50 pings, published as a
   retained MQTT snapshot (`balkon/meteor/recent`), shown on the LUMEN ticker when this
@@ -718,7 +758,8 @@ picking a specific decoder first.
 1. Capture one camera frame **every 30 minutes**, persisted on the **borg-pi itself**
    (not the nas-Pi) — the unit is only powered for roughly a season (~90 days) anyway, so
    the archive is naturally bounded and doesn't need off-site survivability.
-2. Compile the frames into a time-lapse GIF.
+2. Compile the frames into a time-lapse video (**WebM** — a GIF at ~4,300 frames would be
+   hundreds of MB and choke the phone; WebM/VP9 keeps a full season in the tens of MB).
 
 **Value:** a season's worth of the balcony's light and life compressed into a few
 seconds — sunrises drifting, plants growing, weather rolling through — building up for as
@@ -734,15 +775,15 @@ long as the unit happens to be on, without needing to babysit a separate camera 
   bounded (unlike U7's 24/7 concern) because the unit itself is only on for a season, so
   no separate retention/pruning logic is needed beyond starting a fresh directory per
   season.
-- **Compilation:** the GIF is rebuilt/extended periodically (e.g. daily) from the frames
-  so far, not only once "the season" is declared over — the app can see the time-lapse
-  building up throughout, not just as a final reveal. Compiling a new season (or wrapping
-  up the current one) is a **manual action**, not a calendar trigger — simplest, and
-  matches the unit's own informal on/off rhythm rather than inventing season-boundary
-  logic.
-- **Delivery:** same shape as U14's images — the GIF is not meant to live only on the Pi
-  long-term; expose it for the app to fetch (retained MQTT pointer + HTTP, as in U14) so
-  it ends up saved on the phone too, not solely dependent on the Pi's own SD card.
+- **Compilation:** the **WebM** (ffmpeg, VP9) is rebuilt/extended periodically (e.g.
+  daily) from the frames so far, not only once "the season" is declared over — the app
+  can see the time-lapse building up throughout, not just as a final reveal. Compiling a
+  new season (or wrapping up the current one) is a **manual action**, not a calendar
+  trigger — simplest, and matches the unit's own informal on/off rhythm rather than
+  inventing season-boundary logic.
+- **Delivery:** same shape as U14's images — the video is not meant to live only on the
+  Pi long-term; expose it for the app to fetch (retained MQTT pointer + HTTP, as in U14)
+  so it ends up saved on the phone too, not solely dependent on the Pi's own SD card.
 
 ---
 

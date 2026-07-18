@@ -7,7 +7,7 @@ firmware + requirements). Evaluation only, no changes. Severity: 🔴 critical/h
 ## Target system (consolidated)
 
 Ceiling-mounted multifunction unit, front (+Y) to the terrace with the WLED panel
-(SK6812 8×43), bottom (−Z) with camera/radar/mic/BME, rear (−Y) to the house with the
+(SK6812 8×25), bottom (−Z) with camera/radar/mic/BME, rear (−Y) to the house with the
 boards and connectors. Three nodes: **borg-pi5** (capture + inference), **ESP32 carrier**
 (controls + sensing, drives WLED over MQTT only), **nas-Pi5** (always-on remote access +
 image storage — the borg-pi5 hosts the broker). One 5 V rail

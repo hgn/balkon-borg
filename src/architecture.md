@@ -101,6 +101,12 @@ axes are independent, so they combine freely. There are four:
   and 2 FPS keeps CPU-only Frigate trivial. So MediaPipe and Frigate are two tools for
   two different jobs (fine-grained gesture vs. surveillance/recording), time-shared by
   presence rather than competing.
+  **Exception — SENTRY overrides the schedule:** while SENTRY is *armed*, the Vision
+  axis is **pinned to Frigate**, regardless of presence. Without this rule the two
+  specs deadlock: an intruder makes the radar report "present", which would flip Vision
+  to MediaPipe exactly when U11 needs Frigate's person confirmation. Consequence:
+  **gesture control is unavailable while armed** — acceptable, you armed it because
+  you're leaving. Disarm restores the normal presence schedule.
 - **Speaker** (one sound at a time, priority-ducked, §5): silent · playing.
 
 You set each axis and leave it; a light effect persists regardless of what the radio is
@@ -313,6 +319,17 @@ condition itself is resolved. **Confirmed:** a safety warning (2) **cuts into a 
 talk-down** (3) — safety over comfort. TTS is **Piper** (local, offline); the arbiter
 runs the ducking/queue mixer (see `../docs/use-cases.md` U9).
 
+**Panel overlays [NEW — confirm]:** the ladder above governs the speaker; the panel has
+its own, simpler rule. Several events want the matrix briefly (U11 Effector 1 flash +
+police, U9.3 storm red-flash, the SENTRY arming/entry-grace pulse, the U5
+special-aircraft flash) while a LUMEN program (disco, ticker, …) may be running.
+Rule: a panel overlay **temporarily replaces or modulates** the active LUMEN program and
+**restores it** afterwards — the LUMEN submode itself never changes. Ordering mirrors
+the speaker ladder where both exist: **alarm/Effector 1** > **safety red-flash** >
+**SENTRY grace/arming pulse** (a gentle whole-panel brightness modulation *over* the
+program, not a replacement) > **event flash** (U5) > the LUMEN program as the base
+layer. Same tie-breaker as audio: higher pre-empts lower, restore on clear.
+
 ---
 
 ## 6. Mode changes — who writes the mode
@@ -368,10 +385,12 @@ on MQTT; the arbiter keeps a short **in-RAM ring buffer** for recent trends (e.g
 BME pressure trend for U4). The **app is the live dashboard**; each capture service keeps
 its own UI (tar1090, BirdNET-Go, Frigate) and Netdata covers system health. Persisting
 that live telemetry would be a data grave across the unit's downtime, so there is
-deliberately no InfluxDB/Grafana. **The one persistent store** is **BirdNET-Go's own
+deliberately no InfluxDB/Grafana. **The one persistent database** is **BirdNET-Go's own
 SQLite** bird log (U6) — discrete species-sighting *events*, the service's native file
 store, not our infra; the arbiter also records the unit's on-intervals there so bird
-stats can be **uptime-normalised** (detections ÷ on-hours).
+stats can be **uptime-normalised** (detections ÷ on-hours). A few tiny bounded auxiliary
+files persist alongside it (U5 first-seen set, U18 time-lapse frames) — the "no data
+grave" line targets unbounded telemetry logging, not these.
 
 **Mic fan-out.** The USB mic is a **PipeWire** source (Pi OS default), read
 **simultaneously and continuously** by several consumers without locking the device:
@@ -394,6 +413,10 @@ phone → speaker, and does not tap the mic.)
 
 *Resolved:* the **SDR idle default** — ADS-B (SIGINT), silent, filtered to low overflights
 near Laim, so the flight ticker stays live and turning COMMS on displaces it.
+
+*Resolved:* **remote access = WireGuard** (already in place, phone tunnels straight into
+the home network; no port forwarding, remote ≡ local for the app). **Push = ntfy on the
+nas-Pi + UnifiedPush** in the app (no FCM), switchable in the app (`docs/network.md`).
 
 *Resolved:* the Pi-power coupling worry (§2, unit is all-on/all-off); the combinable-
 feature model + resource table (§3–4); the software stack (Python arbiter as a host

@@ -14,6 +14,53 @@ split into src/") for why.
 
 ---
 
+## 2026-07-17 — Concept review: gaps found and fixed across the use-case set
+
+Full cross-check of all 21 use cases against the hardware and architecture, after the
+last use case was specced. Findings and the user's calls:
+
+- **SENTRY pins the Vision axis (logic hole):** the presence schedule (present →
+  MediaPipe) and U11 (radar wake → Frigate person confirm) deadlocked — an intruder's own
+  presence would have flipped Vision to MediaPipe exactly when the alarm needed Frigate.
+  Rule added (§3, U7, U11): **armed = Vision pinned to Frigate**, gesture unavailable
+  while armed. User: "Sentry ist spezieller Modus."
+- **U11 exit handling (logic hole):** arming while still present would have tripped the
+  entry grace on yourself. Added: armed goes **live only after the scene has been clear
+  once**, or after a ~60 s exit delay, whichever first; "arming…" pulse until then.
+- **Push = ntfy on the nas-Pi + UnifiedPush** in the Flutter app (no Google/FCM; MQTT
+  alone can't wake a dozing Android app). The nas-Pi is the right host: always on, so a
+  push arrives even though the borg-pi5 raising it isn't 24/7. **Pushes are switchable in
+  the app** (user requirement), at minimum per category (security vs. events).
+- **Remote access resolved: WireGuard already in place** (user) — phone tunnels into the
+  home net; no port forwarding, remote ≡ local for the app. §9 updated.
+- **Panel overlay ladder added (§5, [NEW — confirm]):** the speaker ladder had no panel
+  counterpart, but Effector 1, the storm red-flash, the SENTRY grace pulse and the U5
+  flash all want the matrix over a running LUMEN program. Rule: overlays temporarily
+  replace/modulate the program and restore it; ordering mirrors the speaker ladder.
+- **Stale "ADS-B is not used" removed** from build-notes (contradicted U5, where ADS-B is
+  the SDR idle default). The short whip is ~λ/4 at 1090 MHz, serviceable.
+- **Antenna is a manual single-antenna compromise** (user: handles it by hand; NOAA APT
+  via whip will be mediocre — accepted). Optional nicety recorded: mode-change TTS says
+  "extend antenna to <n> cm" from a per-band table.
+- **BirdNET radio-bleed gate (U6):** mic and speaker share the box, so radio audio
+  (birdsong inside programmes!) would pollute the bird log. While the speaker plays
+  radio/media, detections are discarded and those windows are excluded from the uptime
+  normalisation. User: "birdnet nur wenn kein Radio."
+- **U13 correction (spec error):** 433.92 MHz does *not* cover 868 MHz weather stations —
+  one `rtl_433` instance now **frequency-hops** 433.92/868.3 (`-H 60`); breadth over
+  continuous coverage, invisible to consumers.
+- **U10.4 EWF downgraded to best-effort:** welle.io most likely cannot decode the German
+  (Fraunhofer-pilot) EWF signalling; if so, U10.4 is dropped — app/cell-broadcast remain
+  the real warning path.
+- **U18 output format: WebM** (VP9), not GIF — ~4,300 frames as GIF would be hundreds of
+  MB; topic renamed `balkon/timelapse/video`.
+- **U14 transient window defined:** the Pi keeps a rolling FIFO-50 of images in tmpfs
+  (mirrors the app's FIFO-50), so an offline phone can catch up; TLE refresh noted as a
+  minor internet dependency.
+- **"One persistent store" wording tightened** (U6, §8): one persistent *database*
+  (BirdNET SQLite); tiny bounded auxiliary files (U5 seen-set, U18 frames) are fine — the
+  no-data-grave line targets unbounded telemetry.
+
 ## 2026-07-17 — U19 (presence ghost) deferred
 
 **Decision:** U19 is **parked**, like U8. Not part of the current build; the number stays
