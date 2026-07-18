@@ -218,6 +218,9 @@ the unit feel intentional and fun, not a utilitarian lamp, without any extra har
 **Requirements:**
 1. BME280 (temperature/humidity/pressure) → MQTT → dashboard: current values plus a
    short-term (recent / session) trend.
+2. Sampled roughly **once a minute**, kept in an in-RAM buffer; the **app can fetch the
+   whole buffer** (each sample timestamped) in one go to draw the trend, not just the
+   next live value.
 
 *(Dropped: the long-term climate log and the presence usage heatmap — see Value.)*
 
@@ -231,14 +234,18 @@ misleading half-record; U4 shows what is true right now and the recent trend, no
 cannot honestly deliver.
 
 **Implementation:** the ESP32 already reads the BME280 over I²C and publishes
-`balkon/env/{temperature,humidity,pressure}` over MQTT (ESPHome), sampled every ~30–60 s
-(slow signals, no need for more). No database: the arbiter keeps the recent samples in an
-**in-RAM ring buffer** (a few hours' worth), which is enough to compute local trends (a
-pressure drop → weather turning) and to serve the current values + short trend. The
-**app is the dashboard** (subscribes to `balkon/env/*` for live values, and can request or
-keep the short trend); the matrix Info-Ticker can surface a value too. Persisting BME data
-would be a data grave — pointless across the unit's downtime — so it is deliberately
-live-only. Radar presence stays live for the light/mode logic (U1) but is not logged.
+`balkon/env/{temperature,humidity,pressure}` over MQTT (ESPHome), sampled roughly **once a
+minute** (slow signals, no need for more). No database: the arbiter keeps the recent
+samples in an **in-RAM ring buffer** (a few hours' worth, each entry timestamped), which is
+enough to compute local trends (a pressure drop → weather turning) and to serve the current
+values + short trend. **Delivery follows the same pattern as the SIGINT feeds**
+(`architecture.md` §4): the buffer is published as a **retained** MQTT snapshot
+(`balkon/env/recent`), so the app gets the **whole timestamped trend in one shot** on
+connect/subscribe, not just the next live sample — that's what lets it draw a graph
+immediately rather than accumulating one live from scratch. The **app is the dashboard**;
+the matrix Info-Ticker can surface a current value too. Persisting BME data would be a
+data grave — pointless across the unit's downtime — so it is deliberately live-only. Radar
+presence stays live for the light/mode logic (U1) but is not logged.
 **No alerts here:** frost/heat/storm warnings are their own use cases (e.g. U9.3 storm
 warning); U4 is display-only.
 
@@ -588,12 +595,43 @@ still browsable in one go thanks to the shared SIGINT ring-buffer pattern (`arch
 ## U14 — Space & sky radio
 
 **Requirements:**
-1. NOAA weather-satellite images on overpass.
-2. ISS SSTV auto-decode.
-3. Meteor scatter detection (GRAVES ping), visual + audio.
+1. **NOAA weather-satellite images** — decode APT on overpass (NOAA-15/18/19, 137 MHz).
+2. **ISS SSTV auto-decode** — decode slow-scan TV images during ISS SSTV events
+   (145.800 MHz FM).
+3. **Meteor scatter detection** (GRAVES forward-scatter ping, 143.050 MHz) — visual +
+   audio on detection.
+4. **Images are not archived on the Pi.** A decoded image triggers an MQTT push (metadata
+   + an HTTP URL to fetch the bytes); **the app is the persistent store** — it downloads
+   the image and keeps a permanent, local **FIFO gallery of the last 50**. The Pi holds
+   the file only transiently, long enough to be fetched.
 
-**Value:** _TBD_
-**Implementation:** _TBD_
+**Value:** a little space-and-sky hobby feed — a weather-satellite photo of your own
+region as it passes overhead, the rare treat of an ISS SSTV image, and a ping when a
+meteor briefly bounces a French radar signal off its trail. All landing straight in the
+app as a permanent, browsable gallery, without turning the enclosure Pi into an image
+archive.
+
+**Implementation:**
+- **Decoders:** `noaa-apt` (or `wxtoimg`-equivalent) for NOAA APT, `qsstv`/`sstv-decode`
+  for ISS SSTV, both triggered by pass predictions (skyfield/predict-style ephemeris) —
+  this is the SIGINT **"scheduled captures"** submode (already named in the mode table):
+  the SDR tunes in only around known overpass/event windows, not continuously. Meteor
+  scatter listens continuously whenever this submode has the tuner (no pass prediction
+  needed — GRAVES runs 24/7).
+- **Image delivery:** on decode, the Pi writes the image to a small transient working
+  file (no growing archive) and publishes a **retained** MQTT message (id, timestamp,
+  type, HTTP URL) so a freshly opened app immediately knows the latest is available. The
+  app fetches over HTTP and appends it to its **own local FIFO-50 gallery** — permanent
+  storage lives on the phone, not the Pi. Deliberately different from U7 (whose event
+  clips need off-site survivability on the nas-Pi for security evidence): U14's images
+  have no such requirement, so client-side storage is simplest and keeps the Pi's own
+  footprint minimal.
+- **Meteor scatter (U14.3):** follows the general SIGINT live-data pattern
+  (`architecture.md` §4) — an in-RAM ring buffer of the last ~50 pings, published as a
+  retained MQTT snapshot (`balkon/meteor/recent`), shown on the LUMEN ticker when this
+  submode is focused. On each ping, a short **audio chime** plays through U9's priority
+  mixer (event-feedback tier) — quick, wordless "ping" feedback, the same pattern as the
+  other event chimes.
 
 ---
 

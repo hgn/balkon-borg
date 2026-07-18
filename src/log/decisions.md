@@ -14,6 +14,47 @@ split into src/") for why.
 
 ---
 
+## 2026-07-17 — U4: env trend buffer gets a retained MQTT snapshot too
+
+Sampling confirmed at roughly **once a minute**. The existing in-RAM ring buffer (a few
+hours, per-sample timestamped) is now delivered the same way as the SIGINT feeds
+(`architecture.md` §4): a **retained** snapshot topic (`balkon/env/recent`), so the app
+gets the whole timestamped trend in one shot on connect and can draw a graph immediately,
+rather than accumulating one live from the moment it happens to be open. Still RAM-only,
+no DB — the retained-snapshot delivery doesn't change the no-telemetry-DB line, just how
+the existing buffer reaches a fresh subscriber.
+
+## 2026-07-17 — src/pi provisioning model: manual base image, scripted from there
+
+**Decision:** the only manual, unscripted step for the borg-pi5 is flashing the OS image,
+WiFi and SSH — everything after that (packages, file copies/scp, service/quadlet
+enablement, config placement) is driven by a script tracked in `src/pi/`, run from a
+control machine (not typed live on the Pi).
+
+**Why:** two goals the user wants — **reproducibility** (upgrading = re-running the
+script, not remembering steps) and **fast SD-failure recovery** (reflash + WiFi/SSH by
+hand, then re-run the script to reach the identical state, instead of rebuilding the setup
+from memory). Recorded in `src/pi/README.md`; not yet built (`src/pi/` still has no code),
+this fixes the target shape for when that work starts.
+
+## 2026-07-17 — U14: space & sky radio, images owned by the app, not the Pi
+
+**Requirements:** NOAA APT images and ISS SSTV images on the SIGINT "scheduled captures"
+submode (pass-predicted tuning); GRAVES meteor-scatter ping detection (continuous, no
+prediction needed).
+
+**Image storage — deliberately not on the Pi:** a decoded image triggers a **retained**
+MQTT push (metadata + HTTP URL); **the app fetches it and keeps its own permanent local
+FIFO-50 gallery.** The Pi holds the file only transiently for serving, no growing archive.
+This is a different call from U7 (event clips need off-site *survivability* on the nas-Pi,
+a security requirement) — U14's images have no such requirement, so pushing persistence to
+the client is simplest and keeps the Pi's storage footprint minimal. The pattern (retained
+MQTT push + HTTP fetch + client-owned persistence) may generalise to other image-producing
+use cases (e.g. U18) if they turn out to want the same shape.
+
+**Meteor scatter (U14.3)** uses the general SIGINT ring-buffer + retained-MQTT pattern
+(`balkon/meteor/recent`) plus a short audio chime through U9 on each ping.
+
 ## 2026-07-17 — U20 retired: pager dropped, airband folded into U10
 
 **Pager/POCSAG monitoring removed** (user's call, once told the realistic yield): German

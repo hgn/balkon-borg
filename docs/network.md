@@ -62,7 +62,8 @@ Topic scheme (target):
 
 | Topic | Publisher → subscriber | Payload |
 |---|---|---|
-| `balkon/env/temperature` · `/humidity` · `/pressure` | ESP32 → dashboards | BME280 readings |
+| `balkon/env/temperature` · `/humidity` · `/pressure` | ESP32 → dashboards | BME280 readings (live) |
+| `balkon/env/recent` **(retained)** | borg-pi5 → app | timestamped BME280 trend buffer (U4), a few hours |
 | `balkon/presence` | ESP32 → dashboards | radar target on/off |
 | `wled/balkon` | ESP32 → WLED | command (`ON`/`OFF`/`T`) |
 | `wled/balkon/api` | ESP32 → WLED | JSON (`bri`, `ps`) |
@@ -74,6 +75,9 @@ Topic scheme (target):
 | `balkon/tpms/recent` **(retained)** | borg-pi5 → dashboards | `rtl_433` TPMS decode (U13), last ~50 |
 | `balkon/aprs/recent` **(retained)** | borg-pi5 → dashboards | APRS stations heard (U15), last ~50 |
 | `balkon/radiosonde/recent` **(retained)** | borg-pi5 → dashboards | radiosonde telemetry (U16), last ~50 |
+| `balkon/noaa/image` **(retained)** | borg-pi5 → app | NOAA APT image ready (U14): id/timestamp/HTTP URL, image not archived on the Pi |
+| `balkon/iss/sstv/image` **(retained)** | borg-pi5 → app | ISS SSTV image ready (U14): id/timestamp/HTTP URL |
+| `balkon/meteor/recent` **(retained)** | borg-pi5 → dashboards | GRAVES meteor-scatter pings (U14), last ~50 |
 
 (The ESP32 currently uses ESPHome MQTT discovery for its own sensor topics, plus the
 explicit `wled/balkon` topics.)
