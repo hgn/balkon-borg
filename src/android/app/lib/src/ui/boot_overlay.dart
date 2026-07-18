@@ -137,10 +137,12 @@ class _RadarWave extends StatelessWidget {
 
   final AnimationController controller;
 
-  // Full-screen radar sweep, not a screen-content enter — but reuse the
-  // app's existing ease-out ("screen enter") curve rather than invent a
-  // one-off; a spring/overshoot on a fullscreen ring would look wrong.
-  static const _ringCurve = balkonScreenEnterCurve;
+  // A radar shockwave travels at constant speed — near-linear expansion
+  // (gentle sine easing at the ends only). The earlier strong ease-out
+  // (balkonScreenEnterCurve) front-loaded ~80% of the expansion into the
+  // first third of the time, which made the 3s wave *feel* sub-second
+  // (user feedback 2026-07-17).
+  static const _ringCurve = Curves.easeInOutSine;
   static const _ringBaseDiameter = 28.0;
   static const _ringBorderWidth = 3.0;
 
@@ -193,9 +195,11 @@ class _RadarWave extends StatelessWidget {
               builder: (context, _) {
                 final t = _ringCurve.transform(controller.value);
                 final diameter = _ringBaseDiameter + (maxDiameter - _ringBaseDiameter) * t;
-                // The ring itself fades out a little ahead of full expansion
-                // so it doesn't linger as a giant static circle.
-                final glowAlpha = (1 - t * 1.15).clamp(0.0, 1.0);
+                // Stay fully visible while sweeping the screen; fade only on
+                // the last ~15%, once the ring has cleared the corners. The
+                // earlier `1 - t*1.15` killed it by half-time (user: "blendet
+                // bereits in halber Durchlauf aus").
+                final glowAlpha = ((1 - t) / 0.15).clamp(0.0, 1.0);
                 return Container(
                   width: diameter,
                   height: diameter,
