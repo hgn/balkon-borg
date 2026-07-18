@@ -205,21 +205,21 @@ class _RadarWave extends StatelessWidget {
               builder: (context, _) {
                 final t = _ringCurve.transform(controller.value);
                 final diameter = _ringBaseDiameter + (maxDiameter - _ringBaseDiameter) * t;
-                // Exit choreography over the last quarter (user, 2026-07-18:
-                // "stärker transparent werden, kurz ganz hell aufflackern"):
-                // `q` runs 0→1 through it. The base fade is quadratic — the
-                // ring loses most of its opacity early in the quarter — and a
-                // narrow gaussian flare around q≈0.4 briefly re-brightens it
-                // to full, tinting toward white: an energy discharge right
-                // before it dies.
-                final q = ((t - 0.75) / 0.25).clamp(0.0, 1.0);
-                final baseFade = (1 - q) * (1 - q);
-                final flare = math.exp(-math.pow((q - 0.4) / 0.09, 2)).toDouble();
+                // Exit choreography (user-tuned 2026-07-18): the ring is at
+                // full strength only for the first quarter, then sags
+                // noticeably ("ab 1/4 deutlich absacken") — fade exponent 1.5
+                // drops it fast early and lets it bleed out toward zero. A
+                // narrow gaussian flare at t≈0.85 briefly re-brightens it to
+                // full, tinting toward white ("der Aufleuchteffekt ist gut"):
+                // an energy discharge right before it dies.
+                final p = ((t - 0.25) / 0.75).clamp(0.0, 1.0);
+                final baseFade = math.pow(1 - p, 1.5).toDouble();
+                final flare = math.exp(-math.pow((t - 0.85) / 0.023, 2)).toDouble();
                 final glowAlpha = (baseFade + flare * 0.9).clamp(0.0, 1.0);
-                // Blur ramps over the same quarter (sigma 0 → 5) so the edge
-                // hazes out while it fades — the flare shines through the
+                // Blur still ramps over the last quarter only (sigma 0 → 5):
+                // the edge hazes out at the end, the flare shines through the
                 // haze rather than sharpening it again.
-                final blurSigma = q * 5.0;
+                final blurSigma = ((t - 0.75) / 0.25).clamp(0.0, 1.0) * 5.0;
                 final flashColor = Color.lerp(
                   BalkonColors.darkPrimaryStrong,
                   Colors.white,

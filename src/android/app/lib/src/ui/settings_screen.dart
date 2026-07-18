@@ -383,6 +383,11 @@ class _BrokerField extends StatelessWidget {
               enabledBorder: border,
               focusedBorder: border.copyWith(borderSide: BorderSide(color: scheme.primary)),
             ),
+            // Persist on every keystroke, not only on keyboard submit:
+            // backing out of the screen without hitting Enter used to lose
+            // the input entirely (user report 2026-07-18 for the name field;
+            // the broker fields had the same latent bug).
+            onChanged: onSubmitted,
             onFieldSubmitted: onSubmitted,
           ),
         ],
