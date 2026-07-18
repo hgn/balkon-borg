@@ -130,6 +130,9 @@ class BalkonRadii {
   static const card = 28.0;
   static const sentryCard = 24.0;
   static const statTile = 20.0;
+  // Not in tokens.json's radius block (only components.md names it: "Live-
+  // Kamera": "Bildbereich: 220px Höhe, Radius 26px").
+  static const liveCamera = 26.0;
   static const chipWide = 16.0;
   static const chip = 14.0;
   static const badge = 13.0;

@@ -53,6 +53,15 @@ abstract final class Submodes {
     Submode('armed', 'Scharf'),
   ];
 
+  /// SENTRY submode values that count as "armed" for the subtle red border
+  /// (components.md "Mode-Card" / "SENTRY-Karte") and the SENTRY switch
+  /// position (Camera screen). Only `armed` exists in the contract today
+  /// (see `sentry` above); `grace`/`alarm` are named here as a forward-
+  /// looking extension of the same armed family (docs/use-cases.md §U11
+  /// lifecycle: off · arming · armed · grace · alarm) so both call sites
+  /// don't need a follow-up change if/when the arbiter starts sending them.
+  static const sentryArmedSubmodes = {'armed', 'grace', 'alarm'};
+
   static List<Submode> forMode(MainMode m) => switch (m) {
         MainMode.lumen => lumen,
         MainMode.comms => comms,

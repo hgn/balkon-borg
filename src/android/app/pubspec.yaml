@@ -22,6 +22,10 @@ dependencies:
   http: ^1.2.2
   # Settings persistence (broker host, intervals, notification toggles).
   shared_preferences: ^2.3.3
+  # U21 push-to-talk recording (E4). Its `hasPermission()` requests the
+  # RECORD_AUDIO runtime permission itself, so no separate permission_handler
+  # dependency is needed.
+  record: ^7.1.1
 
 dev_dependencies:
   flutter_test:

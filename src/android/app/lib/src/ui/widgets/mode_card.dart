@@ -25,13 +25,6 @@ Color modeAccent(BuildContext context, MainMode m) {
   };
 }
 
-/// SENTRY submode values that count as "armed" for the card's subtle red
-/// border (components.md "SENTRY-Karte"). Only `armed` exists in the
-/// contract today; `grace`/`alarm` are named as a future extension of the
-/// same armed family and handled here defensively so the border doesn't need
-/// a follow-up change if they land.
-const _sentryArmedSubmodes = {'armed', 'grace', 'alarm'};
-
 /// Home's 2×2 mode card (components.md "Mode-Card"). Stateful only for the
 /// tap-down press-scale; the submode value/typography swap is driven by
 /// `state.isOff` from the parent, animated via [AnimatedDefaultTextStyle].
@@ -64,7 +57,7 @@ class _ModeCardState extends State<ModeCard> {
     final accent = modeAccent(context, widget.mode);
     final active = !widget.state.isOff;
     final armed = widget.mode == MainMode.sentry &&
-        _sentryArmedSubmodes.contains(widget.state.submode);
+        Submodes.sentryArmedSubmodes.contains(widget.state.submode);
     final label = Submodes.labelFor(widget.mode, widget.state.submode);
 
     return GestureDetector(

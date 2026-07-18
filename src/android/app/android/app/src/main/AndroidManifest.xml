@@ -3,6 +3,8 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Local notifications from the watch-window event checks. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- U21 push-to-talk recording (Camera screen). -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <application
         android:label="Balkon-Borg"
         android:name="${applicationName}"
