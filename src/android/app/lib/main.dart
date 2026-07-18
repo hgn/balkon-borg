@@ -5,6 +5,7 @@ import 'src/services/mqtt_service.dart';
 import 'src/state/app_state.dart';
 import 'src/state/settings.dart';
 import 'src/theme/balkon_theme.dart';
+import 'src/ui/boot_overlay.dart';
 import 'src/ui/shell.dart';
 
 Future<void> main() async {
@@ -37,7 +38,10 @@ class BalkonBorgApp extends StatelessWidget {
           // its child in an AnimatedTheme, driven by these two knobs.
           themeAnimationDuration: balkonThemeCrossfadeDuration,
           themeAnimationCurve: balkonThemeCrossfadeCurve,
-          home: const BorgShell(),
+          // Boot-Welle (E7): runs once per cold start, revealing the shell
+          // underneath — never re-triggered by resume or tab switches since
+          // BootOverlay only ever mounts here, at the app root.
+          home: const BootOverlay(child: BorgShell()),
         ),
       ),
     );

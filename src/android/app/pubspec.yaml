@@ -32,6 +32,8 @@ dependencies:
   # Watch-window background execution while the app is backgrounded: a
   # visible low-priority foreground service ("Borg wacht · bis HH:MM").
   flutter_foreground_task: ^10.0.0
+  # Chained fade/scale sequences for the boot animation (E7).
+  flutter_animate: ^4.5.2
 
 dev_dependencies:
   flutter_test:
