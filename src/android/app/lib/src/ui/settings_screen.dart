@@ -56,6 +56,12 @@ class SettingsScreen extends StatelessWidget {
                 value: settings.hapticsEnabled,
                 onChanged: settings.setHapticsEnabled,
               ),
+              _BrokerField(
+                label: 'Name',
+                subtitle: 'für die Begrüßung (optional)',
+                value: settings.displayName,
+                onSubmitted: settings.setDisplayName,
+              ),
             ],
           ),
           const SizedBox(height: 22), // tokens.json spacing.sectionGap
@@ -323,6 +329,8 @@ class _IntervalChips extends StatelessWidget {
 
 /// Broker text field, restyled onto `surface` (one step below the `surface2`
 /// section card) with the design's radii instead of the default M3 outline.
+/// Also reused for the ALLGEMEIN "Name" row (optional [subtitle], dim, same
+/// treatment as `_SwitchRow`'s subtitle line).
 class _BrokerField extends StatelessWidget {
   const _BrokerField({
     required this.label,
@@ -330,6 +338,7 @@ class _BrokerField extends StatelessWidget {
     required this.onSubmitted,
     this.keyboardType,
     this.obscure = false,
+    this.subtitle,
   });
 
   final String label;
@@ -337,6 +346,7 @@ class _BrokerField extends StatelessWidget {
   final ValueChanged<String> onSubmitted;
   final TextInputType? keyboardType;
   final bool obscure;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -354,6 +364,10 @@ class _BrokerField extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label, style: textTheme.bodySmall?.copyWith(color: extras.textDim)),
+          if (subtitle != null) ...[
+            const SizedBox(height: 2),
+            Text(subtitle!, style: textTheme.bodySmall?.copyWith(color: extras.textDim)),
+          ],
           const SizedBox(height: 6),
           TextFormField(
             initialValue: value,

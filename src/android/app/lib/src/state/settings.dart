@@ -20,6 +20,11 @@ class Settings extends ChangeNotifier {
   String get username => _prefs.getString('username') ?? 'app';
   String get password => _prefs.getString('password') ?? '';
 
+  // Optional display name (greeting engine, services/greeting.dart): no
+  // hardcoded default — the app runs on several family members' own
+  // phones, each with their own Settings/SharedPreferences instance.
+  String get displayName => _prefs.getString('display_name') ?? '';
+
   // Theme (E1): dark is the native/default tone, light is user-selectable
   // via the header toggle pill (binary — no "system" option in the design).
   ThemeMode get themeMode =>
@@ -71,6 +76,11 @@ class Settings extends ChangeNotifier {
     if (port != null) await _prefs.setInt('port', port);
     if (username != null) await _prefs.setString('username', username);
     if (password != null) await _prefs.setString('password', password);
+    notifyListeners();
+  }
+
+  Future<void> setDisplayName(String name) async {
+    await _prefs.setString('display_name', name.trim());
     notifyListeners();
   }
 

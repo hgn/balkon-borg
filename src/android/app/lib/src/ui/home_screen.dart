@@ -7,6 +7,7 @@ import '../contract/submodes.dart';
 import '../contract/topics.dart';
 import '../models/env_sample.dart';
 import '../models/mode_state.dart';
+import '../services/greeting.dart';
 import '../services/haptics.dart';
 import '../state/app_state.dart';
 import '../state/settings.dart';
@@ -37,7 +38,10 @@ class HomeScreen extends StatelessWidget {
           const _ConnectionBanner(),
           const SizedBox(height: 16),
         ],
-        Text(_greeting(DateTime.now()), style: textTheme.headlineMedium),
+        Text(
+          greetingEngine.greet(name: settings.displayName),
+          style: textTheme.headlineMedium,
+        ),
         const SizedBox(height: 4),
         Text(_statusLine(state, settings), style: textTheme.bodyMedium),
         const SizedBox(height: 22),
@@ -46,12 +50,6 @@ class HomeScreen extends StatelessWidget {
         _EnvStatsRow(history: state.envHistory),
       ],
     );
-  }
-
-  String _greeting(DateTime now) {
-    if (now.hour < 11) return 'Guten Morgen.';
-    if (now.hour < 18) return 'Guten Tag.';
-    return 'Guten Abend.';
   }
 
   String _statusLine(AppState state, Settings settings) {
