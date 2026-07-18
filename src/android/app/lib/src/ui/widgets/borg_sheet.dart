@@ -1,5 +1,3 @@
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 
 import '../../theme/balkon_theme.dart';
@@ -18,45 +16,30 @@ import '../../theme/balkon_theme.dart';
 /// upgrades. The backdrop keeps Flutter's default `Curves.ease` fade
 /// (`PopupRoute.barrierCurve`), matching motion.md §4.
 ///
-/// Glassmorphism (E9): the Material itself stays transparent so a
-/// `BackdropFilter` blur + a translucent `surface3` fill can shine through
-/// instead of a flat panel color, clipped to the same top radius so the
-/// blur never bleeds past the sheet's rounded shape. Grabber/header/content
-/// (the caller's `builder`) are unchanged — only the backdrop behind them
-/// changes.
+/// Sheets are deliberately **opaque** (E9 follow-up): the frosted-glass
+/// variant (BackdropFilter + translucent surface3) made sheet content like
+/// the env chart hard to read against whatever shimmered through — user
+/// call 2026-07-17: "einfach wie vorher, ohne Transparenz". The bottom nav
+/// keeps its glass; sheets don't.
 Future<T?> showBorgSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
   bool isScrollControlled = true,
 }) {
   final extras = Theme.of(context).extension<BalkonExtras>()!;
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  // 0.72 (dark) reads as intended, but on the light theme's pale background
-  // it washed out to near-invisible — bumped to 0.8 there to keep the panel
-  // legibly distinct from whatever's scrolling behind it.
-  final fillOpacity = isDark ? 0.72 : 0.8;
   const topRadius = BorderRadius.vertical(top: Radius.circular(BalkonRadii.sheet));
 
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: isScrollControlled,
-    backgroundColor: Colors.transparent,
+    backgroundColor: extras.surface3,
     barrierColor: const Color(0x8C05020C), // rgba(5,2,12,.55), components.md
     shape: const RoundedRectangleBorder(borderRadius: topRadius),
     sheetAnimationStyle: const AnimationStyle(
       curve: balkonSheetCurve,
       duration: balkonSheetDuration,
     ),
-    builder: (context) => ClipRRect(
-      borderRadius: topRadius,
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(
-          color: extras.surface3.withValues(alpha: fillOpacity),
-          child: builder(context),
-        ),
-      ),
-    ),
+    builder: builder,
   );
 }
 

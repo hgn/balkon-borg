@@ -17,21 +17,23 @@ class _BootTiming {
 
   /// Overall ring/controller duration — drives the wave expansion; the
   /// reveal-band delays below are tuned to land inside it. History: 1300ms
-  /// (E7 spec) → 1950ms (E8, "langsamer") → ~3s (user: "+1s", 2026-07-17);
-  /// everything below scales with it (×1.5 from the E8 values).
-  static const total = Duration(milliseconds: 2950);
+  /// (E7 spec) → 1950ms (E8, "langsamer") → 2950ms ("+1s") → back to
+  /// ~2s (user, 2026-07-17: "um 1 Sekunde kürzen" once the ring actually
+  /// swept the full screen — the perceived shortness had been the early
+  /// fade/clamp, not the duration).
+  static const total = Duration(milliseconds: 1950);
 
   // Reveal bands (header/content/nav uncovering as the wave sweeps past).
-  static const headerDelay = Duration(milliseconds: 450);
-  static const contentDelay = Duration(milliseconds: 790);
-  static const navDelay = Duration(milliseconds: 1130);
-  static const revealFadeDuration = Duration(milliseconds: 950);
+  static const headerDelay = Duration(milliseconds: 300);
+  static const contentDelay = Duration(milliseconds: 525);
+  static const navDelay = Duration(milliseconds: 750);
+  static const revealFadeDuration = Duration(milliseconds: 630);
 
   // Logo fade-in / hold / scale-and-fade-out sequence.
-  static const logoFadeIn = Duration(milliseconds: 500);
-  static const logoHoldDelay = Duration(milliseconds: 340);
-  static const logoScale = Duration(milliseconds: 860);
-  static const logoFadeOut = Duration(milliseconds: 860);
+  static const logoFadeIn = Duration(milliseconds: 330);
+  static const logoHoldDelay = Duration(milliseconds: 225);
+  static const logoScale = Duration(milliseconds: 570);
+  static const logoFadeOut = Duration(milliseconds: 570);
 }
 
 /// "Radar-Welle" boot animation (E7, implementation-plan.md): on cold start a
@@ -189,8 +191,16 @@ class _RadarWave extends StatelessWidget {
             ],
           ),
           const Center(child: _BootLogo()),
+          // OverflowBox lifts the parent's BoxConstraints: without it the
+          // circle silently clamped at the screen width the moment it hit
+          // the side edges and never actually traveled past the corners
+          // (user: "der Kreis darf nicht enden, wenn es an die Kanten
+          // stößt"). The Stack clips whatever overflows — exactly right.
           Center(
-            child: AnimatedBuilder(
+            child: OverflowBox(
+              maxWidth: double.infinity,
+              maxHeight: double.infinity,
+              child: AnimatedBuilder(
               animation: controller,
               builder: (context, _) {
                 final t = _ringCurve.transform(controller.value);
@@ -224,6 +234,7 @@ class _RadarWave extends StatelessWidget {
                   ),
                 );
               },
+              ),
             ),
           ),
         ],
