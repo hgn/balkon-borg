@@ -3,7 +3,9 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
+import '../contract/feeds.dart';
 import '../contract/topics.dart';
+import '../models/bird_detection.dart';
 import '../models/borg_event.dart';
 import '../models/env_sample.dart';
 import '../models/health.dart';
@@ -46,6 +48,15 @@ class AppState extends ChangeNotifier {
   String healthSummary = '';
   List<BorgEvent> recentEvents = [];
   List<EnvSample> envHistory = [];
+  List<BirdDetection> birdLog = [];
+
+  /// Cap for [birdLog]: BirdNET-Go publishes one message per detection (no
+  /// retained ring like `event/recent`), so the app accumulates it itself.
+  static const _birdLogCap = 100;
+
+  /// Today's most-detected species (see [BirdOfDay.fromLog] for the
+  /// tie-break rule); `null` if nothing was detected today.
+  BirdOfDay? get birdOfDay => BirdOfDay.fromLog(birdLog);
 
   /// Worst-of health summary for the header dot: grey (unknown) while
   /// disconnected or before any health data arrived.
@@ -72,6 +83,7 @@ class AppState extends ChangeNotifier {
       healthSummary = snapshot.healthSummary;
       recentEvents = snapshot.events;
       envHistory = snapshot.envHistory;
+      birdLog = snapshot.birdLog;
       connected = true;
       notifyListeners();
       return;
@@ -133,6 +145,13 @@ class AppState extends ChangeNotifier {
           for (final e in list)
             if (e is Map<String, dynamic>) EnvSample.fromJson(e),
         ];
+      }
+    } else if (topic == Feeds.birdDetections) {
+      // BirdNET-Go publishes one detection per message, not a batch/ring
+      // like `event/recent` — accumulate locally, newest first, capped.
+      birdLog = [BirdDetection.fromJson(json), ...birdLog];
+      if (birdLog.length > _birdLogCap) {
+        birdLog = birdLog.sublist(0, _birdLogCap);
       }
     } else {
       return;

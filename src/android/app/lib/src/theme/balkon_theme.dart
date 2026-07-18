@@ -220,7 +220,9 @@ ThemeData buildBalkonTheme({required Brightness brightness}) {
 
 /// Helper for Space Grotesk numeric/mono text (clock, stat values, frequencies,
 /// chart readouts). Use directly: Text('93.3 MHz', style: balkonMonoStyle(context, 19, FontWeight.w700))
-TextStyle balkonMonoStyle(BuildContext context, double size, FontWeight weight) {
-  final color = Theme.of(context).colorScheme.onSurface;
-  return TextStyle(fontFamily: 'SpaceGrotesk', fontSize: size, fontWeight: weight, color: color);
+/// [color] defaults to `onSurface`, matching every caller before this param
+/// existed; pass e.g. `extras.textDim` for a dimmed mono label (Log tab).
+TextStyle balkonMonoStyle(BuildContext context, double size, FontWeight weight, {Color? color}) {
+  final resolved = color ?? Theme.of(context).colorScheme.onSurface;
+  return TextStyle(fontFamily: 'SpaceGrotesk', fontSize: size, fontWeight: weight, color: resolved);
 }
