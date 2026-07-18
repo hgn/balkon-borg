@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../services/haptics.dart';
 import '../services/watch_window.dart';
 import '../state/app_state.dart';
 import '../state/settings.dart';
@@ -172,8 +173,10 @@ class _ThemeTogglePill extends StatelessWidget {
     final isDark = settings.themeMode == ThemeMode.dark;
 
     return GestureDetector(
-      onTap: () =>
-          settings.setThemeMode(isDark ? ThemeMode.light : ThemeMode.dark),
+      onTap: () {
+        context.read<Haptics>().lightImpact();
+        settings.setThemeMode(isDark ? ThemeMode.light : ThemeMode.dark);
+      },
       child: Container(
         width: 60,
         height: 32,
@@ -205,26 +208,112 @@ class _ThemeTogglePill extends StatelessWidget {
 
 /// Aggregate health status dot (D1): green/amber/red, grey while
 /// disconnected. Tap opens the health sheet (widgets/health_sheet.dart, E6).
-class _HealthDot extends StatelessWidget {
+///
+/// E8 (implementation-plan.md): while "live" (connected or demo — i.e.
+/// anything but the grey/unknown disconnected state), the dot emits a
+/// subtle sonar ping every few seconds — an expanding, fading ring in the
+/// dot's own color, same ambient-loop family as the live-status/LIVE-camera
+/// pulse dots (design/motion.md).
+class _HealthDot extends StatefulWidget {
   const _HealthDot();
+
+  @override
+  State<_HealthDot> createState() => _HealthDotState();
+}
+
+class _HealthDotState extends State<_HealthDot> with SingleTickerProviderStateMixin {
+  static const _dotSize = 12.0;
+  // "expands to ~2x-2.5x the dot's diameter" (task spec) — 12 * ~2.3.
+  static const _pingMaxDiameter = 28.0;
+  static const _pingInterval = Duration(seconds: 3);
+
+  late final AnimationController _pingController;
+  bool _reduceMotion = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _pingController = AnimationController(vsync: this, duration: _pingInterval);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _reduceMotion = MediaQuery.of(context).disableAnimations;
+  }
+
+  /// Starts/stops the repeating ping to match the current "live" state.
+  /// Called from `build()` (not `didUpdateWidget`): the widget's own
+  /// constructor never changes, `state.aggregateHealth` does — this keeps
+  /// the controller in sync with that Provider-driven value directly.
+  void _syncPing(bool live) {
+    final shouldRun = live && !_reduceMotion;
+    if (shouldRun && !_pingController.isAnimating) {
+      _pingController.repeat();
+    } else if (!shouldRun && _pingController.isAnimating) {
+      _pingController.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _pingController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final scheme = Theme.of(context).colorScheme;
-    final color = switch (state.aggregateHealth) {
+    final health = state.aggregateHealth;
+    final color = switch (health) {
       AggregateHealth.ok => Colors.green,
       AggregateHealth.degraded => Colors.amber,
       AggregateHealth.bad => scheme.error,
       AggregateHealth.unknown => scheme.outline,
     };
+    // "unknown" is the only grey/disconnected state (AppState.aggregateHealth)
+    // — everything else (ok/degraded/bad) implies connected-or-demo.
+    final live = health != AggregateHealth.unknown;
+    _syncPing(live);
+
     return GestureDetector(
       onTap: () => showHealthSheet(context, state),
       child: Container(
-        width: 12,
-        height: 12,
+        width: _dotSize,
+        height: _dotSize,
         margin: const EdgeInsets.symmetric(horizontal: 2),
-        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        child: RepaintBoundary(
+          child: Stack(
+            clipBehavior: Clip.none, // the ping ring paints beyond the 12px dot.
+            alignment: Alignment.center,
+            children: [
+              if (live && !_reduceMotion)
+                AnimatedBuilder(
+                  key: const ValueKey('health-ping-ring'),
+                  animation: _pingController,
+                  builder: (context, _) {
+                    final t = _pingController.value;
+                    final diameter = _dotSize + (_pingMaxDiameter - _dotSize) * t;
+                    // Soft edge: a thin stroke starting around 0.5 opacity,
+                    // fading to zero as the ring expands.
+                    final alpha = (1 - t) * 0.5;
+                    return Container(
+                      width: diameter,
+                      height: diameter,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: color.withValues(alpha: alpha), width: 1.5),
+                      ),
+                    );
+                  },
+                ),
+              Container(
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -282,7 +371,10 @@ class _NavItem extends StatelessWidget {
     final extras = Theme.of(context).extension<BalkonExtras>()!;
     final fg = active ? Colors.white : extras.textDim;
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        context.read<Haptics>().selectionClick();
+        onTap();
+      },
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: balkonSpringDuration,

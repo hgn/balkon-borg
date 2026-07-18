@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../services/haptics.dart';
 import '../../theme/balkon_theme.dart';
 
 /// One row in a COMMS preset list (components.md "Preset-Listen"). Prop-driven,
-/// no Provider coupling: caller decides selection state and the selected
-/// colors (DAB+ uses cyan/dark text, FM/airband use primary/white, per the
-/// per-band rule in the spec).
+/// no Provider coupling for colors/selection: caller decides selection state
+/// and the selected colors (DAB+ uses cyan/dark text, FM/airband use
+/// primary/white, per the per-band rule in the spec). Haptics (E8): a preset
+/// pick is the same "selection among options" family as `BorgChip`, so it
+/// gets the same `selectionClick`.
 class PresetRow extends StatelessWidget {
   const PresetRow({
     super.key,
@@ -33,7 +37,10 @@ class PresetRow extends StatelessWidget {
     final fg = selected ? selectedForeground : scheme.onSurface;
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        context.read<Haptics>().selectionClick();
+        onTap();
+      },
       child: AnimatedContainer(
         duration: balkonSpringDuration,
         curve: balkonSpring,

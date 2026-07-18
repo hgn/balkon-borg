@@ -3,13 +3,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:balkon_borg/src/services/haptics.dart';
 import 'package:balkon_borg/src/state/settings.dart';
 import 'package:balkon_borg/src/theme/balkon_theme.dart';
 import 'package:balkon_borg/src/ui/settings_screen.dart';
 import 'package:balkon_borg/src/ui/widgets/borg_switch.dart';
 
-Widget _wrap(Settings settings) => ChangeNotifierProvider.value(
-      value: settings,
+Widget _wrap(Settings settings) => MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: settings),
+        Provider<Haptics>.value(value: const NoopHaptics()),
+      ],
       child: MaterialApp(
         theme: buildBalkonTheme(brightness: Brightness.dark),
         home: const SettingsScreen(),
@@ -45,6 +49,8 @@ void main() {
 
     // Demo-mode switch row (D2, surfaced per E6 scope).
     expect(find.text('Demo-Modus'), findsOneWidget);
+    // Haptics switch row (E8).
+    expect(find.text('Haptik'), findsOneWidget);
     expect(find.byType(BorgSwitch), findsWidgets);
 
     // App section: version line + APK-source hint.
@@ -76,5 +82,19 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(settings.demoMode, isFalse);
+  });
+
+  testWidgets('Toggling the Haptik switch updates Settings.hapticsEnabled', (tester) async {
+    SharedPreferences.setMockInitialValues({'haptics_enabled': true});
+    final settings = await Settings.load();
+    expect(settings.hapticsEnabled, isTrue);
+    await _pumpTall(tester, settings);
+
+    // The Haptik switch is the second BorgSwitch on the screen (ALLGEMEIN's
+    // second row, right after Demo-Modus).
+    await tester.tap(find.byType(BorgSwitch).at(1));
+    await tester.pumpAndSettle();
+
+    expect(settings.hapticsEnabled, isFalse);
   });
 }

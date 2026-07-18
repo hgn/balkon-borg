@@ -34,6 +34,8 @@ dependencies:
   flutter_foreground_task: ^10.0.0
   # Chained fade/scale sequences for the boot animation (E7).
   flutter_animate: ^4.5.2
+  # Boot-sound underscore playback (E8).
+  audioplayers: ^6.8.1
 
 dev_dependencies:
   flutter_test:
@@ -46,6 +48,7 @@ flutter:
   assets:
     - assets/fonts/Manrope-OFL.txt
     - assets/fonts/SpaceGrotesk-OFL.txt
+    - assets/audio/start.wav
 
   # Bundled offline (D3): variable TTFs from the google/fonts OFL repo, each
   # weight entry pointing at the same variable-font file (Flutter's supported

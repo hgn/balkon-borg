@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../contract/submodes.dart';
 import '../contract/topics.dart';
 import '../models/mode_state.dart';
+import '../services/haptics.dart';
 import '../services/talkdown_recorder.dart';
 import '../state/app_state.dart';
 import '../state/settings.dart';
@@ -67,7 +68,10 @@ class _CameraScreenState extends State<CameraScreen> {
         Center(
           child: PttButton(
             held: _recording,
-            onTapDown: (_) => unawaited(_startRecording()),
+            onTapDown: (_) {
+              context.read<Haptics>().mediumImpact();
+              unawaited(_startRecording());
+            },
             onTapUp: (_) => _finishRecording(),
             onTapCancel: _cancelRecording,
           ),
@@ -96,6 +100,7 @@ class _CameraScreenState extends State<CameraScreen> {
     _autoStopTimer?.cancel();
     if (!_recording) return;
     setState(() => _recording = false);
+    context.read<Haptics>().heavyImpact(); // the deliberate release-to-send.
 
     // Snapshot everything context-derived now — the upload runs in the
     // background (fire-and-forget per the task spec) and must not touch
@@ -386,10 +391,18 @@ class _SentryCard extends StatelessWidget {
           const SizedBox(width: 16),
           SentrySwitch(
             armed: armed,
-            onChanged: (wantArmed) => context.read<AppState>().setSubmode(
-                  MainMode.sentry,
-                  wantArmed ? 'armed' : 'off',
-                ),
+            // Arming is the consequential action (heavyImpact); disarming is
+            // "just" the switch toggle (mediumImpact) — the widget has no
+            // separate press-down/confirm-arm gesture, so the toggle itself
+            // is where that distinction has to live (E8, implementation-plan.md).
+            onChanged: (wantArmed) {
+              final haptics = context.read<Haptics>();
+              wantArmed ? haptics.heavyImpact() : haptics.mediumImpact();
+              context.read<AppState>().setSubmode(
+                    MainMode.sentry,
+                    wantArmed ? 'armed' : 'off',
+                  );
+            },
           ),
         ],
       ),

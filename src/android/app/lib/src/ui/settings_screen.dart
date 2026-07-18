@@ -50,6 +50,12 @@ class SettingsScreen extends StatelessWidget {
                 value: settings.demoMode,
                 onChanged: settings.setDemoMode,
               ),
+              _SwitchRow(
+                label: 'Haptik',
+                subtitle: 'Vibration bei Auswahl, Zustandswechseln, PTT',
+                value: settings.hapticsEnabled,
+                onChanged: settings.setHapticsEnabled,
+              ),
             ],
           ),
           const SizedBox(height: 22), // tokens.json spacing.sectionGap

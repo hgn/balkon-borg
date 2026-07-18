@@ -11,6 +11,7 @@ import '../models/env_sample.dart';
 import '../models/health.dart';
 import '../models/mode_state.dart';
 import '../services/demo_source.dart';
+import '../services/haptics.dart';
 import '../services/mqtt_service.dart';
 import 'settings.dart';
 
@@ -25,7 +26,11 @@ enum AggregateHealth { unknown, ok, degraded, bad }
 /// (`Settings.demoMode`, D2); `connect()` picks the source and re-runs
 /// whenever the setting flips at runtime.
 class AppState extends ChangeNotifier {
-  AppState(this._mqtt, this._settings) {
+  /// [haptics] is injectable (tests pass a recording fake); defaults to the
+  /// real `HapticFeedback`-backed implementation, gated by
+  /// `Settings.hapticsEnabled`.
+  AppState(this._mqtt, this._settings, {Haptics? haptics})
+      : _haptics = haptics ?? SystemHaptics(() => _settings.hapticsEnabled) {
     _sub = _mqtt.messages.listen(_onMessage);
     _connSub = _mqtt.connectionChanges.listen((up) {
       connected = up;
@@ -36,6 +41,7 @@ class AppState extends ChangeNotifier {
 
   final MqttService _mqtt;
   final Settings _settings;
+  final Haptics _haptics;
   final DemoSource _demo = const DemoSource();
   StreamSubscription<BorgMessage>? _sub;
   StreamSubscription<bool>? _connSub;
@@ -117,7 +123,7 @@ class AppState extends ChangeNotifier {
     final topic = msg.topic;
     for (final m in MainMode.values) {
       if (topic == Topics.mode(m)) {
-        modes[m] = ModeState.fromJson(json);
+        _applyModeUpdate(m, ModeState.fromJson(json));
         notifyListeners();
         return;
       }
@@ -164,9 +170,28 @@ class AppState extends ChangeNotifier {
       'chan': ?chan,
     });
     if (_demoActive) {
-      modes[m] = ModeState(submode: submode, chan: chan, pinned: modes[m]?.pinned ?? false);
+      _applyModeUpdate(
+        m,
+        ModeState(submode: submode, chan: chan, pinned: modes[m]?.pinned ?? false),
+      );
       notifyListeners();
     }
+  }
+
+  /// Applies an incoming/demo [ModeState] for [m], firing the "state-echo
+  /// confirmation" haptic (E8, implementation-plan.md) iff the submode or
+  /// channel actually changed — a retained message republishing the same
+  /// value stays silent, and so does the *initial* population (`prev ==
+  /// null`): on connect the broker delivers four retained mode messages at
+  /// once, and buzzing four times on app start is startup noise, not a
+  /// confirmation of anything the user did. Compares old vs new *before*
+  /// mutating, per spec.
+  void _applyModeUpdate(MainMode m, ModeState next) {
+    final prev = modes[m];
+    final changed =
+        prev != null && (prev.submode != next.submode || prev.chan != next.chan);
+    modes[m] = next;
+    if (changed) _haptics.mediumImpact();
   }
 
   void setFocus(MainMode m) =>

@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../services/haptics.dart';
 import '../../theme/balkon_theme.dart';
 
 /// Selectable chip (components.md "Chips" — COMMS band / SIGINT function).
-/// Prop-driven, no Provider coupling: caller decides selection state and the
-/// selected colors (COMMS uses `cyan`, SIGINT uses `primary`), matching the
-/// per-context color rule in the spec.
+/// Prop-driven, no Provider coupling for colors/selection: caller decides
+/// selection state and the selected colors (COMMS uses `cyan`, SIGINT uses
+/// `primary`), matching the per-context color rule in the spec. Haptics are
+/// the one exception (E8, implementation-plan.md): every `BorgChip` — band,
+/// SIGINT, voice-effect and interval chips alike — fires `selectionClick`
+/// centrally here rather than at each call site.
 class BorgChip extends StatelessWidget {
   const BorgChip({
     super.key,
@@ -28,7 +33,10 @@ class BorgChip extends StatelessWidget {
     final extras = Theme.of(context).extension<BalkonExtras>()!;
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        context.read<Haptics>().selectionClick();
+        onTap();
+      },
       child: AnimatedContainer(
         duration: balkonSpringDuration,
         curve: balkonSpring,

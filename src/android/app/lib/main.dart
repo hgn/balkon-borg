@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'src/services/haptics.dart';
 import 'src/services/mqtt_service.dart';
 import 'src/state/app_state.dart';
 import 'src/state/settings.dart';
@@ -24,8 +25,15 @@ class BalkonBorgApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: settings),
+        // Gated by Settings.hapticsEnabled (E8, services/haptics.dart);
+        // widgets read this via Provider, AppState gets it via constructor
+        // injection (it has no BuildContext of its own).
+        Provider<Haptics>(
+          create: (_) => SystemHaptics(() => settings.hapticsEnabled),
+        ),
         ChangeNotifierProvider(
-          create: (_) => AppState(MqttService(), settings)..connect(),
+          create: (context) =>
+              AppState(MqttService(), settings, haptics: context.read<Haptics>())..connect(),
         ),
       ],
       child: Consumer<Settings>(

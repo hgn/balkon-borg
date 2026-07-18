@@ -1,9 +1,36 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import '../services/boot_sound.dart';
 import '../theme/balkon_theme.dart';
+
+/// Every boot-animation timing constant, centralized here rather than
+/// scattered as magic numbers through the widgets below (E8 —
+/// implementation-plan.md). Values are the original E7 "Radar-Welle" timings
+/// scaled ~1.5x, taking the whole sequence from ~1.3s to ~2.0s (user-approved
+/// polish batch, added 2026-07-17).
+class _BootTiming {
+  _BootTiming._();
+
+  /// Overall ring/controller duration — drives the wave expansion; the
+  /// reveal-band delays below are tuned to land inside it.
+  static const total = Duration(milliseconds: 1950);
+
+  // Reveal bands (header/content/nav uncovering as the wave sweeps past).
+  static const headerDelay = Duration(milliseconds: 300);
+  static const contentDelay = Duration(milliseconds: 525);
+  static const navDelay = Duration(milliseconds: 750);
+  static const revealFadeDuration = Duration(milliseconds: 630);
+
+  // Logo fade-in / hold / scale-and-fade-out sequence.
+  static const logoFadeIn = Duration(milliseconds: 330);
+  static const logoHoldDelay = Duration(milliseconds: 225);
+  static const logoScale = Duration(milliseconds: 570);
+  static const logoFadeOut = Duration(milliseconds: 570);
+}
 
 /// "Radar-Welle" boot animation (E7, implementation-plan.md): on cold start a
 /// deep-violet glowing ring expands from a centered logo badge across the
@@ -17,7 +44,7 @@ import '../theme/balkon_theme.dart';
 /// so it can't desync from it and touching this file can't regress
 /// shell/home widget tests.
 class BootOverlay extends StatefulWidget {
-  const BootOverlay({super.key, required this.child, this.enabled = true});
+  const BootOverlay({super.key, required this.child, this.enabled = true, this.soundPlayer});
 
   final Widget child;
 
@@ -27,23 +54,30 @@ class BootOverlay extends StatefulWidget {
   /// there's nothing left running for `pump()`/`pumpAndSettle()` to race.
   final bool enabled;
 
+  /// Injectable seam for the `start.wav` underscore (E8): widget tests pass a
+  /// fake so nothing touches the real `audioplayers` plugin channel. Defaults
+  /// to [PackageBootSound] in production; only ever constructed when the
+  /// animation actually plays (never on the skip path).
+  final BootSound? soundPlayer;
+
   @override
   State<BootOverlay> createState() => _BootOverlayState();
 }
 
 class _BootOverlayState extends State<BootOverlay> with SingleTickerProviderStateMixin {
-  // Total budget ≤ 1.5s (implementation-plan.md E7). The ring drives the
-  // timeline; the reveal-band delays in _RadarWave are tuned to land inside it.
-  static const _duration = Duration(milliseconds: 1300);
-
   late final AnimationController _controller;
   bool _booting = true;
   bool _decided = false;
 
+  /// Only ever set on the "animation actually plays" path — stays `null` on
+  /// the skip path (disabled / reduced motion), so no `BootSound`
+  /// implementation is even constructed there, let alone played.
+  BootSound? _sound;
+
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: _duration)
+    _controller = AnimationController(vsync: this, duration: _BootTiming.total)
       ..addStatusListener((status) {
         if (status == AnimationStatus.completed) _finish();
       });
@@ -55,10 +89,12 @@ class _BootOverlayState extends State<BootOverlay> with SingleTickerProviderStat
     if (_decided) return;
     _decided = true;
     // Reduced-motion (accessibility setting) skips straight to the revealed
-    // state, same as tests do via `enabled: false`.
+    // state, same as tests do via `enabled: false`. No sound on this path.
     if (!widget.enabled || MediaQuery.of(context).disableAnimations) {
       _finish();
     } else {
+      _sound = widget.soundPlayer ?? PackageBootSound();
+      unawaited(_sound!.play()); // fire-and-forget; play() itself never throws.
       _controller.forward();
     }
   }
@@ -71,6 +107,7 @@ class _BootOverlayState extends State<BootOverlay> with SingleTickerProviderStat
   @override
   void dispose() {
     _controller.dispose();
+    unawaited(_sound?.dispose());
     super.dispose();
   }
 
@@ -102,13 +139,10 @@ class _RadarWave extends StatelessWidget {
   static const _ringBorderWidth = 3.0;
 
   // Reveal bands roughly matching shell.dart's header/nav padding; approximate
-  // is fine, this is a sub-second flourish, not a layout contract.
+  // is fine, this is a sub-second flourish, not a layout contract. Timings
+  // themselves live in [_BootTiming].
   static const _headerHeight = 92.0;
   static const _navHeight = 116.0;
-  static const _headerDelay = Duration(milliseconds: 200);
-  static const _contentDelay = Duration(milliseconds: 350);
-  static const _navDelay = Duration(milliseconds: 500);
-  static const _revealFadeDuration = Duration(milliseconds: 420);
 
   @override
   Widget build(BuildContext context) {
@@ -126,14 +160,23 @@ class _RadarWave extends StatelessWidget {
             children: [
               SizedBox(
                 height: _headerHeight,
-                child: _RevealBand(delay: _headerDelay, fadeDuration: _revealFadeDuration),
+                child: _RevealBand(
+                  delay: _BootTiming.headerDelay,
+                  fadeDuration: _BootTiming.revealFadeDuration,
+                ),
               ),
               Expanded(
-                child: _RevealBand(delay: _contentDelay, fadeDuration: _revealFadeDuration),
+                child: _RevealBand(
+                  delay: _BootTiming.contentDelay,
+                  fadeDuration: _BootTiming.revealFadeDuration,
+                ),
               ),
               SizedBox(
                 height: _navHeight,
-                child: _RevealBand(delay: _navDelay, fadeDuration: _revealFadeDuration),
+                child: _RevealBand(
+                  delay: _BootTiming.navDelay,
+                  fadeDuration: _BootTiming.revealFadeDuration,
+                ),
               ),
             ],
           ),
@@ -232,9 +275,9 @@ class _BootLogo extends StatelessWidget {
       ],
     )
         .animate()
-        .fadeIn(duration: 220.ms, curve: Curves.easeOut)
-        .then(delay: 150.ms)
-        .scale(end: const Offset(1.18, 1.18), duration: 380.ms, curve: Curves.easeOut)
-        .fadeOut(duration: 380.ms, curve: Curves.easeOut);
+        .fadeIn(duration: _BootTiming.logoFadeIn, curve: Curves.easeOut)
+        .then(delay: _BootTiming.logoHoldDelay)
+        .scale(end: const Offset(1.18, 1.18), duration: _BootTiming.logoScale, curve: Curves.easeOut)
+        .fadeOut(duration: _BootTiming.logoFadeOut, curve: Curves.easeOut);
   }
 }

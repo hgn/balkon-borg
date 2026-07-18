@@ -29,6 +29,9 @@ class Settings extends ChangeNotifier {
   // real MQTT broker. Default on until the Pi broker (M1) exists.
   bool get demoMode => _prefs.getBool('demo_mode') ?? true;
 
+  // Systematic haptics (E8): gates `services/haptics.dart`. Default on.
+  bool get hapticsEnabled => _prefs.getBool('haptics_enabled') ?? true;
+
   // Watch window (self-wake notification model, src/shared/README.md):
   // any app use arms 6 h of periodic MQTT checks; interval is configurable.
   static const watchWindow = Duration(hours: 6);
@@ -78,6 +81,11 @@ class Settings extends ChangeNotifier {
 
   Future<void> setDemoMode(bool on) async {
     await _prefs.setBool('demo_mode', on);
+    notifyListeners();
+  }
+
+  Future<void> setHapticsEnabled(bool on) async {
+    await _prefs.setBool('haptics_enabled', on);
     notifyListeners();
   }
 

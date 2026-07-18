@@ -7,9 +7,11 @@ import '../contract/submodes.dart';
 import '../contract/topics.dart';
 import '../models/env_sample.dart';
 import '../models/mode_state.dart';
+import '../services/haptics.dart';
 import '../state/app_state.dart';
 import '../state/settings.dart';
 import '../theme/balkon_theme.dart';
+import 'widgets/animated_value.dart';
 import 'widgets/borg_sheet.dart';
 import 'widgets/env_chart.dart';
 import 'widgets/mode_card.dart';
@@ -179,6 +181,7 @@ class _SubmodeRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: GestureDetector(
         onTap: () {
+          context.read<Haptics>().lightImpact();
           context.read<AppState>().setSubmode(mode, option.id);
           Navigator.of(context).pop();
         },
@@ -244,7 +247,8 @@ class _EnvStatsRow extends StatelessWidget {
           if (i > 0) const SizedBox(width: 10), // tokens.json spacing.statGap
           Expanded(
             child: StatTile(
-              value: latest == null ? '—' : _envStats[i].format(_envStats[i].select(latest)),
+              value: latest == null ? null : _envStats[i].select(latest),
+              format: _envStats[i].format,
               label: _envStats[i].title,
               onTap: () => showBorgSheet<void>(
                 context: context,
@@ -300,7 +304,11 @@ class _EnvChartSheet extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          Text(spec.format(latest), style: balkonMonoStyle(context, 26, FontWeight.w700)),
+          AnimatedValue(
+            value: latest,
+            format: spec.format,
+            style: balkonMonoStyle(context, 26, FontWeight.w700),
+          ),
           const SizedBox(height: 18),
           EnvChart(values: values),
           const SizedBox(height: 14),

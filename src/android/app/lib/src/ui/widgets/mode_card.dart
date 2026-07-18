@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../contract/submodes.dart';
 import '../../contract/topics.dart';
 import '../../models/mode_state.dart';
+import '../../services/haptics.dart';
 import '../../theme/balkon_theme.dart';
 
 /// Single-glyph badge per main mode (tokens.json `iconography.modeGlyphs`).
@@ -64,7 +66,10 @@ class _ModeCardState extends State<ModeCard> {
       onTapDown: (_) => _setPressed(true),
       onTapUp: (_) => _setPressed(false),
       onTapCancel: () => _setPressed(false),
-      onTap: widget.onTap,
+      onTap: () {
+        context.read<Haptics>().lightImpact();
+        widget.onTap();
+      },
       child: AnimatedScale(
         scale: _pressed ? 0.95 : 1.0,
         duration: balkonSpringDuration,

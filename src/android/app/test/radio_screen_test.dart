@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:balkon_borg/src/contract/topics.dart';
+import 'package:balkon_borg/src/services/haptics.dart';
 import 'package:balkon_borg/src/services/mqtt_service.dart';
 import 'package:balkon_borg/src/state/app_state.dart';
 import 'package:balkon_borg/src/state/settings.dart';
@@ -22,6 +23,7 @@ Widget _wrap(AppState appState, Settings settings) => MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: settings),
         ChangeNotifierProvider.value(value: appState),
+        Provider<Haptics>.value(value: const NoopHaptics()),
       ],
       child: MaterialApp(
         theme: buildBalkonTheme(brightness: Brightness.dark),

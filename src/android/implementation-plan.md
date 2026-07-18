@@ -37,6 +37,8 @@ before the next starts.
 | **E5** | Log: bird of the day + log list |
 | **E6** | Settings/health in the design style, watch-window foreground service (6 h window, configurable interval, local notifications) |
 | **E7** | Boot animation "Radar-Welle" (added 2026-07-17): logo on black, a deep-violet radar ring expands from the logo center across the screen (scaling circular container, border + blur), and the dashboard elements it sweeps over pop in staggered — as if the scan just discovered them. Fast (≤ 1.5 s), runs once per cold start. `flutter_animate` for the chained fade/scale sequences. |
+| **E8** | Polish, risk-free batch (added 2026-07-17, user-approved): boot slowed to ~2 s + `start.wav` underscore (audioplayers) · systematic haptics (central helper, grammar from selectionClick to heavyImpact incl. state-echo confirmation, settings toggle) · animated env counters (tweened values, no jumps) · health-dot sonar ping (a subtle expanding, fading ring every few seconds — the dot is alive) |
+| **E9** | Render-heavy batch (user-approved, wants an on-device look after): glassmorphism (BackdropFilter on sheets + bottom nav, translucent surfaces) · radar sweep (SIGINT) / sine wave (COMMS) behind the now-active card while receiving · WLED ambient glow (soft radial background in the current light color, morphing on change, off when LUMEN off) |
 
 ## Known unknowns
 

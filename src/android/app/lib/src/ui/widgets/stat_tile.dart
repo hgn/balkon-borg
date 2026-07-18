@@ -1,19 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../services/haptics.dart';
 import '../../theme/balkon_theme.dart';
+import 'animated_value.dart';
 
 /// Home's environment-stat tile (components.md "Umgebungs-Stats"). Press
 /// scales down to 0.94 (`statTapScale`, tokens.json) on tap-down, springs
 /// back; tap opens the chart sheet (handled by the caller via [onTap]).
+///
+/// [value]/[format] drive an [AnimatedValue] (E8): the reading tweens between
+/// samples instead of jumping. `value == null` (no history yet) shows a
+/// static "—" instead — there's nothing to animate from.
 class StatTile extends StatefulWidget {
   const StatTile({
     super.key,
     required this.value,
+    required this.format,
     required this.label,
     required this.onTap,
   });
 
-  final String value;
+  final double? value;
+  final String Function(double value) format;
   final String label;
   final VoidCallback onTap;
 
@@ -35,7 +44,10 @@ class _StatTileState extends State<StatTile> {
       onTapDown: (_) => _setPressed(true),
       onTapUp: (_) => _setPressed(false),
       onTapCancel: () => _setPressed(false),
-      onTap: widget.onTap,
+      onTap: () {
+        context.read<Haptics>().lightImpact();
+        widget.onTap();
+      },
       child: AnimatedScale(
         scale: _pressed ? 0.94 : 1.0,
         duration: balkonSpringDuration,
@@ -50,11 +62,18 @@ class _StatTileState extends State<StatTile> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                widget.value,
-                style: balkonMonoStyle(context, 19, FontWeight.w700),
-                textAlign: TextAlign.center,
-              ),
+              widget.value == null
+                  ? Text(
+                      '—',
+                      style: balkonMonoStyle(context, 19, FontWeight.w700),
+                      textAlign: TextAlign.center,
+                    )
+                  : AnimatedValue(
+                      value: widget.value!,
+                      format: widget.format,
+                      style: balkonMonoStyle(context, 19, FontWeight.w700),
+                      textAlign: TextAlign.center,
+                    ),
               const SizedBox(height: 4),
               Text(
                 widget.label,
