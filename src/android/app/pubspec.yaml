@@ -49,6 +49,7 @@ flutter:
     - assets/fonts/Manrope-OFL.txt
     - assets/fonts/SpaceGrotesk-OFL.txt
     - assets/audio/start.wav
+    - assets/audio/ui/
 
   # Bundled offline (D3): variable TTFs from the google/fonts OFL repo, each
   # weight entry pointing at the same variable-font file (Flutter's supported

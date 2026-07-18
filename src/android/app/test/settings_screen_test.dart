@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:balkon_borg/src/services/haptics.dart';
+import 'package:balkon_borg/src/services/ui_sounds.dart';
 import 'package:balkon_borg/src/state/settings.dart';
 import 'package:balkon_borg/src/theme/balkon_theme.dart';
 import 'package:balkon_borg/src/ui/settings_screen.dart';
@@ -13,6 +14,7 @@ Widget _wrap(Settings settings) => MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: settings),
         Provider<Haptics>.value(value: const NoopHaptics()),
+        Provider<UiSounds>.value(value: const NoopUiSounds()),
       ],
       child: MaterialApp(
         theme: buildBalkonTheme(brightness: Brightness.dark),
@@ -51,6 +53,8 @@ void main() {
     expect(find.text('Demo-Modus'), findsOneWidget);
     // Haptics switch row (E8).
     expect(find.text('Haptik'), findsOneWidget);
+    // UI-sounds switch row (E8 follow-up).
+    expect(find.text('UI-Sounds'), findsOneWidget);
     expect(find.byType(BorgSwitch), findsWidgets);
 
     // App section: version line + APK-source hint.

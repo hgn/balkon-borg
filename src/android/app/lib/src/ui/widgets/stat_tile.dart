@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../services/haptics.dart';
+import '../../services/ui_sounds.dart';
 import '../../theme/balkon_theme.dart';
 import 'animated_value.dart';
 
@@ -46,6 +47,7 @@ class _StatTileState extends State<StatTile> {
       onTapCancel: () => _setPressed(false),
       onTap: () {
         context.read<Haptics>().lightImpact();
+        context.read<UiSounds>().blip();
         widget.onTap();
       },
       child: AnimatedScale(

@@ -5,10 +5,56 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:balkon_borg/src/services/haptics.dart';
 import 'package:balkon_borg/src/services/mqtt_service.dart';
+import 'package:balkon_borg/src/services/ui_sounds.dart';
 import 'package:balkon_borg/src/state/app_state.dart';
 import 'package:balkon_borg/src/state/settings.dart';
 import 'package:balkon_borg/src/theme/balkon_theme.dart';
 import 'package:balkon_borg/src/ui/shell.dart';
+
+/// Records calls instead of hitting the real `HapticFeedback` platform
+/// channel (mirrors `test/app_state_test.dart`'s `_RecordingHaptics`).
+class _RecordingHaptics implements Haptics {
+  final List<String> calls = [];
+
+  @override
+  void selectionClick() => calls.add('selectionClick');
+
+  @override
+  void lightImpact() => calls.add('lightImpact');
+
+  @override
+  void mediumImpact() => calls.add('mediumImpact');
+
+  @override
+  void heavyImpact() => calls.add('heavyImpact');
+}
+
+/// Records calls instead of hitting the real `audioplayers` plugin channel
+/// (mirrors `test/app_state_test.dart`'s `_RecordingUiSounds`).
+class _RecordingUiSounds implements UiSounds {
+  final List<String> calls = [];
+
+  @override
+  void blip() => calls.add('blip');
+
+  @override
+  void confirm() => calls.add('confirm');
+
+  @override
+  void powerUp() => calls.add('powerUp');
+
+  @override
+  void powerDown() => calls.add('powerDown');
+
+  @override
+  void pttDown() => calls.add('pttDown');
+
+  @override
+  void pttSent() => calls.add('pttSent');
+
+  @override
+  void error() => calls.add('error');
+}
 
 /// Bounded settle instead of `pumpAndSettle`: demo mode's health includes a
 /// "degraded" capability (`wled`, `demo_source.dart`), so the header health
@@ -29,12 +75,16 @@ void main() {
     addTearDown(appState.dispose);
     await appState.connect(); // demo mode: synchronous population.
 
+    final haptics = _RecordingHaptics();
+    final uiSounds = _RecordingUiSounds();
+
     await tester.pumpWidget(
       MultiProvider(
         providers: [
           ChangeNotifierProvider.value(value: settings),
           ChangeNotifierProvider.value(value: appState),
-          Provider<Haptics>.value(value: const NoopHaptics()),
+          Provider<Haptics>.value(value: haptics),
+          Provider<UiSounds>.value(value: uiSounds),
         ],
         child: MaterialApp(
           theme: buildBalkonTheme(brightness: Brightness.dark),
@@ -58,13 +108,17 @@ void main() {
     expect(find.text('LUMEN'), findsOneWidget);
     expect(find.text('DAB+'), findsNothing); // Radio-only band chip.
 
-    // Tapping a nav item switches the visible tab.
+    // Tapping a nav item switches the visible tab and fires both the
+    // haptic and its "second sense" UI-sound counterpart (E8 follow-up).
     await tester.tap(find.text('Radio'));
     await _settle(tester);
 
     // Radio tab (E3): segmented tab + COMMS band chips.
     expect(find.text('DAB+'), findsOneWidget);
     expect(find.text('LUMEN'), findsNothing);
+
+    expect(haptics.calls, contains('selectionClick'));
+    expect(uiSounds.calls, contains('blip'));
   });
 
   // Key the health dot's sonar-ping ring is built with (shell.dart's

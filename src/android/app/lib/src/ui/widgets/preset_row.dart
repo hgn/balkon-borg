@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../services/haptics.dart';
+import '../../services/ui_sounds.dart';
 import '../../theme/balkon_theme.dart';
 
 /// One row in a COMMS preset list (components.md "Preset-Listen"). Prop-driven,
@@ -39,6 +40,7 @@ class PresetRow extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         context.read<Haptics>().selectionClick();
+        context.read<UiSounds>().blip();
         onTap();
       },
       child: AnimatedContainer(

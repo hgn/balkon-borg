@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../services/haptics.dart';
+import '../services/ui_sounds.dart';
 import '../services/watch_window.dart';
 import '../state/app_state.dart';
 import '../state/settings.dart';
@@ -191,6 +192,7 @@ class _ThemeTogglePill extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         context.read<Haptics>().lightImpact();
+        context.read<UiSounds>().blip();
         settings.setThemeMode(isDark ? ThemeMode.light : ThemeMode.dark);
       },
       child: Container(
@@ -413,6 +415,7 @@ class _NavItem extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         context.read<Haptics>().selectionClick();
+        context.read<UiSounds>().blip();
         onTap();
       },
       behavior: HitTestBehavior.opaque,

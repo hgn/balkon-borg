@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:balkon_borg/src/contract/topics.dart';
 import 'package:balkon_borg/src/services/haptics.dart';
 import 'package:balkon_borg/src/services/mqtt_service.dart';
+import 'package:balkon_borg/src/services/ui_sounds.dart';
 import 'package:balkon_borg/src/state/app_state.dart';
 import 'package:balkon_borg/src/state/settings.dart';
 
@@ -25,10 +26,42 @@ class _RecordingHaptics implements Haptics {
   void heavyImpact() => calls.add('heavyImpact');
 }
 
-Future<AppState> _demoAppState(Haptics haptics) async {
+/// Records calls instead of hitting the real `audioplayers` plugin channel
+/// (E8 follow-up — services/ui_sounds.dart).
+class _RecordingUiSounds implements UiSounds {
+  final List<String> calls = [];
+
+  @override
+  void blip() => calls.add('blip');
+
+  @override
+  void confirm() => calls.add('confirm');
+
+  @override
+  void powerUp() => calls.add('powerUp');
+
+  @override
+  void powerDown() => calls.add('powerDown');
+
+  @override
+  void pttDown() => calls.add('pttDown');
+
+  @override
+  void pttSent() => calls.add('pttSent');
+
+  @override
+  void error() => calls.add('error');
+}
+
+Future<AppState> _demoAppState(Haptics haptics, [UiSounds? uiSounds]) async {
   SharedPreferences.setMockInitialValues({'demo_mode': true});
   final settings = await Settings.load();
-  final appState = AppState(MqttService(), settings, haptics: haptics);
+  final appState = AppState(
+    MqttService(),
+    settings,
+    haptics: haptics,
+    uiSounds: uiSounds ?? const NoopUiSounds(),
+  );
   await appState.connect(); // demo mode: synchronous population, no haptic yet.
   return appState;
 }
@@ -81,6 +114,43 @@ void main() {
       // Repeating the exact same submode+chan is a no-op republish.
       appState.setSubmode(MainMode.comms, 'dab', chan: 'deutschlandfunk');
       expect(haptics.calls, isEmpty);
+    });
+  });
+
+  group('AppState state-echo UI sound (E8 follow-up)', () {
+    test('a non-sentry submode change fires confirm() alongside the haptic', () async {
+      final haptics = _RecordingHaptics();
+      final uiSounds = _RecordingUiSounds();
+      final appState = await _demoAppState(haptics, uiSounds);
+      addTearDown(appState.dispose);
+
+      appState.setSubmode(MainMode.comms, 'fm');
+
+      expect(haptics.calls, ['mediumImpact']);
+      expect(uiSounds.calls, ['confirm']);
+    });
+
+    test('a sentry submode change fires the haptic but not confirm() (no doubled sound)', () async {
+      final haptics = _RecordingHaptics();
+      final uiSounds = _RecordingUiSounds();
+      final appState = await _demoAppState(haptics, uiSounds);
+      addTearDown(appState.dispose);
+
+      // Demo default: sentry starts 'off'.
+      expect(appState.modes[MainMode.sentry]!.submode, 'off');
+
+      appState.setSubmode(MainMode.sentry, 'armed');
+      expect(appState.modes[MainMode.sentry]!.submode, 'armed');
+      expect(haptics.calls, ['mediumImpact']);
+      // powerUp/powerDown live at the SENTRY switch itself
+      // (camera_screen.dart), not reachable from this state-only test —
+      // just assert confirm() is absent here.
+      expect(uiSounds.calls, isEmpty);
+
+      haptics.calls.clear();
+      appState.setSubmode(MainMode.sentry, 'off');
+      expect(haptics.calls, ['mediumImpact']);
+      expect(uiSounds.calls, isEmpty);
     });
   });
 }

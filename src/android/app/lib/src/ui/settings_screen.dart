@@ -56,6 +56,12 @@ class SettingsScreen extends StatelessWidget {
                 value: settings.hapticsEnabled,
                 onChanged: settings.setHapticsEnabled,
               ),
+              _SwitchRow(
+                label: 'UI-Sounds',
+                subtitle: 'R2D2-Piepser bei Bedienung',
+                value: settings.uiSoundsEnabled,
+                onChanged: settings.setUiSoundsEnabled,
+              ),
               _BrokerField(
                 label: 'Name',
                 subtitle: 'für die Begrüßung (optional)',

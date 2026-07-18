@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'src/services/haptics.dart';
 import 'src/services/mqtt_service.dart';
+import 'src/services/ui_sounds.dart';
 import 'src/state/app_state.dart';
 import 'src/state/settings.dart';
 import 'src/theme/balkon_theme.dart';
@@ -31,9 +32,18 @@ class BalkonBorgApp extends StatelessWidget {
         Provider<Haptics>(
           create: (_) => SystemHaptics(() => settings.hapticsEnabled),
         ),
+        // Gated by Settings.uiSoundsEnabled (services/ui_sounds.dart), the
+        // "second sense" alongside Haptics — same injection pattern.
+        Provider<UiSounds>(
+          create: (_) => PackageUiSounds(() => settings.uiSoundsEnabled),
+        ),
         ChangeNotifierProvider(
-          create: (context) =>
-              AppState(MqttService(), settings, haptics: context.read<Haptics>())..connect(),
+          create: (context) => AppState(
+            MqttService(),
+            settings,
+            haptics: context.read<Haptics>(),
+            uiSounds: context.read<UiSounds>(),
+          )..connect(),
         ),
       ],
       child: Consumer<Settings>(

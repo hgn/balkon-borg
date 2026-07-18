@@ -9,6 +9,7 @@ import '../models/env_sample.dart';
 import '../models/mode_state.dart';
 import '../services/greeting.dart';
 import '../services/haptics.dart';
+import '../services/ui_sounds.dart';
 import '../state/app_state.dart';
 import '../state/settings.dart';
 import '../theme/balkon_theme.dart';
@@ -180,6 +181,7 @@ class _SubmodeRow extends StatelessWidget {
       child: GestureDetector(
         onTap: () {
           context.read<Haptics>().lightImpact();
+          context.read<UiSounds>().blip();
           context.read<AppState>().setSubmode(mode, option.id);
           Navigator.of(context).pop();
         },

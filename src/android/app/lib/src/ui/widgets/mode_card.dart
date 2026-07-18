@@ -5,6 +5,7 @@ import '../../contract/submodes.dart';
 import '../../contract/topics.dart';
 import '../../models/mode_state.dart';
 import '../../services/haptics.dart';
+import '../../services/ui_sounds.dart';
 import '../../theme/balkon_theme.dart';
 
 /// Single-glyph badge per main mode (tokens.json `iconography.modeGlyphs`).
@@ -68,6 +69,7 @@ class _ModeCardState extends State<ModeCard> {
       onTapCancel: () => _setPressed(false),
       onTap: () {
         context.read<Haptics>().lightImpact();
+        context.read<UiSounds>().blip();
         widget.onTap();
       },
       child: AnimatedScale(

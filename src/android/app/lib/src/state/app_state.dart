@@ -15,6 +15,7 @@ import '../models/wled_state.dart';
 import '../services/demo_source.dart';
 import '../services/haptics.dart';
 import '../services/mqtt_service.dart';
+import '../services/ui_sounds.dart';
 import 'settings.dart';
 
 /// Worst-of summary for the header health dot.
@@ -28,11 +29,13 @@ enum AggregateHealth { unknown, ok, degraded, bad }
 /// (`Settings.demoMode`, D2); `connect()` picks the source and re-runs
 /// whenever the setting flips at runtime.
 class AppState extends ChangeNotifier {
-  /// [haptics] is injectable (tests pass a recording fake); defaults to the
-  /// real `HapticFeedback`-backed implementation, gated by
-  /// `Settings.hapticsEnabled`.
-  AppState(this._mqtt, this._settings, {Haptics? haptics})
-      : _haptics = haptics ?? SystemHaptics(() => _settings.hapticsEnabled) {
+  /// [haptics] and [uiSounds] are injectable (tests pass recording fakes);
+  /// default to the real `HapticFeedback`/`audioplayers`-backed
+  /// implementations, gated by `Settings.hapticsEnabled`/
+  /// `Settings.uiSoundsEnabled` respectively.
+  AppState(this._mqtt, this._settings, {Haptics? haptics, UiSounds? uiSounds})
+      : _haptics = haptics ?? SystemHaptics(() => _settings.hapticsEnabled),
+        _uiSounds = uiSounds ?? PackageUiSounds(() => _settings.uiSoundsEnabled) {
     _sub = _mqtt.messages.listen(_onMessage);
     _connSub = _mqtt.connectionChanges.listen((up) {
       connected = up;
@@ -44,6 +47,7 @@ class AppState extends ChangeNotifier {
   final MqttService _mqtt;
   final Settings _settings;
   final Haptics _haptics;
+  final UiSounds _uiSounds;
   final DemoSource _demo = const DemoSource();
   StreamSubscription<BorgMessage>? _sub;
   StreamSubscription<bool>? _connSub;
@@ -204,7 +208,15 @@ class AppState extends ChangeNotifier {
     final changed =
         prev != null && (prev.submode != next.submode || prev.chan != next.chan);
     modes[m] = next;
-    if (changed) _haptics.mediumImpact();
+    if (changed) {
+      _haptics.mediumImpact();
+      if (m == MainMode.sentry) {
+        // powerUp/powerDown already played at the SENTRY switch itself
+        // (camera_screen.dart's `_SentryCard`) — avoid a doubled sound here.
+      } else {
+        _uiSounds.confirm();
+      }
+    }
   }
 
   void setFocus(MainMode m) =>

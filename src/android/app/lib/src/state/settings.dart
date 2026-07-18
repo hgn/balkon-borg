@@ -37,6 +37,10 @@ class Settings extends ChangeNotifier {
   // Systematic haptics (E8): gates `services/haptics.dart`. Default on.
   bool get hapticsEnabled => _prefs.getBool('haptics_enabled') ?? true;
 
+  // Systematic UI sounds (E8 follow-up): gates `services/ui_sounds.dart`,
+  // the "second sense" alongside haptics. Default on.
+  bool get uiSoundsEnabled => _prefs.getBool('ui_sounds_enabled') ?? true;
+
   // Watch window (self-wake notification model, src/shared/README.md):
   // any app use arms 6 h of periodic MQTT checks; interval is configurable.
   static const watchWindow = Duration(hours: 6);
@@ -96,6 +100,11 @@ class Settings extends ChangeNotifier {
 
   Future<void> setHapticsEnabled(bool on) async {
     await _prefs.setBool('haptics_enabled', on);
+    notifyListeners();
+  }
+
+  Future<void> setUiSoundsEnabled(bool on) async {
+    await _prefs.setBool('ui_sounds_enabled', on);
     notifyListeners();
   }
 

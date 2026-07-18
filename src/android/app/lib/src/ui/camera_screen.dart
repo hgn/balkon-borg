@@ -10,6 +10,7 @@ import '../contract/topics.dart';
 import '../models/mode_state.dart';
 import '../services/haptics.dart';
 import '../services/talkdown_recorder.dart';
+import '../services/ui_sounds.dart';
 import '../state/app_state.dart';
 import '../state/settings.dart';
 import '../theme/balkon_theme.dart';
@@ -70,6 +71,7 @@ class _CameraScreenState extends State<CameraScreen> {
             held: _recording,
             onTapDown: (_) {
               context.read<Haptics>().mediumImpact();
+              context.read<UiSounds>().pttDown();
               unawaited(_startRecording());
             },
             onTapUp: (_) => _finishRecording(),
@@ -106,6 +108,7 @@ class _CameraScreenState extends State<CameraScreen> {
     // background (fire-and-forget per the task spec) and must not touch
     // `context` after the `await` below.
     final settings = context.read<Settings>();
+    final sounds = context.read<UiSounds>();
     final messenger = ScaffoldMessenger.of(context);
     final textStyle = Theme.of(context).textTheme.bodyLarge;
     final snackColor = Theme.of(context).extension<BalkonExtras>()!.surface3;
@@ -113,6 +116,7 @@ class _CameraScreenState extends State<CameraScreen> {
     unawaited(_stopAndSend(
       demoMode: settings.demoMode,
       host: settings.host,
+      sounds: sounds,
       messenger: messenger,
       textStyle: textStyle,
       snackColor: snackColor,
@@ -130,6 +134,7 @@ class _CameraScreenState extends State<CameraScreen> {
   Future<void> _stopAndSend({
     required bool demoMode,
     required String host,
+    required UiSounds sounds,
     required ScaffoldMessengerState messenger,
     required TextStyle? textStyle,
     required Color snackColor,
@@ -138,6 +143,8 @@ class _CameraScreenState extends State<CameraScreen> {
     if (path == null) return;
 
     if (demoMode) {
+      // Not a real network result (no arbiter to succeed/fail against) —
+      // stays silent, matching that no haptic fires here either.
       _snack(messenger, textStyle, snackColor, 'Demo — nicht gesendet');
       return;
     }
@@ -150,8 +157,10 @@ class _CameraScreenState extends State<CameraScreen> {
         body: bytes,
       );
       final ok = response.statusCode >= 200 && response.statusCode < 300;
+      ok ? sounds.pttSent() : sounds.error();
       _snack(messenger, textStyle, snackColor, ok ? 'Gesendet' : 'Fehlgeschlagen — borg-pi offline?');
     } catch (_) {
+      sounds.error();
       _snack(messenger, textStyle, snackColor, 'Fehlgeschlagen — borg-pi offline?');
     }
   }
@@ -397,7 +406,9 @@ class _SentryCard extends StatelessWidget {
             // is where that distinction has to live (E8, implementation-plan.md).
             onChanged: (wantArmed) {
               final haptics = context.read<Haptics>();
+              final sounds = context.read<UiSounds>();
               wantArmed ? haptics.heavyImpact() : haptics.mediumImpact();
+              wantArmed ? sounds.powerUp() : sounds.powerDown();
               context.read<AppState>().setSubmode(
                     MainMode.sentry,
                     wantArmed ? 'armed' : 'off',
