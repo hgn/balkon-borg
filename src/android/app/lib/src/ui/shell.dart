@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -14,6 +15,7 @@ import 'log_screen.dart';
 import 'radio_screen.dart';
 import 'settings_screen.dart';
 import 'widgets/health_sheet.dart';
+import 'widgets/wled_glow.dart';
 
 /// The app shell: header (eyebrow/wordmark/theme toggle/health dot/settings)
 /// + floating bottom nav + animated tab content (components.md, motion.md §3).
@@ -61,50 +63,64 @@ class _BorgShellState extends State<BorgShell> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final wledColor = context.watch<AppState>().wledColor;
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(22, 14, 22, 4),
-              child: _BorgHeader(),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 22),
-                child: AnimatedSwitcher(
-                  duration: balkonScreenEnterDuration,
-                  // Staggered intervals instead of a plain cross-fade: the
-                  // outgoing screen is fully gone within the first ~35% of
-                  // the switch, the incoming one only starts after that —
-                  // the two screens barely overlap (user feedback: the
-                  // 450ms cross-fade showed both too visibly).
-                  switchInCurve: const Interval(0.35, 1.0, curve: balkonScreenEnterCurve),
-                  switchOutCurve: const Interval(0.65, 1.0),
-                  transitionBuilder: (child, animation) => FadeTransition(
-                    opacity: animation,
-                    child: AnimatedBuilder(
-                      animation: animation,
-                      // ignore: sort_child_properties_last
-                      child: child,
-                      builder: (context, child) {
-                        final t = animation.value;
-                        return Transform.translate(
-                          offset: Offset(0, (1 - t) * 10),
-                          child: Transform.scale(scale: 0.99 + 0.01 * t, child: child),
-                        );
-                      },
+      // The frosted bottom nav (E9) needs scrolling content to actually
+      // paint behind it for the BackdropFilter blur to have anything to
+      // shimmer — without this, Scaffold insets the body above the nav and
+      // there's nothing but flat background color underneath it.
+      extendBody: true,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: RepaintBoundary(child: WledGlow(color: wledColor)),
+          ),
+          SafeArea(
+            child: Column(
+              children: [
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(22, 14, 22, 4),
+                  child: _BorgHeader(),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 22),
+                    child: AnimatedSwitcher(
+                      duration: balkonScreenEnterDuration,
+                      // Staggered intervals instead of a plain cross-fade:
+                      // the outgoing screen is fully gone within the first
+                      // ~35% of the switch, the incoming one only starts
+                      // after that — the two screens barely overlap (user
+                      // feedback: the 450ms cross-fade showed both too
+                      // visibly).
+                      switchInCurve: const Interval(0.35, 1.0, curve: balkonScreenEnterCurve),
+                      switchOutCurve: const Interval(0.65, 1.0),
+                      transitionBuilder: (child, animation) => FadeTransition(
+                        opacity: animation,
+                        child: AnimatedBuilder(
+                          animation: animation,
+                          // ignore: sort_child_properties_last
+                          child: child,
+                          builder: (context, child) {
+                            final t = animation.value;
+                            return Transform.translate(
+                              offset: Offset(0, (1 - t) * 10),
+                              child: Transform.scale(scale: 0.99 + 0.01 * t, child: child),
+                            );
+                          },
+                        ),
+                      ),
+                      child: KeyedSubtree(
+                        key: ValueKey(_index),
+                        child: _tabs[_index],
+                      ),
                     ),
                   ),
-                  child: KeyedSubtree(
-                    key: ValueKey(_index),
-                    child: _tabs[_index],
-                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
@@ -334,25 +350,49 @@ class _BorgBottomNav extends StatelessWidget {
     (icon: Icons.list_alt_rounded, label: 'Log'),
   ];
 
+  // Glassmorphism (E9): surface3 at 0.72 opacity dark / 0.8 light behind a
+  // blurred backdrop — 0.72 read fine on the dark theme's near-black
+  // background but washed out on the light theme's pale one, so light gets
+  // a higher fill to stay legible against whatever scrolls underneath.
+  static const _fillOpacityDark = 0.72;
+  static const _fillOpacityLight = 0.8;
+  static const _blurSigma = 16.0;
+
   @override
   Widget build(BuildContext context) {
     final extras = Theme.of(context).extension<BalkonExtras>()!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fillOpacity = isDark ? _fillOpacityDark : _fillOpacityLight;
+
     return Container(
-      padding: const EdgeInsets.all(8),
+      // Shadow lives on this outer, unclipped box — the blur clip below
+      // would otherwise cut it off at the rounded corners.
       decoration: BoxDecoration(
-        color: extras.surface3,
         borderRadius: BorderRadius.circular(BalkonRadii.bottomNav),
         boxShadow: const [
           BoxShadow(color: Color(0x2E000000), blurRadius: 30, offset: Offset(0, 12)),
         ],
       ),
-      child: Row(
-        children: [
-          for (var i = 0; i < _items.length; i++) ...[
-            if (i > 0) const SizedBox(width: 6),
-            Expanded(child: _NavItem(item: _items[i], active: i == index, onTap: () => onTap(i))),
-          ],
-        ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(BalkonRadii.bottomNav),
+        // Blur must stay clipped to the nav's own rounded shape — a
+        // fullscreen backdrop blur would be both visually wrong (blurring
+        // content far outside the nav) and needlessly expensive.
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: _blurSigma, sigmaY: _blurSigma),
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            color: extras.surface3.withValues(alpha: fillOpacity),
+            child: Row(
+              children: [
+                for (var i = 0; i < _items.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 6),
+                  Expanded(child: _NavItem(item: _items[i], active: i == index, onTap: () => onTap(i))),
+                ],
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' show Color;
 
 import 'package:flutter/foundation.dart';
 
@@ -10,6 +11,7 @@ import '../models/borg_event.dart';
 import '../models/env_sample.dart';
 import '../models/health.dart';
 import '../models/mode_state.dart';
+import '../models/wled_state.dart';
 import '../services/demo_source.dart';
 import '../services/haptics.dart';
 import '../services/mqtt_service.dart';
@@ -56,6 +58,11 @@ class AppState extends ChangeNotifier {
   List<EnvSample> envHistory = [];
   List<BirdDetection> birdLog = [];
 
+  /// Current WLED light color for the ambient background glow (E9), `null`
+  /// while off/unknown. Fed by `wled/balkon/v` (`Feeds.wledState`) in real
+  /// mode, by `DemoSource`/the LUMEN-submode demo mutation in demo mode.
+  Color? wledColor;
+
   /// Cap for [birdLog]: BirdNET-Go publishes one message per detection (no
   /// retained ring like `event/recent`), so the app accumulates it itself.
   static const _birdLogCap = 100;
@@ -90,6 +97,7 @@ class AppState extends ChangeNotifier {
       recentEvents = snapshot.events;
       envHistory = snapshot.envHistory;
       birdLog = snapshot.birdLog;
+      wledColor = snapshot.wledColor;
       connected = true;
       notifyListeners();
       return;
@@ -154,6 +162,8 @@ class AppState extends ChangeNotifier {
       if (birdLog.length > _birdLogCap) {
         birdLog = birdLog.sublist(0, _birdLogCap);
       }
+    } else if (topic == Feeds.wledState) {
+      wledColor = parseWledColor(json);
     } else {
       return;
     }
@@ -174,6 +184,9 @@ class AppState extends ChangeNotifier {
         m,
         ModeState(submode: submode, chan: chan, pinned: modes[m]?.pinned ?? false),
       );
+      // No real WLED to echo `wled/balkon/v` back in demo mode — mirror the
+      // LUMEN submode into a plausible glow color ourselves (E9).
+      if (m == MainMode.lumen) wledColor = _demo.colorForLumenSubmode(submode);
       notifyListeners();
     }
   }

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -143,39 +145,51 @@ class _SegmentItem extends StatelessWidget {
 }
 
 /// "Jetzt aktiv" card (components.md): shows the viewed segment's current
-/// submode + channel, plus the ambient equalizer while it is non-off.
+/// submode + channel, plus the ambient equalizer while it is non-off. While
+/// receiving, a faint animated layer lives behind the content (E9 —
+/// implementation-plan.md): a radar sweep for SIGINT, a scrolling sine wave
+/// for COMMS.
 class _ActiveCard extends StatelessWidget {
   const _ActiveCard({required this.mode, required this.state});
 
   final MainMode mode;
   final ModeState state;
 
+  static const _radius = 24.0;
+
   @override
   Widget build(BuildContext context) {
     final extras = Theme.of(context).extension<BalkonExtras>()!;
     final textTheme = Theme.of(context).textTheme;
 
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(_radius),
+      child: ColoredBox(
         color: extras.surface2,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('JETZT AKTIV', style: textTheme.labelLarge?.copyWith(color: extras.textDim)),
-                const SizedBox(height: 4),
-                Text(_label(), style: textTheme.titleLarge),
-              ],
+        child: Stack(
+          children: [
+            _ActiveCardBackground(mode: mode, state: state),
+            Padding(
+              padding: const EdgeInsets.all(18),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('JETZT AKTIV', style: textTheme.labelLarge?.copyWith(color: extras.textDim)),
+                        const SizedBox(height: 4),
+                        Text(_label(), style: textTheme.titleLarge),
+                      ],
+                    ),
+                  ),
+                  EqBars(active: !state.isOff),
+                ],
+              ),
             ),
-          ),
-          EqBars(active: !state.isOff),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -191,6 +205,189 @@ class _ActiveCard extends StatelessWidget {
     if (state.isOff) return 'SIGINT · Aus';
     return 'SIGINT · ${Submodes.labelFor(MainMode.sigint, state.submode)}';
   }
+}
+
+/// Ambient background layer behind the "Jetzt aktiv" card content (E9):
+/// a rotating radar sweep while SIGINT is receiving, a scrolling sine wave
+/// while COMMS is receiving, nothing while off. The controller only runs
+/// while one of the two is active, and only exists while `_ActiveCard` (and
+/// therefore this widget) is actually built — the Radio tab's content is
+/// swapped out of the tree entirely when another tab is shown
+/// (`shell.dart`'s `AnimatedSwitcher`+`KeyedSubtree`), so there's nothing
+/// left ticking in the background once the user navigates away.
+class _ActiveCardBackground extends StatefulWidget {
+  const _ActiveCardBackground({required this.mode, required this.state});
+
+  final MainMode mode;
+  final ModeState state;
+
+  @override
+  State<_ActiveCardBackground> createState() => _ActiveCardBackgroundState();
+}
+
+class _ActiveCardBackgroundState extends State<_ActiveCardBackground>
+    with SingleTickerProviderStateMixin {
+  // Radar completes one revolution every 4s (task spec). The sine wave
+  // shares the same controller — its phase advances at a fraction of the
+  // radar's angular speed so it reads as "slowly scrolling", not spinning.
+  static const _revolution = Duration(seconds: 4);
+  static const _waveSpeedFraction = 0.35;
+
+  late final AnimationController _controller =
+      AnimationController(vsync: this, duration: _revolution);
+  bool _reduceMotion = false;
+
+  bool get _sweepActive => widget.mode == MainMode.sigint && !widget.state.isOff;
+  bool get _waveActive => widget.mode == MainMode.comms && !widget.state.isOff;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _reduceMotion = MediaQuery.of(context).disableAnimations;
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ActiveCardBackground oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _sync();
+  }
+
+  void _sync() {
+    final shouldRun = (_sweepActive || _waveActive) && !_reduceMotion;
+    if (shouldRun && !_controller.isAnimating) {
+      _controller.repeat();
+    } else if (!shouldRun && _controller.isAnimating) {
+      _controller.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_sweepActive && !_waveActive) return const SizedBox.shrink();
+
+    final scheme = Theme.of(context).colorScheme;
+    final extras = Theme.of(context).extension<BalkonExtras>()!;
+
+    return Positioned.fill(
+      child: RepaintBoundary(
+        child: IgnorePointer(
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, _) {
+              final t = _controller.value;
+              return CustomPaint(
+                painter: _sweepActive
+                    ? _RadarSweepPainter(angle: t * 2 * math.pi, color: scheme.primary)
+                    : _SineWavePainter(
+                        phase: t * 2 * math.pi * _waveSpeedFraction,
+                        primary: scheme.primary,
+                        cyan: extras.cyan,
+                      ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Soft rotating cone (components.md/E9): a `SweepGradient` circle anchored
+/// toward the card's right side, bright near the leading edge and fading
+/// into a trail behind it — reads as a slow radar sweep, not a spinner.
+class _RadarSweepPainter extends CustomPainter {
+  const _RadarSweepPainter({required this.angle, required this.color});
+
+  final double angle;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width * 0.82, size.height * 0.5);
+    final radius = size.height * 1.6; // large enough to sweep the whole card.
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    final gradient = SweepGradient(
+      transform: GradientRotation(angle),
+      colors: [
+        color.withValues(alpha: 0.16),
+        color.withValues(alpha: 0.0),
+        color.withValues(alpha: 0.0),
+      ],
+      stops: const [0.0, 0.28, 1.0], // bright leading edge + fading trail.
+    );
+    canvas.drawCircle(center, radius, Paint()..shader = gradient.createShader(rect));
+  }
+
+  @override
+  bool shouldRepaint(covariant _RadarSweepPainter oldDelegate) =>
+      oldDelegate.angle != angle || oldDelegate.color != color;
+}
+
+/// Two overlapping, slowly-scrolling sine curves (components.md/E9), full
+/// card width — a subtle stand-in for a live COMMS waveform.
+class _SineWavePainter extends CustomPainter {
+  const _SineWavePainter({required this.phase, required this.primary, required this.cyan});
+
+  final double phase;
+  final Color primary;
+  final Color cyan;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    _drawWave(
+      canvas,
+      size,
+      phase: phase,
+      color: primary.withValues(alpha: 0.14),
+      amplitude: size.height * 0.22,
+      waveLength: size.width * 0.9,
+    );
+    _drawWave(
+      canvas,
+      size,
+      phase: phase * 0.7 + math.pi / 3,
+      color: cyan.withValues(alpha: 0.14),
+      amplitude: size.height * 0.16,
+      waveLength: size.width * 0.55,
+    );
+  }
+
+  void _drawWave(
+    Canvas canvas,
+    Size size, {
+    required double phase,
+    required Color color,
+    required double amplitude,
+    required double waveLength,
+  }) {
+    final midY = size.height * 0.5;
+    final path = Path();
+    for (var x = 0.0; x <= size.width; x += 2) {
+      final y = midY + amplitude * math.sin((x / waveLength) * 2 * math.pi + phase);
+      if (x == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _SineWavePainter oldDelegate) => oldDelegate.phase != phase;
 }
 
 /// COMMS content block: band chips + the selected band's preset list

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 
+import '../contract/feeds.dart';
 import '../contract/topics.dart';
 
 /// A raw MQTT message from the broker.
@@ -51,6 +52,9 @@ class MqttService {
     }
 
     client.subscribe(Topics.subscription, MqttQos.atLeastOnce);
+    // Outside the `balkon/#` tree — WLED's own status topic (E9 ambient
+    // glow), needs its own subscription.
+    client.subscribe(Feeds.wledState, MqttQos.atLeastOnce);
     client.updates?.listen(_onUpdates);
     return true;
   }

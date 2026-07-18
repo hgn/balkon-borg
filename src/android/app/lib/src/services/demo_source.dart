@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' show Color;
 
 import '../contract/topics.dart';
 import '../models/bird_detection.dart';
@@ -18,6 +19,7 @@ class DemoSnapshot {
     required this.events,
     required this.envHistory,
     required this.birdLog,
+    required this.wledColor,
   });
 
   final Map<MainMode, ModeState> modes;
@@ -27,6 +29,7 @@ class DemoSnapshot {
   final List<BorgEvent> events;
   final List<EnvSample> envHistory;
   final List<BirdDetection> birdLog;
+  final Color? wledColor;
 }
 
 /// Builds realistic fake data instead of the real broker (D2 — demo mode).
@@ -81,8 +84,29 @@ class DemoSource {
       ],
       envHistory: _buildEnvHistory(ts),
       birdLog: _buildBirdLog(ts),
+      // Demo default LUMEN submode is 'info-ticker' → no glow (see below).
+      wledColor: colorForLumenSubmode('info-ticker'),
     );
   }
+
+  /// Plausible WLED glow color for a LUMEN submode (E9 — implementation-
+  /// plan.md), standing in for `wled/balkon/v` while there's no real WLED to
+  /// echo it back. Judgment call, not from `design/tokens.json`: WLED picks
+  /// its own color independently of the app's brand palette, so these are
+  /// scene-appropriate guesses, not the LUMEN/COMMS/SIGINT/SENTRY semantic
+  /// colors. `off` and `info-ticker` stay `null` — a ticker doesn't imply a
+  /// stable ambient color, and `off` obviously has no light to glow.
+  Color? colorForLumenSubmode(String submode) => switch (submode) {
+        'ambient' => const Color(0xFFFFB066), // warm white-orange
+        'cozy' => const Color(0xFFFF8A3D), // warmer orange, fireplace-like
+        'full' => const Color(0xFFFFEAC2), // bright warm white
+        'distance-auto' => const Color(0xFFFFD9A0), // soft auto warm white
+        'disco' => const Color(0xFFB33BFF), // violet
+        'strobe' => const Color(0xFFFFFFFF), // white flash
+        'police' => const Color(0xFF3B82F6), // blue
+        'visualiser' => const Color(0xFF35E6FF), // cyan, music-reactive
+        _ => null, // 'off', 'info-ticker', unknown.
+      };
 
   /// ~2 days of plausible Munich-balcony bird detections, newest first
   /// (matches the accumulation order `AppState` uses for the real feed).

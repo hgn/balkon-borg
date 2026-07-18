@@ -9,4 +9,12 @@ abstract final class Feeds {
   /// `src/shared/README.md` (planned for Pi stage M4). `BirdDetection.fromJson`
   /// parses it defensively until then.
   static const birdDetections = 'balkon/birds/detections';
+
+  /// WLED's own built-in MQTT status topic (`<mqttDeviceTopic>/v`, WLED's
+  /// "verbose state" JSON), read directly for the ambient glow (E9). Not
+  /// under `balkon/*` — the ESP/WLED integration publishes its native
+  /// on/bri/seg payload here independently of the arbiter contract; the
+  /// arbiter still owns brightness *commands* via `balkon/cmd/brightness`.
+  /// `parseWledColor` (`models/wled_state.dart`) parses it defensively.
+  static const wledState = 'wled/balkon/v';
 }
