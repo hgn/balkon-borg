@@ -8,7 +8,10 @@ FLUTTER := bash -c 'source $(CURDIR)/env.sh && cd $(CURDIR)/app && flutter $$0 $
 APK     := app/build/app/outputs/flutter-apk/app-release.apk
 NAS_APK := /mnt/nas/borg.apk
 
-.PHONY: all apk install check test analyze run clean distclean help
+.PHONY: all apk install sounds check test analyze run clean distclean help
+
+sounds: ## regenerate the UI sound set (app/assets/audio/ui/)
+	./gen-sounds.py
 
 all: apk ## build the release APK
 
