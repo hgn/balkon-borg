@@ -16,20 +16,22 @@ class _BootTiming {
   _BootTiming._();
 
   /// Overall ring/controller duration — drives the wave expansion; the
-  /// reveal-band delays below are tuned to land inside it.
-  static const total = Duration(milliseconds: 1950);
+  /// reveal-band delays below are tuned to land inside it. History: 1300ms
+  /// (E7 spec) → 1950ms (E8, "langsamer") → ~3s (user: "+1s", 2026-07-17);
+  /// everything below scales with it (×1.5 from the E8 values).
+  static const total = Duration(milliseconds: 2950);
 
   // Reveal bands (header/content/nav uncovering as the wave sweeps past).
-  static const headerDelay = Duration(milliseconds: 300);
-  static const contentDelay = Duration(milliseconds: 525);
-  static const navDelay = Duration(milliseconds: 750);
-  static const revealFadeDuration = Duration(milliseconds: 630);
+  static const headerDelay = Duration(milliseconds: 450);
+  static const contentDelay = Duration(milliseconds: 790);
+  static const navDelay = Duration(milliseconds: 1130);
+  static const revealFadeDuration = Duration(milliseconds: 950);
 
   // Logo fade-in / hold / scale-and-fade-out sequence.
-  static const logoFadeIn = Duration(milliseconds: 330);
-  static const logoHoldDelay = Duration(milliseconds: 225);
-  static const logoScale = Duration(milliseconds: 570);
-  static const logoFadeOut = Duration(milliseconds: 570);
+  static const logoFadeIn = Duration(milliseconds: 500);
+  static const logoHoldDelay = Duration(milliseconds: 340);
+  static const logoScale = Duration(milliseconds: 860);
+  static const logoFadeOut = Duration(milliseconds: 860);
 }
 
 /// "Radar-Welle" boot animation (E7, implementation-plan.md): on cold start a
@@ -45,6 +47,10 @@ class _BootTiming {
 /// shell/home widget tests.
 class BootOverlay extends StatefulWidget {
   const BootOverlay({super.key, required this.child, this.enabled = true, this.soundPlayer});
+
+  /// Total boot duration, exposed so tests fast-forward past it without
+  /// duplicating the number (it has been retuned twice on user feedback).
+  static const totalDuration = _BootTiming.total;
 
   final Widget child;
 

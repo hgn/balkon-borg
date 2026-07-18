@@ -32,9 +32,10 @@ void main() {
     expect(find.text('shell'), findsOneWidget);
     expect(find.text('Borg'), findsOneWidget);
 
-    // Fast-forward past the ~2.0s budget: the whole boot layer unmounts,
+    // Fast-forward past the boot budget (referenced, not duplicated — the
+    // timing has been retuned twice): the whole boot layer unmounts,
     // leaving only the child — nothing lingers.
-    await tester.pump(const Duration(milliseconds: 2100));
+    await tester.pump(BootOverlay.totalDuration + const Duration(milliseconds: 150));
     expect(find.text('Borg'), findsNothing);
     expect(find.text('shell'), findsOneWidget);
   });
@@ -75,7 +76,7 @@ void main() {
     await tester.pump();
     expect(sound.playCount, 1);
 
-    await tester.pump(const Duration(milliseconds: 2100));
+    await tester.pump(BootOverlay.totalDuration + const Duration(milliseconds: 150));
     expect(sound.disposeCount, 0); // still mounted (only the overlay layer unmounted itself).
 
     await tester.pumpWidget(const SizedBox()); // unmount the whole widget.
