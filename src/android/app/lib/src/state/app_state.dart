@@ -140,12 +140,20 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Commands — fire-and-forget; the retained state echo updates the UI.
-  void setSubmode(MainMode m, String submode, {String? chan}) =>
-      _mqtt.publishJson(Topics.cmdMode(m), {
-        'submode': submode,
-        'chan': ?chan,
-      });
+  // Commands — fire-and-forget; the retained state echo updates the UI. In
+  // demo mode there is no arbiter to echo the state topic back, so the
+  // change is additionally applied straight to local state (E2) — real mode
+  // relies solely on the echo, no optimistic UI (contract convention).
+  void setSubmode(MainMode m, String submode, {String? chan}) {
+    _mqtt.publishJson(Topics.cmdMode(m), {
+      'submode': submode,
+      'chan': ?chan,
+    });
+    if (_demoActive) {
+      modes[m] = ModeState(submode: submode, chan: chan, pinned: modes[m]?.pinned ?? false);
+      notifyListeners();
+    }
+  }
 
   void setFocus(MainMode m) =>
       _mqtt.publishJson(Topics.cmdFocus, {'focus': m.name});

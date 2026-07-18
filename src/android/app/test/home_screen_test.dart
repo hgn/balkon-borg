@@ -1,0 +1,92 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:balkon_borg/src/contract/topics.dart';
+import 'package:balkon_borg/src/services/mqtt_service.dart';
+import 'package:balkon_borg/src/state/app_state.dart';
+import 'package:balkon_borg/src/state/settings.dart';
+import 'package:balkon_borg/src/theme/balkon_theme.dart';
+import 'package:balkon_borg/src/ui/home_screen.dart';
+
+Future<AppState> _demoAppState() async {
+  SharedPreferences.setMockInitialValues({'demo_mode': true});
+  final settings = await Settings.load();
+  final appState = AppState(MqttService(), settings);
+  await appState.connect(); // demo mode: synchronous population.
+  return appState;
+}
+
+Widget _wrap(AppState appState, Settings settings) => MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: settings),
+        ChangeNotifierProvider.value(value: appState),
+      ],
+      child: MaterialApp(
+        theme: buildBalkonTheme(brightness: Brightness.dark),
+        home: const Scaffold(body: HomeScreen()),
+      ),
+    );
+
+void main() {
+  testWidgets('Home shows the 4 mode cards and env tiles from demo data', (tester) async {
+    final appState = await _demoAppState();
+    addTearDown(appState.dispose);
+    final settings = Settings(await SharedPreferences.getInstance());
+
+    await tester.pumpWidget(_wrap(appState, settings));
+    await tester.pumpAndSettle();
+
+    for (final label in ['LUMEN', 'COMMS', 'SIGINT', 'SENTRY']) {
+      expect(find.text(label), findsOneWidget);
+    }
+    // DemoSource: lumen=ticker, comms=off, sigint=adsb, sentry=off.
+    expect(find.text('Info-Ticker'), findsOneWidget);
+    expect(find.text('ADS-B'), findsOneWidget);
+    expect(find.text('Aus'), findsNWidgets(2));
+
+    // Env stat tiles, built from the last demo envHistory sample.
+    expect(find.text('Temperatur'), findsOneWidget);
+    expect(find.text('Luftfeuchte'), findsOneWidget);
+    expect(find.text('Luftdruck'), findsOneWidget);
+    final latest = appState.envHistory.last;
+    expect(find.text('${latest.t.toStringAsFixed(1)}°C'), findsOneWidget);
+  });
+
+  testWidgets('tapping a mode card opens the submode sheet', (tester) async {
+    final appState = await _demoAppState();
+    addTearDown(appState.dispose);
+    final settings = Settings(await SharedPreferences.getInstance());
+
+    await tester.pumpWidget(_wrap(appState, settings));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('LUMEN'));
+    await tester.pumpAndSettle();
+
+    // Sheet title + a submode option that isn't visible on the card itself.
+    expect(find.text('Disco'), findsOneWidget);
+    expect(find.text('Ambient'), findsOneWidget);
+  });
+
+  testWidgets('selecting a submode in demo mode updates the card value', (tester) async {
+    final appState = await _demoAppState();
+    addTearDown(appState.dispose);
+    final settings = Settings(await SharedPreferences.getInstance());
+
+    await tester.pumpWidget(_wrap(appState, settings));
+    await tester.pumpAndSettle();
+
+    // COMMS starts off.
+    expect(find.text('Aus'), findsNWidgets(2));
+
+    await tester.tap(find.text('COMMS'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('FM'));
+    await tester.pumpAndSettle();
+
+    expect(appState.modes[MainMode.comms]!.submode, 'fm');
+    expect(find.text('FM'), findsOneWidget); // now shown on the card itself.
+  });
+}

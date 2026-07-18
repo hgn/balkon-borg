@@ -42,8 +42,8 @@ void main() {
     expect(find.text('Radio'), findsOneWidget);
     expect(find.text('Log'), findsOneWidget);
 
-    // Home tab is visible initially (existing status content).
-    expect(find.text('MODES'), findsOneWidget);
+    // Home tab is visible initially (E2 mode-card grid).
+    expect(find.text('LUMEN'), findsOneWidget);
     expect(find.text('E3 FOLGT'), findsNothing);
 
     // Tapping a nav item switches the visible tab.
@@ -51,6 +51,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('E3 FOLGT'), findsOneWidget);
-    expect(find.text('MODES'), findsNothing);
+    expect(find.text('LUMEN'), findsNothing);
   });
 }

@@ -9,6 +9,7 @@ import 'home_screen.dart';
 import 'log_screen.dart';
 import 'radio_screen.dart';
 import 'settings_screen.dart';
+import 'widgets/borg_sheet.dart';
 
 /// The app shell: header (eyebrow/wordmark/theme toggle/health dot/settings)
 /// + floating bottom nav + animated tab content (components.md, motion.md §3).
@@ -196,13 +197,8 @@ class _HealthDot extends StatelessWidget {
   }
 
   void _showHealthSheet(BuildContext context, AppState state) {
-    final extras = Theme.of(context).extension<BalkonExtras>()!;
-    showModalBottomSheet<void>(
+    showBorgSheet<void>(
       context: context,
-      backgroundColor: extras.surface3,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(BalkonRadii.sheet)),
-      ),
       builder: (sheetContext) {
         final textTheme = Theme.of(sheetContext).textTheme;
         return Padding(
@@ -211,18 +207,9 @@ class _HealthDot extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Theme.of(sheetContext).colorScheme.outline,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
+              const BorgSheetGrabber(),
               const SizedBox(height: 18),
-              Text('Health', style: textTheme.titleMedium),
+              const BorgSheetHeader(title: 'Health'),
               const SizedBox(height: 12),
               if (state.health.isEmpty)
                 Text('no health data yet', style: textTheme.bodyMedium)

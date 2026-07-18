@@ -14,7 +14,7 @@ void main() {
       final snapshot = const DemoSource().build();
 
       expect(snapshot.modes.keys.toSet(), MainMode.values.toSet());
-      expect(snapshot.modes[MainMode.lumen]!.submode, 'ticker');
+      expect(snapshot.modes[MainMode.lumen]!.submode, 'info-ticker');
       expect(snapshot.modes[MainMode.comms]!.submode, 'off');
       expect(snapshot.modes[MainMode.sigint]!.submode, 'adsb');
       expect(snapshot.modes[MainMode.sentry]!.submode, 'off');

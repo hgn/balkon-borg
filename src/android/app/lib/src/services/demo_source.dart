@@ -37,7 +37,7 @@ class DemoSource {
 
     return DemoSnapshot(
       modes: const {
-        MainMode.lumen: ModeState(submode: 'ticker'),
+        MainMode.lumen: ModeState(submode: 'info-ticker'),
         MainMode.comms: ModeState(submode: 'off'),
         MainMode.sigint: ModeState(submode: 'adsb'),
         MainMode.sentry: ModeState(submode: 'off'),
