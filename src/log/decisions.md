@@ -14,6 +14,19 @@ split into src/") for why.
 
 ---
 
+## 2026-07-17 — U17: RF spectrum monitor via OpenWebRX, app-only
+
+**Tool: OpenWebRX** for SIGINT "Spectrum" — a turnkey SDR web receiver with a
+browser-native waterfall, fitting the existing "each capture service has its own web UI"
+pattern (tar1090, Frigate, BirdNET-Go). **App/web only** (user's call) — the LED panel is
+too coarse (8×43) for a meaningful spectrogram, so Spectrum has no panel representation,
+unlike the ticker-fed SIGINT submodes.
+
+**Delivery to the Android app:** embed OpenWebRX's own web UI via WebView (behind the
+reverse proxy), reusing its already-smooth browser-native rendering rather than building a
+custom streaming path — satisfies the user's "muss flüssig rüberkommen" requirement for
+free.
+
 ## 2026-07-17 — U16: radiosonde tracker, no landing prediction
 
 Track Munich-region radiosonde launches (`radiosonde_auto_rx`, 400–406 MHz, SIGINT

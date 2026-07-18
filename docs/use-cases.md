@@ -643,10 +643,27 @@ falling — as it happens, no computed guesswork about where it comes down.
 ## U17 — RF spectrum monitor
 
 **Requirements:**
-1. Waterfall view of nearby transmissions.
+1. Live waterfall view of nearby transmissions across the SDR's tunable range.
+2. **App/web only, no panel involvement** — the LED panel doesn't attempt a spectrogram;
+   this is purely a screen feature.
+3. Smooth, fluid rendering in the Android app, not a choppy/laggy feed.
 
-**Value:** _TBD_
-**Implementation:** _TBD_
+**Value:** an actual look at the RF spectrum around the balcony — a proper waterfall, not
+an abstraction — for the moments you want to see what's transmitting nearby, without
+picking a specific decoder first.
+
+**Implementation:**
+- **Tool: OpenWebRX**, SIGINT submode "Spectrum". A turnkey SDR web receiver with a
+  browser-native waterfall over WebSocket — no custom rendering to build, and it fits the
+  project's existing "each capture service gets its own web UI" pattern (tar1090, Frigate,
+  BirdNET-Go).
+- **Delivery:** the Android app embeds OpenWebRX's own web UI directly (a WebView) behind
+  the reverse proxy (`architecture.md` §9), reusing its already browser-optimised
+  real-time rendering — this is what satisfies the "flüssig" requirement, with no separate
+  streaming implementation needed.
+- **Resource use:** like any SIGINT submode, Spectrum holds the SDR tuner exclusively while
+  active (`architecture.md` §4) — displaces COMMS/other SIGINT submodes as usual.
+- **No panel state, no persistence.** Purely a live, on-demand view.
 
 ---
 
