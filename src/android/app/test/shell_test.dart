@@ -44,13 +44,16 @@ void main() {
 
     // Home tab is visible initially (E2 mode-card grid).
     expect(find.text('LUMEN'), findsOneWidget);
-    expect(find.text('E3 FOLGT'), findsNothing);
+    expect(find.text('DAB+'), findsNothing); // Radio-only band chip.
 
-    // Tapping a nav item switches the visible tab.
+    // Tapping a nav item switches the visible tab. Safe to pumpAndSettle:
+    // Radio defaults to the COMMS segment, and demo COMMS starts off (no
+    // ambient equalizer loop running yet — see radio_screen_test.dart).
     await tester.tap(find.text('Radio'));
     await tester.pumpAndSettle();
 
-    expect(find.text('E3 FOLGT'), findsOneWidget);
+    // Radio tab (E3): segmented tab + COMMS band chips.
+    expect(find.text('DAB+'), findsOneWidget);
     expect(find.text('LUMEN'), findsNothing);
   });
 }
