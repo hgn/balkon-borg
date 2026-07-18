@@ -14,6 +14,23 @@ split into src/") for why.
 
 ---
 
+## 2026-07-17 — U20 retired: pager dropped, airband folded into U10
+
+**Pager/POCSAG monitoring removed** (user's call, once told the realistic yield): German
+BOS/emergency-services dispatch has migrated to encrypted digital (TETRA) radio, so
+unencrypted POCSAG traffic worth receiving today is thin (mostly commercial paging) — not
+worth building a submode for. The "Pager" SIGINT submode is dropped from the mode table.
+
+**Airband voice monitoring folded into U10** (COMMS' Airband submode) — it was never
+distinct from "another COMMS station list". Formalised there with the frequencies already
+recorded in the mode diagram (`architecture.md` §3): **Approach · 127.95** (default) ·
+ATIS · 123.13 · Director · 118.82 · Tower · 118.7. This closes a gap: U10's own
+requirements list never actually had an Airband entry, even though the mode table and
+diagram already referenced it as U20.2.
+
+**U20 retired as a tombstone number** (no renumber of U13–U19/U21). Corrected stale
+`U20`/`U8` references in `architecture.md`'s resource table and SIGINT-pattern note.
+
 ## 2026-07-17 — U17: RF spectrum monitor via OpenWebRX, app-only
 
 **Tool: OpenWebRX** for SIGINT "Spectrum" — a turnkey SDR web receiver with a

@@ -26,8 +26,8 @@ reserve.
 | Main mode (focus) | Submodes (Button 2, incl. explicit *off*) | Use cases |
 |---|---|---|
 | **LUMEN** (the panel) | off · ambient · full · cozy · distance-auto · info-ticker · disco · strobe · police · visualiser | U1, U3 |
-| **COMMS** (SDR, listen) | off · FM+RDS · DAB+ · Shortwave · Airband | U10.1/.2/.3, U20.2; U10.4 (DAB+ EWF) as a monitor under DAB |
-| **SIGINT** (SDR, decode) | off · ADS-B · ISM/rtl_433 · APRS · Radiosonde · Spectrum · Pager · LoRa *(later)* · scheduled captures | U5, U13, U15, U16, U17, U20.1, U14; U8 *(deferred)* |
+| **COMMS** (SDR, listen) | off · FM+RDS · DAB+ · Shortwave · Airband | U10.1–.3, U10.5 (Airband); U10.4 (DAB+ EWF) as a monitor under DAB |
+| **SIGINT** (SDR, decode) | off · ADS-B · ISM/rtl_433 · APRS · Radiosonde · Spectrum · LoRa *(later)* · scheduled captures | U5, U13, U15, U16, U17, U14; U8 *(deferred)* |
 | **SENTRY** (security) | off · armed | U11 (armed explicitly, no auto-trigger) |
 
 *Night* is treated as a **modifier**, not its own main mode — it shifts thresholds and
@@ -472,18 +472,25 @@ Deutschlandfunk.
    Bayern · 101.3 · Gong · 96.3 · Energy · 93.3 · Charivari · 95.5.
 3. **Shortwave / world-band** — a free tune (no preset list), for evening DX.
 4. **DAB+ Emergency Warning Functionality (EWF)** — auto-play a warning when tuned to DAB.
+5. **Airband** (Munich EDDM voice) — **Approach · 127.95** (default) · ATIS · 123.13 ·
+   Director · 118.82 · Tower · 118.7. Formerly tracked as its own use case (U20.2); folded
+   in here because it's just another COMMS station list — no separate spec needed. (Its
+   sibling requirement, POCSAG pager monitoring, was **dropped**: German BOS/emergency
+   dispatch has moved to encrypted digital (TETRA) radio, so unencrypted POCSAG traffic
+   worth receiving has largely dried up — not worth building for what's left. U20 is
+   retired as a tombstone number.)
 
 **Value:** the balcony gets a real radio with a display — twist to a station, the panel
-shows what's playing (RDS/label). The curated Munich lists mean the common stations are
-one button away; the app reaches the rest.
+shows what's playing (RDS/label, or the tuned airband frequency/callsign). The curated
+Munich lists mean the common stations are one button away; the app reaches the rest.
 
 **Implementation:** FM via `rtl_fm`/redsea (RDS text → panel ticker), DAB+ via a headless
-`welle.io`/`welle-cli`, shortwave through the RTL-SDR V4's built-in HF front end. The
-station list is data in the mode config (`src/shared/`), so it's editable without code.
-All of COMMS holds the single SDR tuner, so it displaces SIGINT (§ mode overview) — you
-can't listen and scan at once. EWF only fires while actually tuned to DAB (single-tuner
-limit, noted in the mode overview); the app/cell-broadcast stay the always-on warning
-path.
+`welle.io`/`welle-cli`, shortwave through the RTL-SDR V4's built-in HF front end, airband
+via `rtl_fm` (NFM). The station list is data in the mode config (`src/shared/`), so it's
+editable without code. All of COMMS holds the single SDR tuner, so it displaces SIGINT
+(§ mode overview) — you can't listen and scan at once. EWF only fires while actually
+tuned to DAB (single-tuner limit, noted in the mode overview); the app/cell-broadcast stay
+the always-on warning path.
 
 ---
 
@@ -688,14 +695,16 @@ picking a specific decoder first.
 
 ---
 
-## U20 — Funkverkehr
+## U20 — Funkverkehr *(retired — split up)*
 
-**Requirements:**
-1. Pager/POCSAG message monitoring.
-2. Air-band voice monitoring (MUC tower/approach).
+Dropped as its own use case. Its two requirements went separate ways:
+- **Pager/POCSAG monitoring — removed.** German BOS/emergency-services dispatch has
+  migrated to encrypted digital (TETRA) radio, so the unencrypted POCSAG traffic worth
+  receiving today is thin (mostly commercial paging) — not worth building for what's left.
+- **Airband voice monitoring — folded into U10** (COMMS' Airband submode: Approach / ATIS
+  / Director / Tower). It was never anything more than another COMMS station list.
 
-**Value:** _TBD_
-**Implementation:** _TBD_
+Number kept as a tombstone so U13–U19/U21 don't shift.
 
 ---
 

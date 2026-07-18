@@ -246,8 +246,8 @@ BirdNET + clap + FFT at once); BME/dashboards/logging need nothing scarce.
 | Disco / effects (U3) | ● | | | | |
 | Music visualiser (U3) | ● | | | | ○ |
 | Presence ghost (U19) | ● | | | | |
-| COMMS listen — FM/DAB/SW/airband (U10, U20.2) | | ● | | ● | |
-| SIGINT decode — ADS-B/rtl_433/APRS/… (U5,U13,U15,U16; U8 later) | | ● | | | |
+| COMMS listen — FM/DAB/SW/airband (U10) | | ● | | ● | |
+| SIGINT decode — ADS-B/rtl_433/APRS/radiosonde/spectrum (U5,U13,U15,U16,U17; U8 later) | | ● | | | |
 | Gesture (U2) | | | ● | | |
 | Frigate / SENTRY (U7, U11) | | | ● | ●² | |
 | TTS feedback (U9) | | | | ● | |
@@ -276,7 +276,7 @@ The only cells still genuinely open are edge refinements (e.g. should the panel 
 per panel for now).
 
 **SIGINT live-data pattern** (general, applies to every SIGINT decode submode — U5, U13,
-U15, U16, U17, U20): each decoder keeps a small **in-RAM ring buffer** of its last ~50
+U15, U16, U17): each decoder keeps a small **in-RAM ring buffer** of its last ~50
 entries (not a DB — falls under the live-only rule, §8). Two consumers read the same
 buffer:
 - The **LUMEN info-ticker**, when active, shows the data of whichever SIGINT submode is
