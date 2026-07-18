@@ -14,6 +14,25 @@ split into src/") for why.
 
 ---
 
+## 2026-07-17 — Android app build plan agreed (see android/implementation-plan.md)
+
+Design system delivered to `src/android/design/` (tokens, ready ThemeData, component
+specs, motion curves). Build plan decided with the user; full text in
+[`../android/implementation-plan.md`](../android/implementation-plan.md):
+
+- **Settings/health get no tab** (design has exactly 4): gear + aggregate status dot in
+  the header, health as a bottom sheet. Fifth tab rejected (breaks the 4-item design).
+- **Demo mode built in** (fake data source, settings toggle, default on): the Pi
+  arbiter doesn't exist yet, so without it every screen would be an empty shell until
+  Pi M1. A local test broker was the rejected alternative (more friction per
+  iteration).
+- **Fonts bundled** (no google_fonts runtime download — offline-first), **charts via
+  CustomPainter** (design is a simple line+area; no chart dependency), **WebRTC wiring
+  deferred** until go2rtc runs (camera tab ships full UI with placeholder now).
+- **Stages E1–E6** (shell → home → radio → camera → log → settings/watch-window),
+  each run by the `android-flutter` agent autonomously, reviewed and committed
+  individually, analyze/tests/build green as the exit bar.
+
 ## 2026-07-17 — Android app skeleton: Provider, minSdk 33, net.jauu.balkonborg
 
 The Flutter app skeleton is built (`src/android/app/`). Decisions, with the user:
