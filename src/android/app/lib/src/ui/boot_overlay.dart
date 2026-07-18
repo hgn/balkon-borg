@@ -205,29 +205,38 @@ class _RadarWave extends StatelessWidget {
               builder: (context, _) {
                 final t = _ringCurve.transform(controller.value);
                 final diameter = _ringBaseDiameter + (maxDiameter - _ringBaseDiameter) * t;
-                // Stay fully visible while sweeping the screen; fade only on
-                // the last ~15%, once the ring has cleared the corners. The
-                // earlier `1 - t*1.15` killed it by half-time (user: "blendet
-                // bereits in halber Durchlauf aus").
-                final glowAlpha = ((1 - t) / 0.15).clamp(0.0, 1.0);
-                // Over the last quarter the ring additionally hazes out —
-                // a mild blur ramp (0 → sigma 5), so the edge softens as it
-                // leaves instead of staying razor-sharp to the end. "Nur ein
-                // bisschen": deliberately not a full blur-out (user,
-                // 2026-07-17).
-                final blurSigma = ((t - 0.75) / 0.25).clamp(0.0, 1.0) * 5.0;
+                // Exit choreography over the last quarter (user, 2026-07-18:
+                // "stärker transparent werden, kurz ganz hell aufflackern"):
+                // `q` runs 0→1 through it. The base fade is quadratic — the
+                // ring loses most of its opacity early in the quarter — and a
+                // narrow gaussian flare around q≈0.4 briefly re-brightens it
+                // to full, tinting toward white: an energy discharge right
+                // before it dies.
+                final q = ((t - 0.75) / 0.25).clamp(0.0, 1.0);
+                final baseFade = (1 - q) * (1 - q);
+                final flare = math.exp(-math.pow((q - 0.4) / 0.09, 2)).toDouble();
+                final glowAlpha = (baseFade + flare * 0.9).clamp(0.0, 1.0);
+                // Blur ramps over the same quarter (sigma 0 → 5) so the edge
+                // hazes out while it fades — the flare shines through the
+                // haze rather than sharpening it again.
+                final blurSigma = q * 5.0;
+                final flashColor = Color.lerp(
+                  BalkonColors.darkPrimaryStrong,
+                  Colors.white,
+                  flare * 0.65,
+                )!;
                 final ring = Container(
                   width: diameter,
                   height: diameter,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: BalkonColors.darkPrimaryStrong.withValues(alpha: glowAlpha),
+                      color: flashColor.withValues(alpha: glowAlpha),
                       width: _ringBorderWidth,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: BalkonColors.darkPrimaryStrong.withValues(alpha: glowAlpha * 0.55),
+                        color: flashColor.withValues(alpha: glowAlpha * 0.55),
                         blurRadius: 40,
                         spreadRadius: 6,
                       ),
