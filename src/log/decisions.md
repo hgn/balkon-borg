@@ -33,7 +33,7 @@ last use case was specced. Findings and the user's calls:
   the app** (user requirement), at minimum per category (security vs. events).
 - **Remote access resolved: WireGuard already in place** (user) — phone tunnels into the
   home net; no port forwarding, remote ≡ local for the app. §9 updated.
-- **Panel overlay ladder added (§5, [NEW — confirm]):** the speaker ladder had no panel
+- **Panel overlay ladder added (§5, confirmed by the user):** the speaker ladder had no panel
   counterpart, but Effector 1, the storm red-flash, the SENTRY grace pulse and the U5
   flash all want the matrix over a running LUMEN program. Rule: overlays temporarily
   replace/modulate the program and restore it; ordering mirrors the speaker ladder.

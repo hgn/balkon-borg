@@ -319,7 +319,7 @@ condition itself is resolved. **Confirmed:** a safety warning (2) **cuts into a 
 talk-down** (3) — safety over comfort. TTS is **Piper** (local, offline); the arbiter
 runs the ducking/queue mixer (see `../docs/use-cases.md` U9).
 
-**Panel overlays [NEW — confirm]:** the ladder above governs the speaker; the panel has
+**Panel overlays (confirmed):** the ladder above governs the speaker; the panel has
 its own, simpler rule. Several events want the matrix briefly (U11 Effector 1 flash +
 police, U9.3 storm red-flash, the SENTRY arming/entry-grace pulse, the U5
 special-aircraft flash) while a LUMEN program (disco, ticker, …) may be running.
