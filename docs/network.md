@@ -73,6 +73,7 @@ Topic scheme (target):
 | `balkon/ism/recent` **(retained)** | borg-pi5 → dashboards | `rtl_433` ISM sensor decode (U13), last ~50 |
 | `balkon/tpms/recent` **(retained)** | borg-pi5 → dashboards | `rtl_433` TPMS decode (U13), last ~50 |
 | `balkon/aprs/recent` **(retained)** | borg-pi5 → dashboards | APRS stations heard (U15), last ~50 |
+| `balkon/radiosonde/recent` **(retained)** | borg-pi5 → dashboards | radiosonde telemetry (U16), last ~50 |
 
 (The ESP32 currently uses ESPHome MQTT discovery for its own sensor topics, plus the
 explicit `wled/balkon` topics.)

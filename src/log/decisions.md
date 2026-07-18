@@ -14,6 +14,15 @@ split into src/") for why.
 
 ---
 
+## 2026-07-17 — U16: radiosonde tracker, no landing prediction
+
+Track Munich-region radiosonde launches (`radiosonde_auto_rx`, 400–406 MHz, SIGINT
+submode "Radiosonde") — live telemetry only, via the general SIGINT ring-buffer +
+retained-MQTT pattern (`balkon/radiosonde/recent`). **Landing prediction dropped**
+(user's call): neither a physics-based predictor (needs external wind-field data, a real
+dependency for a niche feature) nor a naive linear extrapolation (inaccurate, not worth
+building) — just show where the sonde is now.
+
 ## 2026-07-17 — U15: APRS tracker, live picture via the general SIGINT pattern
 
 Decode passing APRS traffic (balloons, hikers, digipeaters/IGates) via `multimon-ng` /

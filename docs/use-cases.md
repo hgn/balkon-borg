@@ -618,10 +618,25 @@ the app, not just a blip that flashes past and is gone.
 ## U16 — Radiosonde tracker
 
 **Requirements:**
-1. Track Munich-region weather-balloon launches, predict landing.
+1. Track Munich-region weather-balloon (radiosonde) launches — position, altitude,
+   ascent/descent rate — while in range.
+2. **No landing prediction** — dropped (live telemetry only; not worth the complexity of
+   a physics-based predictor or the inaccuracy of a naive extrapolation).
 
-**Value:** _TBD_
-**Implementation:** _TBD_
+**Value:** a live picture of the twice-daily DWD radiosonde launch (Oberschleißheim, north
+Munich) passing overhead or nearby — where it is, how high, how fast it's climbing or
+falling — as it happens, no computed guesswork about where it comes down.
+
+**Implementation:**
+- **Decoder:** `radiosonde_auto_rx` on the SDR (400–406 MHz band), SIGINT submode
+  "Radiosonde".
+- **Live data (general SIGINT pattern, `architecture.md` §4):** in-RAM ring buffer of the
+  last ~50 telemetry frames (position, altitude, ascent/descent rate, serial).
+- **Interface:** retained MQTT snapshot topic `balkon/radiosonde/recent`
+  (`docs/network.md`); shown on the LUMEN ticker when Radiosonde is the focused SIGINT
+  submode.
+- **No persistence, no prediction.** Live telemetry only, forgotten once the sonde is out
+  of range — consistent with the no-telemetry-DB line.
 
 ---
 
