@@ -67,7 +67,7 @@ before the next starts.
 
 | **E10** | ADS-B radar (added 2026-07-19, D6): the SIGINT background sweep becomes a real plan-position indicator. Aircraft from `balkon/adsb/aircraft` are placed at their true bearing/distance around the balcony, blips fade with the sweep, the nearest gets a callsign/altitude label. `CustomPainter` + one ticker, only while the ADS-B submode is visible. Demo mode flies plausible tracks. |
 | **E11** | Fragment shaders (added 2026-07-19, D6): a one-shot CRT/scanline glitch (~400 ms) over the camera view when SENTRY reports a person, and a condensation/droplet wash on the background above 85 % humidity. Native `.frag` assets via `flutter_shaders`/`FragmentProgram`, precompiled at startup, tickers bound to visibility, skipped under `disableAnimations`. |
-| **E12** | Twin-Lite (added 2026-07-19, D6): a 2D layered render of the enclosure seen from below (case shell, diffuser, LED dots), the diffuser tinted live by `wledColor` and dimmed by the WLED brightness, small state marks for camera/SENTRY/radio. Lives on Home above the mode cards; tapping opens the health sheet. Vector/`CustomPainter`, no model files. |
+| **E12** | *(built, then reverted 2026-07-19: the picture was not worth the vertical space it took on Home. Code is in commit 8cabc31 if it ever comes back.)* Twin-Lite: a 2D layered render of the enclosure seen from below (case shell, diffuser, LED dots), the diffuser tinted live by `wledColor` and dimmed by the WLED brightness, small state marks for camera/SENTRY/radio. Lives on Home above the mode cards; tapping opens the health sheet. Vector/`CustomPainter`, no model files. |
 
 ## Known unknowns
 
