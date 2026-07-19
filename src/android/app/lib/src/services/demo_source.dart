@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui' show Color;
 
 import '../contract/topics.dart';
+import '../models/aircraft.dart';
 import '../models/bird_detection.dart';
 import '../models/borg_event.dart';
 import '../models/env_sample.dart';
@@ -20,6 +21,7 @@ class DemoSnapshot {
     required this.envHistory,
     required this.birdLog,
     required this.wledColor,
+    required this.aircraft,
   });
 
   final Map<MainMode, ModeState> modes;
@@ -30,6 +32,7 @@ class DemoSnapshot {
   final List<EnvSample> envHistory;
   final List<BirdDetection> birdLog;
   final Color? wledColor;
+  final List<Aircraft> aircraft;
 }
 
 /// Builds realistic fake data instead of the real broker (D2 — demo mode).
@@ -86,6 +89,117 @@ class DemoSource {
       birdLog: _buildBirdLog(ts),
       // Demo default LUMEN submode is 'info-ticker' → no glow (see below).
       wledColor: colorForLumenSubmode('info-ticker'),
+      aircraft: _buildAircraft(),
+    );
+  }
+
+  /// Plausible EDDM-approach traffic (E10): five aircraft around the
+  /// balcony, spread across the altitude/distance ranges real ADS-B would
+  /// show — a couple of jets low and slow on final into Munich, one climbing
+  /// out, one crossing at cruise. `lat`/`lon` are derived from `bearingDeg`/
+  /// `distKm` via [GreatCircle.destination] rather than picked separately,
+  /// so the two stay consistent with each other (and with what a real
+  /// `fromJson` payload implies) from the first frame.
+  List<Aircraft> _buildAircraft() {
+    Aircraft make({
+      required String hex,
+      required String flight,
+      required double bearingDeg,
+      required double distKm,
+      required double altFt,
+      required double trackDeg,
+      required double groundSpeedKt,
+    }) {
+      final pos = GreatCircle.destination(BorgGeo.homeLat, BorgGeo.homeLon, bearingDeg, distKm);
+      return Aircraft(
+        hex: hex,
+        flight: flight,
+        lat: pos.lat,
+        lon: pos.lon,
+        altFt: altFt,
+        trackDeg: trackDeg,
+        groundSpeedKt: groundSpeedKt,
+        distKm: distKm,
+        bearingDeg: bearingDeg,
+      );
+    }
+
+    return [
+      // Short final, low and slow — about to land south-west of the balcony.
+      make(
+        hex: '3c6a1f',
+        flight: 'DLH9CJ',
+        bearingDeg: 150,
+        distKm: 6.5,
+        altFt: 2400,
+        trackDeg: 330,
+        groundSpeedKt: 140,
+      ),
+      // Mid final, descending from the north.
+      make(
+        hex: '3c4b02',
+        flight: 'EJU2371',
+        bearingDeg: 8,
+        distKm: 18,
+        altFt: 5200,
+        trackDeg: 187,
+        groundSpeedKt: 210,
+      ),
+      // Further out on approach, from the west.
+      make(
+        hex: '3c8e77',
+        flight: 'RYR74HB',
+        bearingDeg: 245,
+        distKm: 24,
+        altFt: 9800,
+        trackDeg: 65,
+        groundSpeedKt: 260,
+      ),
+      // Just beyond the outer ring — clamped-blip demo traffic.
+      make(
+        hex: '3c1d90',
+        flight: 'DLH441',
+        bearingDeg: 300,
+        distKm: 39,
+        altFt: 15000,
+        trackDeg: 120,
+        groundSpeedKt: 320,
+      ),
+      // High cruise overflight, no relation to Munich approach traffic.
+      make(
+        hex: '4baa3c',
+        flight: 'EJU55TT',
+        bearingDeg: 95,
+        distKm: 33,
+        altFt: 37000,
+        trackDeg: 275,
+        groundSpeedKt: 460,
+      ),
+    ];
+  }
+
+  /// Advances every aircraft's position along its own track for [dt] of
+  /// simulated flight time (kt → km/h via the 1.852 nm/km factor), then
+  /// recomputes `distKm`/`bearingDeg` from the new position — the same
+  /// [GreatCircle] math a real payload's fallback would use, so demo traffic
+  /// behaves exactly like the real feed would once it moves. Aircraft
+  /// missing the fields needed to move (no lat/lon/track/speed) pass through
+  /// unchanged rather than being dropped.
+  List<Aircraft> advanceAircraft(List<Aircraft> current, Duration dt) =>
+      [for (final a in current) _advanceOne(a, dt)];
+
+  Aircraft _advanceOne(Aircraft a, Duration dt) {
+    if (a.lat == null || a.lon == null || a.trackDeg == null || a.groundSpeedKt == null) {
+      return a;
+    }
+    final hours = dt.inMicroseconds / (Duration.microsecondsPerHour);
+    final distanceKm = a.groundSpeedKt! * 1.852 * hours;
+    final dest = GreatCircle.destination(a.lat!, a.lon!, a.trackDeg!, distanceKm);
+    return a.copyWith(
+      lat: dest.lat,
+      lon: dest.lon,
+      distKm: GreatCircle.distanceKm(BorgGeo.homeLat, BorgGeo.homeLon, dest.lat, dest.lon),
+      bearingDeg: GreatCircle.bearingDeg(BorgGeo.homeLat, BorgGeo.homeLon, dest.lat, dest.lon),
     );
   }
 

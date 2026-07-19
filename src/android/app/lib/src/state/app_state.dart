@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 
 import '../contract/feeds.dart';
 import '../contract/topics.dart';
+import '../models/aircraft.dart';
 import '../models/bird_detection.dart';
 import '../models/borg_event.dart';
 import '../models/env_sample.dart';
@@ -62,6 +63,11 @@ class AppState extends ChangeNotifier {
   List<EnvSample> envHistory = [];
   List<BirdDetection> birdLog = [];
 
+  /// Current sky picture from `Topics.adsbAircraft` (E10), nearest first per
+  /// the contract. Fed by the real feed (~1/s while ADS-B runs) or, in demo
+  /// mode, by [DemoSource.build]/[advanceDemoAircraft].
+  List<Aircraft> aircraft = [];
+
   /// Current WLED light color for the ambient background glow (E9), `null`
   /// while off/unknown. Fed by `wled/balkon/v` (`Feeds.wledState`) in real
   /// mode, by `DemoSource`/the LUMEN-submode demo mutation in demo mode.
@@ -102,6 +108,7 @@ class AppState extends ChangeNotifier {
       envHistory = snapshot.envHistory;
       birdLog = snapshot.birdLog;
       wledColor = snapshot.wledColor;
+      aircraft = snapshot.aircraft;
       connected = true;
       notifyListeners();
       return;
@@ -168,6 +175,8 @@ class AppState extends ChangeNotifier {
       }
     } else if (topic == Feeds.wledState) {
       wledColor = parseWledColor(json);
+    } else if (topic == Topics.adsbAircraft) {
+      aircraft = SkySnapshot.fromJson(json).aircraft;
     } else {
       return;
     }
@@ -217,6 +226,16 @@ class AppState extends ChangeNotifier {
         _uiSounds.confirm();
       }
     }
+  }
+
+  /// Advances demo aircraft along their tracks (E10 — `AdsbRadar`'s own
+  /// sweep drives this via a widget-lifetime `Timer`, so it only runs while
+  /// the radar is actually visible). No-op outside demo mode: the real feed
+  /// moves aircraft by republishing `Topics.adsbAircraft`, not by ticking.
+  void advanceDemoAircraft(Duration elapsed) {
+    if (!_demoActive) return;
+    aircraft = _demo.advanceAircraft(aircraft, elapsed);
+    notifyListeners();
   }
 
   void setFocus(MainMode m) =>

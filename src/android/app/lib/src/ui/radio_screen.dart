@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -6,9 +7,11 @@ import 'package:provider/provider.dart';
 import '../contract/stations.dart';
 import '../contract/submodes.dart';
 import '../contract/topics.dart';
+import '../models/aircraft.dart';
 import '../models/mode_state.dart';
 import '../state/app_state.dart';
 import '../theme/balkon_theme.dart';
+import 'widgets/adsb_radar.dart';
 import 'widgets/borg_chip.dart';
 import 'widgets/eq_bars.dart';
 import 'widgets/preset_row.dart';
@@ -237,7 +240,11 @@ class _ActiveCardBackgroundState extends State<_ActiveCardBackground>
       AnimationController(vsync: this, duration: _revolution);
   bool _reduceMotion = false;
 
-  bool get _sweepActive => widget.mode == MainMode.sigint && !widget.state.isOff;
+  // ADS-B (E10) gets its own self-contained radar element in `_SigintBlock`
+  // instead — showing this decorative sweep behind the card too would stack
+  // two sweeps on top of each other for the one submode that has a real one.
+  bool get _sweepActive =>
+      widget.mode == MainMode.sigint && !widget.state.isOff && widget.state.submode != 'adsb';
   bool get _waveActive => widget.mode == MainMode.comms && !widget.state.isOff;
 
   @override
@@ -537,6 +544,10 @@ class _SigintBlock extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(_descriptions[selected] ?? '', style: textTheme.bodyMedium),
+          if (selected == 'adsb') ...[
+            const SizedBox(height: 14),
+            const _AdsbSection(),
+          ],
         ],
       ],
     );
@@ -545,6 +556,111 @@ class _SigintBlock extends StatelessWidget {
   void _onFunctionTap(BuildContext context, String fn) {
     if (sigintState.submode == fn) return; // already active, no-op re-tap.
     _activateWithDisplacement(context, mode: MainMode.sigint, submode: fn, other: MainMode.comms);
+  }
+}
+
+/// The ADS-B plan position indicator (E10): a square-ish `AdsbRadar` card,
+/// full content width, with a short list of current traffic below it —
+/// `_SigintBlock`'s "now active" content for this one submode instead of the
+/// plain description text the other SIGINT functions get.
+///
+/// Owns a 1s `Timer` that advances demo-mode aircraft along their tracks
+/// (`AppState.advanceDemoAircraft` no-ops outside demo mode) — a "tick
+/// function" in the task's own words, deliberately *not* driven by
+/// `AdsbRadar`'s internal sweep controller so that widget stays a plain,
+/// presentational, easily-testable painter. The timer is created in
+/// `initState` and cancelled in `dispose`, so it only ever runs while this
+/// section is actually mounted (SIGINT tab, ADS-B submode active) — never
+/// left ticking in the background after navigating away.
+class _AdsbSection extends StatefulWidget {
+  const _AdsbSection();
+
+  @override
+  State<_AdsbSection> createState() => _AdsbSectionState();
+}
+
+class _AdsbSectionState extends State<_AdsbSection> {
+  Timer? _demoTicker;
+
+  @override
+  void initState() {
+    super.initState();
+    _demoTicker = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => context.read<AppState>().advanceDemoAircraft(const Duration(seconds: 1)),
+    );
+  }
+
+  @override
+  void dispose() {
+    _demoTicker?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final aircraft = context.watch<AppState>().aircraft;
+    final extras = Theme.of(context).extension<BalkonExtras>()!;
+    final scheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(BalkonRadii.card),
+          child: Container(
+            decoration: BoxDecoration(
+              color: extras.surface,
+              border: Border.all(color: scheme.outline),
+            ),
+            padding: const EdgeInsets.all(14),
+            child: AdsbRadar(aircraft: aircraft),
+          ),
+        ),
+        if (aircraft.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          for (final a in _sortedByDistance(aircraft)) _AircraftRow(aircraft: a),
+        ],
+      ],
+    );
+  }
+
+  List<Aircraft> _sortedByDistance(List<Aircraft> aircraft) {
+    final sorted = [...aircraft]..sort((a, b) {
+        final da = a.distKm ?? double.infinity;
+        final db = b.distKm ?? double.infinity;
+        return da.compareTo(db);
+      });
+    return sorted;
+  }
+}
+
+/// One traffic-list row below the radar: callsign, altitude, distance.
+class _AircraftRow extends StatelessWidget {
+  const _AircraftRow({required this.aircraft});
+
+  final Aircraft aircraft;
+
+  @override
+  Widget build(BuildContext context) {
+    final extras = Theme.of(context).extension<BalkonExtras>()!;
+    final alt = aircraft.altFt != null ? '${aircraft.altFt!.round()} ft' : '— ft';
+    final dist = aircraft.distKm != null ? '${aircraft.distKm!.toStringAsFixed(1)} km' : '— km';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              aircraft.flight ?? aircraft.hex.toUpperCase(),
+              style: balkonMonoStyle(context, 13, FontWeight.w700),
+            ),
+          ),
+          Text('$alt · $dist', style: balkonMonoStyle(context, 12, FontWeight.w600, color: extras.textDim)),
+        ],
+      ),
+    );
   }
 }
 

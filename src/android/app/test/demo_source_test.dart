@@ -35,6 +35,15 @@ void main() {
         expect(sample.t, greaterThan(-40));
         expect(sample.t, lessThan(60));
       }
+
+      // E10: plausible EDDM-approach traffic, each placeable on the radar.
+      expect(snapshot.aircraft.length, inInclusiveRange(3, 6));
+      for (final a in snapshot.aircraft) {
+        expect(a.hex, isNotEmpty);
+        expect(a.isPlaceable, isTrue);
+        expect(a.altFt, inInclusiveRange(2000, 38000));
+        expect(a.distKm, inInclusiveRange(2, 40));
+      }
     });
 
     test('populates AppState via connect() when demoMode is on', () async {
@@ -51,6 +60,37 @@ void main() {
       expect(state.health, isNotEmpty);
       expect(state.recentEvents, isNotEmpty);
       expect(state.envHistory, isNotEmpty);
+      expect(state.aircraft, isNotEmpty);
+    });
+
+    test('advanceDemoAircraft moves aircraft along their track (demo mode)', () async {
+      SharedPreferences.setMockInitialValues({'demo_mode': true});
+      final settings = await Settings.load();
+      final state = AppState(MqttService(), settings);
+      addTearDown(state.dispose);
+      await state.connect();
+
+      final before = {for (final a in state.aircraft) a.hex: a};
+      state.advanceDemoAircraft(const Duration(minutes: 10));
+      final after = {for (final a in state.aircraft) a.hex: a};
+
+      expect(after.keys, before.keys); // same aircraft, just moved.
+      for (final hex in before.keys) {
+        // 10 simulated minutes at real ground speeds is easily a
+        // measurable distance/bearing change from the balcony.
+        expect(after[hex]!.distKm, isNot(before[hex]!.distKm));
+      }
+    });
+
+    test('advanceDemoAircraft is a no-op outside demo mode', () async {
+      SharedPreferences.setMockInitialValues({'demo_mode': false});
+      final settings = await Settings.load();
+      final state = AppState(MqttService(), settings);
+      addTearDown(state.dispose);
+
+      expect(state.aircraft, isEmpty);
+      state.advanceDemoAircraft(const Duration(minutes: 10));
+      expect(state.aircraft, isEmpty);
     });
   });
 }
