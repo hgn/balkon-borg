@@ -29,10 +29,13 @@ the open questions had to be settled and written down (`src/pi/README.md`, `src/
   is a LAN device with no security requirement, and a second secrets mechanism is one
   more thing to lose after an SD failure. Accepted cost: the passwords live in the git
   history, so the repo stays private.
-- **Agents may run the scripts against the real Pi**, but may not configure it by hand.
-  The rule written into the README: anything changed on the Pi must be expressed in
-  `provision.py` first, otherwise the next SD failure loses it. Provisioning is only
-  worth anything if it is the *only* path.
+- **Agents work entirely blind: the Pi has not been delivered.** No SSH, no execution, no
+  commits either (the user reviews and commits). Everything is written now and first run
+  by the user later. This pushes the design toward pure, locally testable logic (mode
+  machine, tuner arbitration, rings, mixer, health registry, SENTRY ladder) and toward
+  scripts whose failure output is good enough to read while standing in front of a new
+  Pi. The rule stands regardless: anything the Pi needs must be expressed in
+  `provision.py`, never fixed by hand, or the next SD failure loses it.
 - **Packages cover M0 through M4+ now**, all of it, rather than stopping at the
   foundation. Accepted risk: the M4 packages are written against untested assumptions
   about container device passthrough, so they name their fallbacks instead of pretending

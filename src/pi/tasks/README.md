@@ -28,10 +28,15 @@ foundation is real, not stubbed.
 
 ## Definition of done, for every package
 
+**There is no Pi yet** (see [`../README.md`](../README.md)): no SSH, no execution against
+hardware, and **agents do not commit**. Each package's exit criteria describe the finished
+system, and are the checklist the *user* works through once the hardware arrives. What an
+agent owes now:
+
 1. `make -C src/pi check` green (mypy strict, pytest).
-2. The package's own exit criteria met, as listed in its file.
-3. `make -C src/pi provision` is a no-op on a second run.
-4. A decision-log entry for anything non-trivial you settled
+2. Every part of the package's exit criteria that is pure logic actually covered by tests,
+   not asserted in prose.
+3. A decision-log entry for anything non-trivial you settled
    ([`../../log/decisions.md`](../../log/decisions.md)).
-5. An honest report: what works, what is untested because the hardware was not there,
-   what you had to compromise on.
+4. An honest report: what is written, what is locally verified, which exit criteria remain
+   open until the hardware exists, and what you had to compromise on.

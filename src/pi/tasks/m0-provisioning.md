@@ -33,8 +33,9 @@ venv and no install step.
 ### Steps to implement
 
 1. **Preflight**: reachable over SSH, expected user, expected architecture, OS release
-   readable. Verify the Python version on the host and **write the real value into
-   `../README.md`'s host table** as part of this package.
+   readable, Python version above the guard. The guard assumes 3.12+; the *real* value
+   gets written into `../README.md`'s host table on the first run against actual
+   hardware, which is the user's job, not an agent's.
 2. **Packages** via apt: build essentials as needed, `podman`, `rsync`, `python3-venv`,
    the RTL-SDR userspace, PipeWire and its session manager, NFS client bits if used later.
    Pin nothing that does not need pinning; the box tracks the distro.
@@ -74,12 +75,20 @@ truth and the Pi is a target.
 
 ## Exit criteria
 
+Verifiable now, by an agent:
+
+- `--dry-run` and `--list` produce the full plan with no host present, and the step list,
+  argument handling and result reporting are unit-tested.
+- Probe and action logic is separated cleanly enough that idempotence is testable against
+  a fake executor: each step's probe is exercised in both the "already true" and "needs
+  doing" case, without any SSH.
+- `make -C src/pi check` green.
+
+Verifiable later, by the user, once the Pi exists:
+
 - A fresh Pi reaches the target state with one command.
 - Running it a second time changes nothing and says so, step by step.
-- `--dry-run` on a fresh host prints a plausible full plan without touching it.
 - The host's real Python version is recorded in `../README.md`.
-- `make -C src/pi check` green (the step list and its probes are pure logic and are
-  unit-tested without a host).
 
 ## Cannot be verified without hardware
 

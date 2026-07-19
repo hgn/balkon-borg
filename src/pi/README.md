@@ -16,6 +16,29 @@ given has enough to work correctly. Read it fully before writing code.
   against it. Changing it means changing two sides plus that file, in one commit, with a
   decision-log entry.
 
+## There is no Pi yet
+
+**The hardware has not been delivered.** No agent working on these packages has SSH, a
+running host, or any way to execute what it writes against real hardware. Everything is
+written blind, verified locally (`mypy strict`, `pytest`), and run for the first time by
+the user once the Pi 5 arrives.
+
+Three consequences, and they shape how the code has to look:
+
+- **No agent commits.** Write the files, report what you did, stop. The user reviews and
+  commits.
+- **A script you cannot run is a script you have to reason about.** Probes, error paths
+  and messages carry the weight here that a quick test run would otherwise carry. Assume
+  every step will first execute in front of a person holding a new Pi, and make the
+  failure output good enough for that moment.
+- **Pure logic is the part you can actually verify**, so put as much of the system there
+  as honestly fits: the mode state machine, the tuner arbitration, the ring buffers, the
+  mixer priorities, the health registry, the SENTRY ladder. Test those properly. Anything
+  that only exists inside an SSH call is untested by construction, so keep that layer thin.
+
+Do not report a package as verified on hardware. Report it as written and locally checked,
+and name what is still unproven.
+
 ## The device in one paragraph
 
 A multifunction unit hanging under a balcony ceiling. The **borg-pi5** inside it is the
@@ -66,12 +89,10 @@ image flash plus one script run.
 
 This gives the hard rule for agents:
 
-> **Anything you change on the Pi must be expressed in `provision.py` first.** If you fix
-> something over SSH by hand and the script does not reproduce it, you have created a
-> state that nobody can rebuild, and the next SD failure loses it. Fix the script, then
-> re-run the script.
-
-You may SSH to the Pi and run the scripts against it. You may not configure it by hand.
+> **Everything the Pi needs must be expressed in `provision.py`.** Nothing is ever fixed
+> by hand on the box: a state the script does not reproduce is a state nobody can rebuild,
+> and the next SD failure loses it. This holds later, when there is a Pi to log into, and
+> it holds now, when writing the script is the only thing anyone can do anyway.
 
 Every provisioning step is **idempotent**: it probes the current state and does nothing if
 it is already correct. Re-running the whole thing is a no-op and must stay a no-op.
@@ -209,20 +230,31 @@ there.
 
 ## Verification
 
-Before declaring a package done:
+What is available now:
 
 ```
-make -C src/pi check      # mypy strict + pytest, no hardware needed
-make -C src/pi provision  # against the real Pi, must be a no-op on a second run
+make -C src/pi check   # mypy strict + pytest, no hardware needed
+```
+
+What the user runs later, once the Pi exists:
+
+```
+make -C src/pi provision   # must be a no-op on a second run
+make -C src/pi deploy
 ```
 
 Report honestly. If tests fail, say so and show the output. If a step was skipped, say
 that. A package that "works except for" is not done, it is a package with a known defect,
-and the next agent needs to know which.
+and the next agent needs to know which. Since nothing here can be run against hardware,
+the report matters more than usual: it is the only description of what is actually solid.
 
-## What an agent cannot verify alone
+## What cannot be verified at all right now
 
-Hardware behaviour: SDR reception quality, camera passthrough into a container, PipeWire
-against a USB sound card, and anything about the ESP32 or the WLED panel. Where a package
-depends on one of these, it says so and names the fallback. Do not fake a green result by
-stubbing the hardware out of the test and calling it verified.
+Everything touching hardware: SDR reception, camera passthrough into a container, PipeWire
+against a USB sound card, container device access in general, and anything involving the
+ESP32 or the WLED panel. On top of that, for as long as the Pi is missing, so is every
+integration path: the broker, the units, the deploy loop and the provisioning steps
+themselves have never executed.
+
+Each package names what it depends on. Never stub the hardware out of a test and call the
+result verified.
