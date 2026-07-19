@@ -4,6 +4,10 @@ One file per package, in dependency order. Each is self-contained enough to hand
 agent together with [`../README.md`](../README.md) (the working agreement) and
 [`../../shared/README.md`](../../shared/README.md) (the wire contract).
 
+[`../setup.md`](../setup.md) describes the technology each package builds on (Podman
+quadlets, the asyncio arbiter, PipeWire, time sync, health, storage, deploy). Read it
+before the first package you touch.
+
 **Read [`../README.md`](../README.md) first, every time.** It carries the conventions, the
 provisioning rule ("anything you change on the Pi must be in `provision.py` first"), the
 commit rules and the stability principle. A package that violates it is rejected however

@@ -4,6 +4,9 @@ Everything that runs on the borg-pi5, plus the tooling that puts it there. This 
 the **working agreement**: an agent that reads only this file and the task package it was
 given has enough to work correctly. Read it fully before writing code.
 
+- **How the Pi is set up and what it is built from:** [`setup.md`](setup.md) — the
+  manual first steps (image, WiFi, SSH) and the technology in detail: Podman quadlets,
+  the asyncio arbiter, PipeWire, time sync, health, storage, deployment.
 - **What is being built:** [`implementation-plan.md`](implementation-plan.md) (decided
   2026-07-17: Python provisioning tool, system quadlets + user-session arbiter, pydantic
   config, health registry, milestones M0-M4+).
