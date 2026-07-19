@@ -15,6 +15,7 @@ import 'widgets/adsb_radar.dart';
 import 'widgets/borg_chip.dart';
 import 'widgets/eq_bars.dart';
 import 'widgets/preset_row.dart';
+import 'widgets/tuner_notice.dart';
 
 /// Dark contrast text on `cyan` backgrounds (DAB+ chip/preset selection,
 /// components.md "Preset-Listen": "DAB+ ausgewählt: Background cyan, Text
@@ -39,7 +40,17 @@ class RadioScreen extends StatefulWidget {
 }
 
 class _RadioScreenState extends State<RadioScreen> {
-  _Segment _segment = _Segment.comms;
+  late _Segment _segment = _initialSegment();
+
+  /// Open on whichever of the two currently holds the tuner, so arriving here
+  /// from a SIGINT program on Home does not land on the COMMS segment. Only
+  /// the initial value; switching segments by hand stays sticky afterwards.
+  _Segment _initialSegment() {
+    final state = context.read<AppState>();
+    if (!(state.modes[MainMode.comms]?.isOff ?? true)) return _Segment.comms;
+    if (!(state.modes[MainMode.sigint]?.isOff ?? true)) return _Segment.sigint;
+    return _Segment.comms;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -480,7 +491,6 @@ class _CommsBlock extends StatelessWidget {
       mode: MainMode.comms,
       submode: band,
       chan: Stations.defaultFor(band),
-      other: MainMode.sigint,
     );
   }
 
@@ -490,7 +500,6 @@ class _CommsBlock extends StatelessWidget {
       mode: MainMode.comms,
       submode: band,
       chan: stationId,
-      other: MainMode.sigint,
     );
   }
 }
@@ -555,7 +564,7 @@ class _SigintBlock extends StatelessWidget {
 
   void _onFunctionTap(BuildContext context, String fn) {
     if (sigintState.submode == fn) return; // already active, no-op re-tap.
-    _activateWithDisplacement(context, mode: MainMode.sigint, submode: fn, other: MainMode.comms);
+    _activateWithDisplacement(context, mode: MainMode.sigint, submode: fn);
   }
 }
 
@@ -665,33 +674,15 @@ class _AircraftRow extends StatelessWidget {
 }
 
 /// Shared displacement rule (architecture.md §3/§4: COMMS and SIGINT share
-/// one tuner). Activates [mode]/[submode] (+ optional [chan]), and if [other]
-/// was genuinely non-off at the moment of the tap, turns it off too and
-/// surfaces a brief notice.
+/// one tuner). Activates [mode]/[submode] (+ optional [chan]) and says so if
+/// that took the tuner away from the other mode.
 void _activateWithDisplacement(
   BuildContext context, {
   required MainMode mode,
   required String submode,
   String? chan,
-  required MainMode other,
 }) {
-  final state = context.read<AppState>();
-  final otherState = state.modes[other];
-  final displaced = otherState != null && !otherState.isOff;
-
-  state.setSubmode(mode, submode, chan: chan);
-
-  if (displaced) {
-    state.setSubmode(other, 'off');
-    final extras = Theme.of(context).extension<BalkonExtras>()!;
-    final message =
-        mode == MainMode.comms ? 'SIGINT pausiert — ein Tuner' : 'COMMS pausiert — ein Tuner';
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: extras.surface3,
-        duration: const Duration(seconds: 2),
-        content: Text(message, style: Theme.of(context).textTheme.bodyLarge),
-      ),
-    );
+  if (context.read<AppState>().setSubmodeExclusive(mode, submode, chan: chan)) {
+    showTunerNotice(context, mode);
   }
 }

@@ -11,6 +11,7 @@ import 'package:balkon_borg/src/services/talkdown_recorder.dart';
 import 'package:balkon_borg/src/services/ui_sounds.dart';
 import 'package:balkon_borg/src/state/app_state.dart';
 import 'package:balkon_borg/src/state/settings.dart';
+import 'package:balkon_borg/src/state/tabs.dart';
 import 'package:balkon_borg/src/theme/balkon_theme.dart';
 import 'package:balkon_borg/src/ui/camera_screen.dart';
 import 'package:balkon_borg/src/ui/widgets/ptt_button.dart';
@@ -54,6 +55,7 @@ Widget _wrap(AppState appState, Settings settings, TalkdownRecorder recorder) =>
         ChangeNotifierProvider.value(value: settings),
         ChangeNotifierProvider.value(value: appState),
         Provider<ShaderLibrary>.value(value: ShaderLibrary.empty),
+        ChangeNotifierProvider(create: (_) => BorgTabs()),
         Provider<Haptics>.value(value: const NoopHaptics()),
         Provider<UiSounds>.value(value: const NoopUiSounds()),
       ],

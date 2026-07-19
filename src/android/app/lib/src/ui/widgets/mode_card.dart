@@ -90,18 +90,24 @@ class _ModeCardState extends State<ModeCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.22),
-                  borderRadius: BorderRadius.circular(BalkonRadii.badge),
-                ),
-                child: Text(
-                  _glyphs[widget.mode]!,
-                  style: balkonMonoStyle(context, 17, FontWeight.w700).copyWith(color: accent),
-                ),
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.22),
+                      borderRadius: BorderRadius.circular(BalkonRadii.badge),
+                    ),
+                    child: Text(
+                      _glyphs[widget.mode]!,
+                      style: balkonMonoStyle(context, 17, FontWeight.w700).copyWith(color: accent),
+                    ),
+                  ),
+                  const Spacer(),
+                  _RunningDot(active: active, accent: armed ? extras.danger : accent),
+                ],
               ),
               const SizedBox(height: 14),
               Column(
@@ -125,6 +131,43 @@ class _ModeCardState extends State<ModeCard> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Whether the mode is running, as a small dot in the card's top-right: lit
+/// in the mode's accent with a soft halo while it runs, a hollow ring in the
+/// border colour while it is off. Quiet enough to ignore, present enough to
+/// answer "is that thing on?" without reading any text (user call 2026-07-19).
+class _RunningDot extends StatelessWidget {
+  const _RunningDot({required this.active, required this.accent});
+
+  final bool active;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return AnimatedContainer(
+      duration: balkonSpringDuration,
+      curve: balkonSpring,
+      width: 10,
+      height: 10,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: active ? accent : Colors.transparent,
+        // The ring is always drawn, only its colour changes: animating a
+        // border in and out of existence trips a framework assertion on a
+        // circular decoration.
+        border: Border.all(color: active ? accent : scheme.outline, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: active ? 0.5 : 0),
+            blurRadius: 8,
+            spreadRadius: 1,
+          ),
+        ],
       ),
     );
   }

@@ -9,6 +9,7 @@ import 'package:balkon_borg/src/services/mqtt_service.dart';
 import 'package:balkon_borg/src/services/ui_sounds.dart';
 import 'package:balkon_borg/src/state/app_state.dart';
 import 'package:balkon_borg/src/state/settings.dart';
+import 'package:balkon_borg/src/state/tabs.dart';
 import 'package:balkon_borg/src/theme/balkon_theme.dart';
 import 'package:balkon_borg/src/ui/home_screen.dart';
 import 'package:balkon_borg/src/ui/widgets/borg_switch.dart';
@@ -25,6 +26,7 @@ Widget _wrap(AppState appState, Settings settings) => MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: settings),
         ChangeNotifierProvider.value(value: appState),
+        ChangeNotifierProvider(create: (_) => BorgTabs()),
         Provider<Haptics>.value(value: const NoopHaptics()),
         Provider<UiSounds>.value(value: const NoopUiSounds()),
       ],
@@ -125,6 +127,28 @@ void main() {
     expect(appState.modes[MainMode.lumen]!.submode, running);
   });
 
+  testWidgets('starting COMMS from Home switches SIGINT off — one tuner', (tester) async {
+    final appState = await _demoAppState();
+    addTearDown(appState.dispose);
+    final settings = Settings(await SharedPreferences.getInstance());
+
+    // Demo defaults: sigint runs ADS-B, comms is off.
+    expect(appState.modes[MainMode.sigint]!.submode, 'adsb');
+
+    await tester.pumpWidget(_wrap(appState, settings));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('COMMS'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('FM'));
+    await tester.pump();
+
+    expect(appState.modes[MainMode.comms]!.submode, 'fm');
+    expect(appState.modes[MainMode.sigint]!.submode, 'off');
+    expect(find.textContaining('SIGINT pausiert'), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 2100)); // drain the snackbar
+  });
+
   testWidgets('a submode row is tappable across its full width', (tester) async {
     final appState = await _demoAppState();
     addTearDown(appState.dispose);
@@ -137,10 +161,7 @@ void main() {
 
     // Tap near the right edge of the row, far from the label glyphs — with a
     // shrink-wrapped row this lands on the sheet background and does nothing.
-    final row = tester.getRect(find.ancestor(
-      of: find.text('FM'),
-      matching: find.byType(AnimatedContainer),
-    ));
+    final row = tester.getRect(find.byKey(const ValueKey('submode-fm')));
     await tester.tapAt(Offset(row.right - 8, row.center.dy));
     await tester.pumpAndSettle();
 

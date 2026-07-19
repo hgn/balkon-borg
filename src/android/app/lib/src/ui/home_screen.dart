@@ -12,6 +12,7 @@ import '../services/haptics.dart';
 import '../services/ui_sounds.dart';
 import '../state/app_state.dart';
 import '../state/settings.dart';
+import '../state/tabs.dart';
 import '../theme/balkon_theme.dart';
 import 'widgets/animated_value.dart';
 import 'widgets/borg_sheet.dart';
@@ -19,6 +20,7 @@ import 'widgets/borg_switch.dart';
 import 'widgets/env_chart.dart';
 import 'widgets/mode_card.dart';
 import 'widgets/stat_tile.dart';
+import 'widgets/tuner_notice.dart';
 
 /// Home tab (components.md, E2 — implementation-plan.md): greeting header,
 /// 2×2 mode-card grid, environment stats. Health/events moved behind the
@@ -210,10 +212,8 @@ class _ModePowerSwitch extends StatelessWidget {
           on ? sounds.powerUp() : sounds.powerDown();
         }
         final app = context.read<AppState>();
-        app.setSubmode(
-          mode,
-          on ? (app.lastProgram[mode] ?? Submodes.programsFor(mode).first.id) : 'off',
-        );
+        final target = on ? (app.lastProgram[mode] ?? Submodes.programsFor(mode).first.id) : 'off';
+        if (app.setSubmodeExclusive(mode, target)) showTunerNotice(context, mode);
       },
     );
   }
@@ -229,8 +229,12 @@ class _SubmodeRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final scheme = Theme.of(context).colorScheme;
+    final extras = Theme.of(context).extension<BalkonExtras>()!;
     final textTheme = Theme.of(context).textTheme;
     final selected = (state.modes[mode]?.submode ?? 'off') == option.id;
+    // COMMS and SIGINT programs are only half the choice: which station, which
+    // decode. That lives on the Radio tab, so those rows offer a way over.
+    final tunable = mode == MainMode.comms || mode == MainMode.sigint;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
@@ -241,13 +245,16 @@ class _SubmodeRow extends StatelessWidget {
         onTap: () {
           context.read<Haptics>().lightImpact();
           context.read<UiSounds>().blip();
-          context.read<AppState>().setSubmode(mode, option.id);
           // The sheet stays open: picking a submode is usually one of several
           // tries ("how does Ambient look, and Cozy?"), and a sheet that
           // slams shut after each pick makes comparing them a chore. Close
           // via the drag handle or the X.
+          if (context.read<AppState>().setSubmodeExclusive(mode, option.id)) {
+            showTunerNotice(context, mode);
+          }
         },
         child: AnimatedContainer(
+          key: ValueKey('submode-${option.id}'),
           duration: balkonSpringDuration,
           curve: balkonSpring,
           width: double.infinity,
@@ -256,12 +263,43 @@ class _SubmodeRow extends StatelessWidget {
             color: selected ? scheme.primary : Colors.transparent,
             borderRadius: BorderRadius.circular(18),
           ),
-          child: Text(
-            option.label,
-            style: textTheme.bodyLarge?.copyWith(
-              color: selected ? Colors.white : scheme.onSurface,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-            ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  option.label,
+                  style: textTheme.bodyLarge?.copyWith(
+                    color: selected ? Colors.white : scheme.onSurface,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                  ),
+                ),
+              ),
+              // COMMS and SIGINT programs have a second screen behind them
+              // (the station list, the radar): the chevron activates the
+              // program and takes you there in one gesture.
+              if (tunable)
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    context.read<Haptics>().lightImpact();
+                    context.read<UiSounds>().blip();
+                    if (context.read<AppState>().setSubmodeExclusive(mode, option.id)) {
+                      showTunerNotice(context, mode);
+                    }
+                    Navigator.of(context).pop();
+                    context.read<BorgTabs>().goTo(BorgTabs.radio);
+                  },
+                  child: Padding(
+                    // Generous slop: this is the small target on the row.
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    child: Icon(
+                      Icons.chevron_right_rounded,
+                      size: 20,
+                      color: selected ? Colors.white : extras.textDim,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
       ),

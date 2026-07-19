@@ -250,6 +250,32 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// The mode that competes with [m] for the single RTL-SDR: COMMS and SIGINT
+  /// cannot run at once (architecture.md §3/§4, there is one tuner). Every
+  /// other mode has no rival.
+  static MainMode? tunerRival(MainMode m) => switch (m) {
+        MainMode.comms => MainMode.sigint,
+        MainMode.sigint => MainMode.comms,
+        _ => null,
+      };
+
+  /// Activates [submode] on [m] and switches off whatever was holding the
+  /// tuner, returning `true` if something was actually displaced so the caller
+  /// can say so. Turning a mode *off* displaces nothing.
+  ///
+  /// The arbiter is the authority on this in the real system (it owns the
+  /// tuner); the app applies the same rule so the UI does not offer a state
+  /// the hardware cannot reach, and so demo mode behaves like the real thing.
+  bool setSubmodeExclusive(MainMode m, String submode, {String? chan}) {
+    final rival = tunerRival(m);
+    final rivalState = rival == null ? null : modes[rival];
+    final displaced = submode != 'off' && rivalState != null && !rivalState.isOff;
+
+    setSubmode(m, submode, chan: chan);
+    if (displaced) setSubmode(rival!, 'off');
+    return displaced;
+  }
+
   void setFocus(MainMode m) =>
       _mqtt.publishJson(Topics.cmdFocus, {'focus': m.name});
 

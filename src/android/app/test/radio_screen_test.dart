@@ -9,6 +9,7 @@ import 'package:balkon_borg/src/services/mqtt_service.dart';
 import 'package:balkon_borg/src/services/ui_sounds.dart';
 import 'package:balkon_borg/src/state/app_state.dart';
 import 'package:balkon_borg/src/state/settings.dart';
+import 'package:balkon_borg/src/state/tabs.dart';
 import 'package:balkon_borg/src/theme/balkon_theme.dart';
 import 'package:balkon_borg/src/ui/radio_screen.dart';
 
@@ -24,6 +25,7 @@ Widget _wrap(AppState appState, Settings settings) => MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: settings),
         ChangeNotifierProvider.value(value: appState),
+        ChangeNotifierProvider(create: (_) => BorgTabs()),
         Provider<Haptics>.value(value: const NoopHaptics()),
         Provider<UiSounds>.value(value: const NoopUiSounds()),
       ],
@@ -50,20 +52,20 @@ void main() {
     final settings = Settings(await SharedPreferences.getInstance());
 
     await tester.pumpWidget(_wrap(appState, settings));
-    // Safe to fully settle: default COMMS view, demo comms starts off (no
-    // ambient equalizer loop running yet).
-    await tester.pumpAndSettle();
+    // Bounded: the screen opens on whichever mode holds the tuner, and demo
+    // SIGINT runs ADS-B, whose radar sweeps forever by design.
+    await _settle(tester);
+
+    // Demo SIGINT runs ADS-B, so the screen opens on the SIGINT segment: it
+    // shows whichever mode currently holds the single tuner.
+    expect(find.textContaining('Flugzeug-Tracking'), findsOneWidget);
+    expect(find.text('DAB+'), findsNothing);
+
+    await tester.tap(find.text('COMMS'));
+    await _settle(tester);
 
     expect(find.text('DAB+'), findsOneWidget);
     expect(find.textContaining('Flugzeug-Tracking'), findsNothing);
-
-    await tester.tap(find.text('SIGINT'));
-    // demo sigint starts on 'adsb' (non-off), so its equalizer now loops —
-    // bounded pump instead of pumpAndSettle from here on.
-    await _settle(tester);
-
-    expect(find.textContaining('Flugzeug-Tracking'), findsOneWidget);
-    expect(find.text('DAB+'), findsNothing);
   });
 
   testWidgets('tapping a band chip switches which preset list is shown', (tester) async {
@@ -72,7 +74,9 @@ void main() {
     final settings = Settings(await SharedPreferences.getInstance());
 
     await tester.pumpWidget(_wrap(appState, settings));
-    await tester.pumpAndSettle(); // COMMS view, comms starts off — safe.
+    await _settle(tester);
+    await tester.tap(find.text('COMMS')); // opens on SIGINT (demo ADS-B runs)
+    await _settle(tester);
 
     await tester.tap(find.text('FM'));
     await _settle(tester);
@@ -90,7 +94,9 @@ void main() {
     final settings = Settings(await SharedPreferences.getInstance());
 
     await tester.pumpWidget(_wrap(appState, settings));
-    await tester.pumpAndSettle(); // COMMS view, comms starts off — safe.
+    await _settle(tester);
+    await tester.tap(find.text('COMMS')); // opens on SIGINT (demo ADS-B runs)
+    await _settle(tester);
 
     // COMMS starts off; tapping DAB+ activates it at its default station.
     await tester.tap(find.text('DAB+'));
@@ -111,7 +117,9 @@ void main() {
     expect(appState.modes[MainMode.comms]!.submode, 'off');
 
     await tester.pumpWidget(_wrap(appState, settings));
-    await tester.pumpAndSettle(); // COMMS view, comms starts off — safe.
+    await _settle(tester);
+    await tester.tap(find.text('COMMS')); // opens on SIGINT (demo ADS-B runs)
+    await _settle(tester);
 
     await tester.tap(find.text('DAB+'));
     // Single bounded pump (not the full drain) so the SnackBar is still

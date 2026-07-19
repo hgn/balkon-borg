@@ -8,6 +8,7 @@ import 'src/services/sound_class.dart';
 import 'src/services/ui_sounds.dart';
 import 'src/state/app_state.dart';
 import 'src/state/settings.dart';
+import 'src/state/tabs.dart';
 import 'src/theme/balkon_theme.dart';
 import 'src/ui/boot_overlay.dart';
 import 'src/ui/shell.dart';
@@ -40,6 +41,9 @@ class BalkonBorgApp extends StatelessWidget {
         // Gated by Settings.hapticsEnabled (E8, services/haptics.dart);
         // widgets read this via Provider, AppState gets it via constructor
         // injection (it has no BuildContext of its own).
+        // Above MaterialApp on purpose: modal sheets are pushed on the root
+        // navigator and would not see a provider living inside the shell.
+        ChangeNotifierProvider(create: (_) => BorgTabs()),
         Provider<Haptics>(
           create: (_) => SystemHaptics(() => settings.hapticsEnabled),
         ),

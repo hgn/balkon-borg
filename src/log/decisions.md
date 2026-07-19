@@ -14,6 +14,26 @@ split into src/") for why.
 
 ---
 
+## 2026-07-19 — One tuner, enforced in one place
+
+The COMMS/SIGINT displacement rule (there is a single RTL-SDR, so starting one radio
+mode stops the other) existed only in the Radio tab. The Home submode sheet could
+happily switch COMMS on while SIGINT was running, offering a state the hardware cannot
+reach. It moved into `AppState.setSubmodeExclusive`, which both screens now use, with
+the notice text shared as well.
+
+The app enforcing this is a convenience, not the authority: **the arbiter owns the
+tuner** and must apply the same rule server-side (M4b), because the ESP's buttons and
+any future client can trigger the same collision without asking the phone. The app
+version exists so the UI does not show an impossible state for the round trip, and so
+demo mode behaves like the real thing.
+
+Mode cards also gained a small lit dot for "this is running", and COMMS/SIGINT programs
+a chevron into the Radio tab, since picking FM is only half the decision and the station
+lives one screen away.
+
+---
+
 ## 2026-07-19 — The borg-pi5 is the master, clients are displays
 
 Stated by the user as a general principle after noticing app-side constants creeping in

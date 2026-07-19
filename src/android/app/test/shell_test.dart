@@ -9,6 +9,7 @@ import 'package:balkon_borg/src/services/shader_library.dart';
 import 'package:balkon_borg/src/services/ui_sounds.dart';
 import 'package:balkon_borg/src/state/app_state.dart';
 import 'package:balkon_borg/src/state/settings.dart';
+import 'package:balkon_borg/src/state/tabs.dart';
 import 'package:balkon_borg/src/theme/balkon_theme.dart';
 import 'package:balkon_borg/src/ui/shell.dart';
 
@@ -85,6 +86,7 @@ void main() {
           ChangeNotifierProvider.value(value: settings),
           ChangeNotifierProvider.value(value: appState),
           Provider<ShaderLibrary>.value(value: ShaderLibrary.empty),
+          ChangeNotifierProvider(create: (_) => BorgTabs()),
           Provider<Haptics>.value(value: haptics),
           Provider<UiSounds>.value(value: uiSounds),
         ],
@@ -115,9 +117,13 @@ void main() {
     await tester.tap(find.text('Radio'));
     await _settle(tester);
 
-    // Radio tab (E3): segmented tab + COMMS band chips.
-    expect(find.text('DAB+'), findsOneWidget);
+    // Radio tab (E3): opens on the segment holding the tuner, which in demo
+    // data is SIGINT (ADS-B). COMMS is one tap away.
+    expect(find.text('SIGINT'), findsWidgets);
     expect(find.text('LUMEN'), findsNothing);
+    await tester.tap(find.text('COMMS'));
+    await _settle(tester);
+    expect(find.text('DAB+'), findsOneWidget);
 
     expect(haptics.calls, contains('selectionClick'));
     expect(uiSounds.calls, contains('blip'));
@@ -143,6 +149,7 @@ void main() {
           ChangeNotifierProvider.value(value: settings),
           ChangeNotifierProvider.value(value: appState),
           Provider<ShaderLibrary>.value(value: ShaderLibrary.empty),
+          ChangeNotifierProvider(create: (_) => BorgTabs()),
           Provider<Haptics>.value(value: const NoopHaptics()),
         ],
         child: MaterialApp(
@@ -170,6 +177,7 @@ void main() {
           ChangeNotifierProvider.value(value: settings),
           ChangeNotifierProvider.value(value: appState),
           Provider<ShaderLibrary>.value(value: ShaderLibrary.empty),
+          ChangeNotifierProvider(create: (_) => BorgTabs()),
           Provider<Haptics>.value(value: const NoopHaptics()),
         ],
         child: MaterialApp(

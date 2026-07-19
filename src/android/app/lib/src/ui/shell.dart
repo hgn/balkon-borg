@@ -9,6 +9,7 @@ import '../services/ui_sounds.dart';
 import '../services/watch_window.dart';
 import '../state/app_state.dart';
 import '../state/settings.dart';
+import '../state/tabs.dart';
 import '../theme/balkon_theme.dart';
 import 'camera_screen.dart';
 import 'home_screen.dart';
@@ -29,7 +30,6 @@ class BorgShell extends StatefulWidget {
 }
 
 class _BorgShellState extends State<BorgShell> with WidgetsBindingObserver {
-  int _index = 0;
   static const _watchWindow = WatchWindowService();
 
   static const _tabs = [
@@ -121,8 +121,8 @@ class _BorgShellState extends State<BorgShell> with WidgetsBindingObserver {
                         ),
                       ),
                       child: KeyedSubtree(
-                        key: ValueKey(_index),
-                        child: _tabs[_index],
+                        key: ValueKey(context.watch<BorgTabs>().index),
+                        child: _tabs[context.watch<BorgTabs>().index],
                       ),
                     ),
                   ),
@@ -137,8 +137,8 @@ class _BorgShellState extends State<BorgShell> with WidgetsBindingObserver {
         child: SafeArea(
           top: false,
           child: _BorgBottomNav(
-            index: _index,
-            onTap: (i) => setState(() => _index = i),
+            index: context.watch<BorgTabs>().index,
+            onTap: context.read<BorgTabs>().goTo,
           ),
         ),
       ),
