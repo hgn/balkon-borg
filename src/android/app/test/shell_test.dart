@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:balkon_borg/src/services/haptics.dart';
 import 'package:balkon_borg/src/services/mqtt_service.dart';
+import 'package:balkon_borg/src/services/shader_library.dart';
 import 'package:balkon_borg/src/services/ui_sounds.dart';
 import 'package:balkon_borg/src/state/app_state.dart';
 import 'package:balkon_borg/src/state/settings.dart';
@@ -83,6 +84,7 @@ void main() {
         providers: [
           ChangeNotifierProvider.value(value: settings),
           ChangeNotifierProvider.value(value: appState),
+          Provider<ShaderLibrary>.value(value: ShaderLibrary.empty),
           Provider<Haptics>.value(value: haptics),
           Provider<UiSounds>.value(value: uiSounds),
         ],
@@ -140,6 +142,7 @@ void main() {
         providers: [
           ChangeNotifierProvider.value(value: settings),
           ChangeNotifierProvider.value(value: appState),
+          Provider<ShaderLibrary>.value(value: ShaderLibrary.empty),
           Provider<Haptics>.value(value: const NoopHaptics()),
         ],
         child: MaterialApp(
@@ -166,6 +169,7 @@ void main() {
         providers: [
           ChangeNotifierProvider.value(value: settings),
           ChangeNotifierProvider.value(value: appState),
+          Provider<ShaderLibrary>.value(value: ShaderLibrary.empty),
           Provider<Haptics>.value(value: const NoopHaptics()),
         ],
         child: MaterialApp(

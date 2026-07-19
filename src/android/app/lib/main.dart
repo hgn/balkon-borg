@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'src/services/haptics.dart';
 import 'src/services/mqtt_service.dart';
+import 'src/services/shader_library.dart';
 import 'src/services/ui_sounds.dart';
 import 'src/state/app_state.dart';
 import 'src/state/settings.dart';
@@ -13,19 +14,28 @@ import 'src/ui/shell.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final settings = await Settings.load();
-  runApp(BalkonBorgApp(settings: settings));
+  // E11: compiled once here, up front — compilation is allowed to fail (old
+  // device, Impeller quirk), in which case `ShaderLibrary` just carries
+  // `null` programs and every effect widget renders nothing extra
+  // (services/shader_library.dart).
+  final shaders = await ShaderLibrary.load();
+  runApp(BalkonBorgApp(settings: settings, shaders: shaders));
 }
 
 class BalkonBorgApp extends StatelessWidget {
-  const BalkonBorgApp({super.key, required this.settings});
+  const BalkonBorgApp({super.key, required this.settings, required this.shaders});
 
   final Settings settings;
+  final ShaderLibrary shaders;
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: settings),
+        // Compiled once in main() (E11); looked up by the effect widgets
+        // themselves (`sentry_glitch_overlay.dart`, `condensation_overlay.dart`).
+        Provider<ShaderLibrary>.value(value: shaders),
         // Gated by Settings.hapticsEnabled (E8, services/haptics.dart);
         // widgets read this via Provider, AppState gets it via constructor
         // injection (it has no BuildContext of its own).

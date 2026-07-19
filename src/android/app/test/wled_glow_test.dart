@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:balkon_borg/src/contract/topics.dart';
 import 'package:balkon_borg/src/services/haptics.dart';
 import 'package:balkon_borg/src/services/mqtt_service.dart';
+import 'package:balkon_borg/src/services/shader_library.dart';
 import 'package:balkon_borg/src/state/app_state.dart';
 import 'package:balkon_borg/src/state/settings.dart';
 import 'package:balkon_borg/src/theme/balkon_theme.dart';
@@ -34,6 +35,7 @@ void main() {
         providers: [
           ChangeNotifierProvider.value(value: settings),
           ChangeNotifierProvider.value(value: appState),
+          Provider<ShaderLibrary>.value(value: ShaderLibrary.empty),
           Provider<Haptics>.value(value: const NoopHaptics()),
         ],
         child: MaterialApp(

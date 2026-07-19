@@ -41,6 +41,11 @@ class Settings extends ChangeNotifier {
   // the "second sense" alongside haptics. Default on.
   bool get uiSoundsEnabled => _prefs.getBool('ui_sounds_enabled') ?? true;
 
+  // Fragment-shader showpieces (E11): the SENTRY detection glitch and the
+  // condensation wash. Default on, same "dezent, turn-off-able" contract as
+  // haptics/UI sounds.
+  bool get effectsEnabled => _prefs.getBool('effects_enabled') ?? true;
+
   // Watch window (self-wake notification model, src/shared/README.md):
   // any app use arms 6 h of periodic MQTT checks; interval is configurable.
   static const watchWindow = Duration(hours: 6);
@@ -105,6 +110,11 @@ class Settings extends ChangeNotifier {
 
   Future<void> setUiSoundsEnabled(bool on) async {
     await _prefs.setBool('ui_sounds_enabled', on);
+    notifyListeners();
+  }
+
+  Future<void> setEffectsEnabled(bool on) async {
+    await _prefs.setBool('effects_enabled', on);
     notifyListeners();
   }
 

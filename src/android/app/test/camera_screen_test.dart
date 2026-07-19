@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:balkon_borg/src/contract/topics.dart';
 import 'package:balkon_borg/src/services/haptics.dart';
 import 'package:balkon_borg/src/services/mqtt_service.dart';
+import 'package:balkon_borg/src/services/shader_library.dart';
 import 'package:balkon_borg/src/services/talkdown_recorder.dart';
 import 'package:balkon_borg/src/services/ui_sounds.dart';
 import 'package:balkon_borg/src/state/app_state.dart';
@@ -52,6 +53,7 @@ Widget _wrap(AppState appState, Settings settings, TalkdownRecorder recorder) =>
       providers: [
         ChangeNotifierProvider.value(value: settings),
         ChangeNotifierProvider.value(value: appState),
+        Provider<ShaderLibrary>.value(value: ShaderLibrary.empty),
         Provider<Haptics>.value(value: const NoopHaptics()),
         Provider<UiSounds>.value(value: const NoopUiSounds()),
       ],

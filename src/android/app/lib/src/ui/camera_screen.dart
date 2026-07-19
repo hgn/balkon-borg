@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../contract/submodes.dart';
 import '../contract/topics.dart';
+import '../models/borg_event.dart';
 import '../models/mode_state.dart';
 import '../services/haptics.dart';
 import '../services/talkdown_recorder.dart';
@@ -16,6 +17,7 @@ import '../state/settings.dart';
 import '../theme/balkon_theme.dart';
 import 'widgets/borg_chip.dart';
 import 'widgets/ptt_button.dart';
+import 'widgets/sentry_glitch_overlay.dart';
 import 'widgets/sentry_switch.dart';
 
 /// Camera tab (components.md "Live-Kamera" / "SENTRY-Karte" / "Push-to-Talk
@@ -62,7 +64,12 @@ class _CameraScreenState extends State<CameraScreen> {
     return ListView(
       padding: const EdgeInsets.only(top: 8, bottom: 24),
       children: [
-        _LiveCameraArea(demoMode: settings.demoMode, host: settings.host),
+        _LiveCameraArea(
+          demoMode: settings.demoMode,
+          host: settings.host,
+          recentEvents: state.recentEvents,
+          glitchEnabled: settings.effectsEnabled,
+        ),
         const SizedBox(height: 22),
         _SentryCard(state: sentryState),
         const SizedBox(height: 28),
@@ -181,10 +188,20 @@ class _CameraScreenState extends State<CameraScreen> {
 /// (skips the network attempt entirely); otherwise attempts the go2rtc MJPEG
 /// fallback (`BorgHttp.liveMjpeg`) with a graceful offline placeholder.
 class _LiveCameraArea extends StatefulWidget {
-  const _LiveCameraArea({required this.demoMode, required this.host});
+  const _LiveCameraArea({
+    required this.demoMode,
+    required this.host,
+    required this.recentEvents,
+    required this.glitchEnabled,
+  });
 
   final bool demoMode;
   final String host;
+
+  /// Feeds the SENTRY detection glitch (E11): a new `security`-category
+  /// entry here fires the one-shot CRT overlay.
+  final List<BorgEvent> recentEvents;
+  final bool glitchEnabled;
 
   @override
   State<_LiveCameraArea> createState() => _LiveCameraAreaState();
@@ -222,6 +239,7 @@ class _LiveCameraAreaState extends State<_LiveCameraArea> {
         fit: StackFit.expand,
         children: [
           widget.demoMode ? _demoPlaceholder(extras) : _mjpegAttempt(extras),
+          SentryGlitchOverlay(recentEvents: widget.recentEvents, enabled: widget.glitchEnabled),
           Positioned(top: 12, left: 12, child: _LiveBadge(pulsing: pulsing)),
         ],
       ),

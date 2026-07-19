@@ -55,6 +55,8 @@ void main() {
     expect(find.text('Haptik'), findsOneWidget);
     // UI-sounds switch row (E8 follow-up).
     expect(find.text('UI-Sounds'), findsOneWidget);
+    // Effects switch row (E11: SENTRY glitch + condensation).
+    expect(find.text('Effekte'), findsOneWidget);
     expect(find.byType(BorgSwitch), findsWidgets);
 
     // App section: build identity + APK-source hint. Tests run without the
@@ -102,5 +104,18 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(settings.hapticsEnabled, isFalse);
+  });
+
+  testWidgets('Toggling the Effekte switch updates Settings.effectsEnabled', (tester) async {
+    SharedPreferences.setMockInitialValues({'effects_enabled': true});
+    final settings = await Settings.load();
+    expect(settings.effectsEnabled, isTrue);
+    await _pumpTall(tester, settings);
+
+    // ALLGEMEIN row order: Demo-Modus, Haptik, UI-Sounds, Effekte.
+    await tester.tap(find.byType(BorgSwitch).at(3));
+    await tester.pumpAndSettle();
+
+    expect(settings.effectsEnabled, isFalse);
   });
 }

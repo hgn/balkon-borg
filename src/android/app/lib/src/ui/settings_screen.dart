@@ -56,6 +56,12 @@ class SettingsScreen extends StatelessWidget {
                 value: settings.uiSoundsEnabled,
                 onChanged: settings.setUiSoundsEnabled,
               ),
+              _SwitchRow(
+                label: 'Effekte',
+                subtitle: 'SENTRY-Störbild, Kondensation bei hoher Luftfeuchte',
+                value: settings.effectsEnabled,
+                onChanged: settings.setEffectsEnabled,
+              ),
               _BrokerField(
                 label: 'Name',
                 subtitle: 'für die Begrüßung (optional)',

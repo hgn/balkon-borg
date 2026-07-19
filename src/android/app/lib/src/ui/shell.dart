@@ -15,6 +15,7 @@ import 'home_screen.dart';
 import 'log_screen.dart';
 import 'radio_screen.dart';
 import 'settings_screen.dart';
+import 'widgets/condensation_overlay.dart';
 import 'widgets/health_sheet.dart';
 import 'widgets/wled_glow.dart';
 
@@ -64,7 +65,9 @@ class _BorgShellState extends State<BorgShell> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final wledColor = context.watch<AppState>().wledColor;
+    final appState = context.watch<AppState>();
+    final effectsEnabled = context.watch<Settings>().effectsEnabled;
+    final humidity = appState.envHistory.isEmpty ? null : appState.envHistory.last.h;
     return Scaffold(
       // The frosted bottom nav (E9) needs scrolling content to actually
       // paint behind it for the BackdropFilter blur to have anything to
@@ -74,7 +77,13 @@ class _BorgShellState extends State<BorgShell> with WidgetsBindingObserver {
       body: Stack(
         children: [
           Positioned.fill(
-            child: RepaintBoundary(child: WledGlow(color: wledColor)),
+            child: RepaintBoundary(child: WledGlow(color: appState.wledColor)),
+          ),
+          // Condensation wash (E11) sits above the WLED glow but still
+          // fully behind the app content — "on the glass in front of the
+          // light", not mixed into it.
+          Positioned.fill(
+            child: CondensationOverlay(humidity: humidity, enabled: effectsEnabled),
           ),
           SafeArea(
             child: Column(

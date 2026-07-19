@@ -51,6 +51,14 @@ flutter:
     - assets/audio/start.wav
     - assets/audio/ui/
 
+  # Fragment shaders (E11, implementation-plan.md D6): SENTRY detection
+  # glitch and the humidity condensation wash. Compiled once at startup by
+  # `services/shader_library.dart`; compilation is allowed to fail (old
+  # device, Impeller quirk, `flutter test` never compiles shaders at all).
+  shaders:
+    - shaders/sentry-glitch.frag
+    - shaders/condensation.frag
+
   # Bundled offline (D3): variable TTFs from the google/fonts OFL repo, each
   # weight entry pointing at the same variable-font file (Flutter's supported
   # way to use a variable font without a runtime download).
