@@ -25,6 +25,11 @@ before the next starts.
   wiring only once go2rtc runs on the Pi** (URLs are in the contract already).
 - **Station lists (U10)** are app constants for now; they move to the Pi's config
   (retained topic) once the arbiter owns them.
+- **D8 — The Pi owns the facts** (added 2026-07-19): world and device values belong to the
+  borg-pi5 and reach the app over MQTT; the app is largely a display and keeps fallbacks,
+  not authorities. Only UI preferences stay local. Constants to migrate once the Pi side
+  exists: `BorgGeo.homeLat/homeLon`, `contract/stations.dart`, the radar's 50 km range,
+  the condensation thresholds. See `../log/decisions.md`.
 - **D6 — Visual showpieces in their leanest form** (added 2026-07-19): three ideas were
   assessed and approved, but two of them run in a cheaper variant than originally
   sketched. The ADS-B radar is drawn with `CustomPainter`, not Rive (Rive's input set is

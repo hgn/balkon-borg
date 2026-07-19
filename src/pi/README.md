@@ -52,6 +52,22 @@ attached. Full picture: [`../../README.md`](../../README.md), use cases in
 [`../../docs/use-cases.md`](../../docs/use-cases.md), system view in
 [`../architecture.md`](../architecture.md).
 
+## The Pi owns the facts
+
+The borg-pi5 is the master of this system. Every fact about the world or the device
+lives here and travels to clients over MQTT: home coordinates, distance and altitude
+thresholds, station lists, detection limits, retention rules. The phone app is largely a
+display. It may offer to change such a value, but it does so by sending a command; it
+never becomes the owner.
+
+Clients are allowed a **fallback** for the moment before the Pi has answered, never an
+authority. Only pure UI preferences (sounds, haptics, effects, theme, display name) are
+genuinely theirs, because those differ per person.
+
+So when a service needs a tunable, put it in `../shared/borg.yaml` and, where it is
+useful to change at runtime, expose it over MQTT. Do not leave it to the clients to
+each carry their own copy.
+
 ## The one principle that outranks the others
 
 **The system runs with any subset of hardware present.** An unplugged SDR, a dead

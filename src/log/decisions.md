@@ -14,6 +14,35 @@ split into src/") for why.
 
 ---
 
+## 2026-07-19 — The borg-pi5 is the master, clients are displays
+
+Stated by the user as a general principle after noticing app-side constants creeping in
+(the radar's home coordinate, the station lists): anything factual about the world or the
+device is owned by the Pi and travels over MQTT, and is ideally configurable over MQTT
+too. The app may offer to change such a value, but it does so through a command; it does
+not own the value.
+
+**Rationale:** the app runs on several phones and gets reinstalled now and then. A value
+compiled into it drifts per device and cannot be corrected from the one place that
+actually knows the truth. The Pi is on the ceiling, singular, and provisioned from the
+repo, so it is the only sensible home for the system's facts.
+
+**The dividing line:** world and device facts to the Pi (coordinates, thresholds, station
+lists, detection limits, ranges, retention). Pure UI preferences stay on the phone
+(sounds, haptics, effects, theme, display name, check interval), because they differ per
+person by definition and a shared value would be wrong for someone.
+
+Clients keep **fallbacks**, not authorities: a hardcoded default is legitimate for the
+window before the Pi answers, and must give way as soon as it does.
+
+**Known violations to fix when the Pi side lands (M1/M4b):** `BorgGeo.homeLat/homeLon`
+(app constant, drives the radar's polar placement), `contract/stations.dart` (FM, DAB+
+and airband presets, already flagged in the app plan), the radar's 50 km range, and the
+condensation thresholds (85/82 %). Written down here so they do not quietly become
+permanent.
+
+---
+
 ## 2026-07-19 — Pi work packages: target host, secrets, agent access, clips local
 
 The Pi work is being prepared as packages for other agents, so the working conditions and

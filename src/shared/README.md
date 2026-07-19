@@ -29,6 +29,14 @@ here for the first time.
 - **Commands are fire-and-forget; the state topic is the ack.** A client sends a
   command, the arbiter applies it (or refuses) and publishes the resulting state —
   clients render state, never their own optimistic guess.
+- **The borg-pi5 is the master; clients are mostly displays.** Every fact about the
+  world or the device belongs to the Pi and reaches clients over MQTT: home coordinates,
+  distance and altitude thresholds, station lists, detection limits, retention rules.
+  Where a client offers to change such a value it does so by sending a command, not by
+  keeping its own copy. A client may hold a **fallback** for when the Pi has not
+  answered yet, never an authority. Only pure UI preferences (sounds, haptics, effects,
+  theme, display name, check interval) belong to the client, because they differ per
+  phone and per person by definition.
 - **One writer per topic.** The arbiter owns `balkon/mode/*`, `balkon/health/*`,
   `balkon/event/*` and all `.../recent` snapshots; the ESP owns `balkon/env/*` (live),
   `balkon/presence`, `balkon/input/*`; services own their feed topics.
