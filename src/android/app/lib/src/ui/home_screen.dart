@@ -15,6 +15,7 @@ import '../state/settings.dart';
 import '../theme/balkon_theme.dart';
 import 'widgets/animated_value.dart';
 import 'widgets/borg_sheet.dart';
+import 'widgets/device_twin.dart';
 import 'widgets/env_chart.dart';
 import 'widgets/mode_card.dart';
 import 'widgets/stat_tile.dart';
@@ -45,7 +46,9 @@ class HomeScreen extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(_statusLine(state, settings), style: textTheme.bodyMedium),
-        const SizedBox(height: 22),
+        const SizedBox(height: 16),
+        const DeviceTwin(),
+        const SizedBox(height: 18),
         _ModeGrid(state: state),
         const SizedBox(height: 22),
         _EnvStatsRow(history: state.envHistory),
