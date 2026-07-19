@@ -57,8 +57,10 @@ void main() {
     expect(find.text('UI-Sounds'), findsOneWidget);
     expect(find.byType(BorgSwitch), findsWidgets);
 
-    // App section: version line + APK-source hint.
-    expect(find.textContaining('0.1.0'), findsOneWidget);
+    // App section: build identity + APK-source hint. Tests run without the
+    // Makefile's --dart-defines, so the build reports itself as `dev`.
+    expect(find.text('dev'), findsOneWidget);
+    expect(find.text('nicht aus einem Build-Lauf'), findsOneWidget);
     expect(find.text('APK-Quelle: borg-pi/apk'), findsOneWidget);
   });
 

@@ -1,18 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../build_info.dart';
 import '../models/borg_event.dart';
 import '../state/settings.dart';
 import '../theme/balkon_theme.dart';
 import 'widgets/borg_chip.dart';
 import 'widgets/borg_switch.dart';
-
-/// Mirrors pubspec.yaml's `version: 0.1.0+1` (versionName+versionCode).
-/// Hardcoded for E6 rather than pulling in a `package_info_plus` runtime
-/// dependency just for this; revisit if the app ever needs to read its own
-/// version back (e.g. to compare against the borg-pi's `/apk/version.json`).
-const _appVersionName = '0.1.0';
-const _appVersionCode = 1;
 
 const _intervalOptions = [
   (seconds: 10, label: '10s'),
@@ -127,7 +121,8 @@ class SettingsScreen extends StatelessWidget {
           _SettingsSection(
             title: 'APP',
             children: [
-              _InfoRow(label: 'Version', value: '$_appVersionName ($_appVersionCode)'),
+              _InfoRow(label: 'Version', value: BuildInfo.version),
+              _InfoRow(label: 'Stand', value: BuildInfo.origin),
               const _AppHint('APK-Quelle: borg-pi/apk'),
             ],
           ),

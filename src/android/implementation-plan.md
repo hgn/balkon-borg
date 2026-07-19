@@ -36,6 +36,16 @@ before the next starts.
   aware). Each stage is developed and committed separately so a single effect can be
   reverted without touching the others.
 
+- **D7 — Build identity from git** (added 2026-07-19): the settings show `rNNN` where
+  NNN is the commit count of the built tree, plus commit date and short hash. A bigger
+  number is the newer build, which is the only question a version string on a phone has
+  to answer; a semantic version would have to be bumped by hand and would drift. The
+  Makefile injects it (`--dart-define` + `--build-name`/`--build-number`, so the commit
+  count is also the Android versionCode and an older APK cannot install over a newer
+  one). A build from a dirty tree is marked `rNNN+`. Running from the IDE or in tests
+  nothing is injected and the app reports itself as `dev`. `make version` prints what
+  the current tree would produce.
+
 ## Stages
 
 | Stage | Content |
