@@ -5,18 +5,19 @@
 /// one gate instead of scattered `AudioPlayer`/`AudioPool` calls that would
 /// ignore the setting.
 ///
-/// Grammar mirrors `haptics.dart`'s (gen-sounds.py's docstring: "Sound
-/// grammar mirrors the haptics grammar"), mapped onto the 16 WAVs under
-/// `assets/audio/ui/`:
-/// - `blip` — the `selectionClick`/`lightImpact` counterpart: picking one
-///   option, a plain confirmatory tap. Uniform pick among blip-1..5, with a
-///   ~2% "excited babble" easter egg (twitter-1/2, gen-sounds.py) instead —
-///   the droid getting overly enthusiastic about a routine tap.
+/// Grammar mirrors `haptics.dart`'s, mapped onto the WAVs under
+/// `assets/audio/ui/`. The dividing line is **navigation vs. change**:
+/// moving around the app is a click and nothing else, because it happens
+/// too often and too fast for anything with a tail; changing what the
+/// hardware is actually doing may occasionally get a droid's opinion.
+/// - `blip` — the `selectionClick`/`lightImpact` counterpart: tabs, chips,
+///   rows, cards. Uniform pick among the short clicks, no surprises ever.
 /// - `confirm` — the "state-echo confirmation" counterpart to
-///   `mediumImpact()` fired from `AppState._applyModeUpdate`. Uniform pick
-///   among chirp-1..3. Suppressed for SENTRY submode changes (see
-///   `app_state.dart`) since those already get `powerUp`/`powerDown` at the
-///   switch itself — playing `confirm` too would double up.
+///   `mediumImpact()` fired from `AppState._applyModeUpdate`, i.e. the
+///   arbiter reporting back that COMMS really went from off to FM. Usually
+///   a chirp, at `_droidChance` a burst of droid babble instead. Suppressed
+///   for SENTRY submode changes (see `app_state.dart`) since those already
+///   get `powerUp`/`powerDown` at the switch itself.
 /// - `powerUp`/`powerDown` — the SENTRY arm/disarm switch, mirroring the
 ///   `heavyImpact`/`mediumImpact` split there but as one sound each way
 ///   (power-up.wav / power-down.wav).
@@ -25,7 +26,7 @@
 ///   (ptt-roger.wav) — not release-to-send itself, which is a gesture, not
 ///   an outcome.
 /// - `error` — a failed talkdown send (`_stopAndSend`'s non-2xx/catch
-///   branches). Uniform pick among sad-1..2.
+///   branches). Uniform pick among the sad ones.
 library;
 
 import 'dart:async';
@@ -73,14 +74,32 @@ class NoopUiSounds implements UiSounds {
   void error() {}
 }
 
-const _blips = ['blip-1', 'blip-2', 'blip-3', 'blip-4', 'blip-5'];
-const _chirps = ['chirp-1', 'chirp-2', 'chirp-3'];
-const _twitters = ['twitter-1', 'twitter-2'];
-const _sads = ['sad-1', 'sad-2'];
+/// Navigation/selection clicks: short only (all well under ~120 ms). Moving
+/// through the app happens faster than a long sample can finish, so anything
+/// with a tail belongs in [_droids], not here.
+const _clicks = ['blip-1', 'blip-2', 'blip-3', 'blip-4', 'blip-5'];
 
-/// Chance that [PackageUiSounds.blip] plays a `twitter-*` easter egg instead
-/// of a plain `blip-*`.
-const _easterEggChance = 0.02;
+/// State-echo confirmations: a moment worth a beep, roughly one per
+/// deliberate change rather than one per tap.
+const _chirps = ['chirp-1', 'chirp-2', 'chirp-3', 'chirp-4'];
+
+/// The droid babble — seconds long, full of character, and therefore only
+/// ever heard on an actual change, at [_droidChance]. Never on navigation.
+const _droids = [
+  'blip-6',
+  'blip-7',
+  'twitter-1',
+  'twitter-2',
+  'twitter-3',
+  'twitter-4',
+];
+
+const _sads = ['sad-1', 'sad-2', 'sad-3'];
+
+/// Chance that [PackageUiSounds.confirm] answers with droid babble instead of
+/// the usual chirp: rare enough to stay a surprise, common enough that a
+/// session with a handful of mode changes has a decent chance of one.
+const _droidChance = 0.07;
 
 /// Volume every UI sound plays at — quiet enough to sit under haptics as a
 /// "second sense", not a foreground effect.
@@ -112,17 +131,13 @@ class PackageUiSounds implements UiSounds {
   @override
   void blip() {
     if (!enabled()) return;
-    if (_random.nextDouble() < _easterEggChance) {
-      _player(_pick(_twitters));
-    } else {
-      _player(_pick(_blips));
-    }
+    _player(_pick(_clicks));
   }
 
   @override
   void confirm() {
     if (!enabled()) return;
-    _player(_pick(_chirps));
+    _player(_random.nextDouble() < _droidChance ? _pick(_droids) : _pick(_chirps));
   }
 
   @override

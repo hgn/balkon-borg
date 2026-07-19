@@ -26,8 +26,8 @@ VERSION_FLAGS := \
 
 .PHONY: all apk install sounds check test analyze run version clean distclean help
 
-sounds: ## regenerate the UI sound set (app/assets/audio/ui/)
-	./gen-sounds.py
+sounds: ## regenerate the UI sound set (app/assets/audio/generated-sounds/)
+	./gen-sounds.py --out app/assets/audio/generated-sounds
 
 all: apk ## build the release APK
 

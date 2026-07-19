@@ -128,9 +128,12 @@ def build_set(out: Path, seed: int) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="generate the UI sound set")
+    # Never defaults to the live asset dir (app/assets/audio/ui): that one
+    # holds hand-picked sounds, and a stray run of this script would silently
+    # overwrite them. Copy over what you want from here instead.
     parser.add_argument("--out", type=Path,
-                        default=Path(__file__).parent / "app/assets/audio/ui",
-                        help="output directory (default: app/assets/audio/ui)")
+                        default=Path(__file__).parent / "app/assets/audio/generated-sounds",
+                        help="output directory (default: app/assets/audio/generated-sounds)")
     parser.add_argument("--seed", type=int, default=42,
                         help="RNG seed; same seed reproduces the same set")
     args = parser.parse_args()
