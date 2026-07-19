@@ -73,17 +73,20 @@ class BorgSheetCloseButton extends StatelessWidget {
   }
 }
 
-/// Sheet header row: title (18/800) + [BorgSheetCloseButton].
+/// Sheet header row: title (18/800), an optional [trailing] control (the
+/// submode sheet puts the mode's on/off switch there) + [BorgSheetCloseButton].
 class BorgSheetHeader extends StatelessWidget {
-  const BorgSheetHeader({super.key, required this.title});
+  const BorgSheetHeader({super.key, required this.title, this.trailing});
 
   final String title;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         Expanded(child: Text(title, style: Theme.of(context).textTheme.titleMedium)),
+        if (trailing != null) ...[trailing!, const SizedBox(width: 14)],
         const BorgSheetCloseButton(),
       ],
     );

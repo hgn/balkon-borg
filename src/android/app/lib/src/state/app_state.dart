@@ -56,6 +56,11 @@ class AppState extends ChangeNotifier {
 
   bool connected = false;
   final Map<MainMode, ModeState> modes = {};
+
+  /// Last non-off submode seen per mode, so switching a mode back on returns
+  /// to what it was doing instead of always to the first program in the list.
+  /// Only a session memory; a fresh app falls back to the first program.
+  final Map<MainMode, String> lastProgram = {};
   MainMode? focus;
   final Map<String, CapabilityHealth> health = {};
   String healthSummary = '';
@@ -99,6 +104,12 @@ class AppState extends ChangeNotifier {
       modes
         ..clear()
         ..addAll(snapshot.modes);
+      // Demo state is installed wholesale rather than through the message
+      // path, so seed the program memory here too — otherwise switching a
+      // demo mode off and on again forgets what it had been running.
+      for (final e in snapshot.modes.entries) {
+        if (!e.value.isOff) lastProgram[e.key] = e.value.submode;
+      }
       focus = snapshot.focus;
       health
         ..clear()
@@ -214,6 +225,7 @@ class AppState extends ChangeNotifier {
   /// mutating, per spec.
   void _applyModeUpdate(MainMode m, ModeState next) {
     final prev = modes[m];
+    if (!next.isOff) lastProgram[m] = next.submode;
     final changed =
         prev != null && (prev.submode != next.submode || prev.chan != next.chan);
     modes[m] = next;

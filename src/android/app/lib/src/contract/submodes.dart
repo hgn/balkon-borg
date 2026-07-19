@@ -69,6 +69,12 @@ abstract final class Submodes {
         MainMode.sentry => sentry,
       };
 
+  /// The actual programs of a mode, without the `off` entry: what the mode
+  /// does *when it runs*. Off is a power state one level above these and is
+  /// offered as a switch, not as a list row (user call 2026-07-19).
+  static List<Submode> programsFor(MainMode m) =>
+      forMode(m).where((s) => s.id != 'off').toList(growable: false);
+
   /// Display label for a wire submode id; falls back to the raw id for
   /// values not in the list (defensive — the arbiter is the source of truth,
   /// a future submode not yet mirrored here should still render as *something*).

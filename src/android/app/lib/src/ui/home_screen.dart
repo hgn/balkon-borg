@@ -15,6 +15,7 @@ import '../state/settings.dart';
 import '../theme/balkon_theme.dart';
 import 'widgets/animated_value.dart';
 import 'widgets/borg_sheet.dart';
+import 'widgets/borg_switch.dart';
 import 'widgets/env_chart.dart';
 import 'widgets/mode_card.dart';
 import 'widgets/stat_tile.dart';
@@ -141,6 +142,7 @@ class _SubmodeSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isOn = !(context.watch<AppState>().modes[mode]?.isOff ?? true);
     // components.md: "max-height 70% Screen". LUMEN alone has 10 options, so
     // the row list needs to be able to scroll rather than overflow.
     return ConstrainedBox(
@@ -151,12 +153,68 @@ class _SubmodeSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            BorgSheetHeader(title: mode.name.toUpperCase()),
+            BorgSheetHeader(
+              title: mode.name.toUpperCase(),
+              trailing: _ModePowerSwitch(mode: mode),
+            ),
             const SizedBox(height: 12),
-            for (final option in Submodes.forMode(mode)) _SubmodeRow(mode: mode, option: option),
+            // Off is not a program and is not listed as one: it lives in the
+            // header switch above. While the mode is off the programs stay
+            // visible but dimmed — they are what it *would* do — and tapping
+            // one switches the mode on with exactly that program.
+            AnimatedOpacity(
+              duration: balkonSpringDuration,
+              curve: balkonSpring,
+              opacity: isOn ? 1 : 0.45,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final option in Submodes.programsFor(mode))
+                    _SubmodeRow(mode: mode, option: option),
+                ],
+              ),
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The mode's power state as a switch in the sheet header: off is a level
+/// above the programs, not one of them (user call 2026-07-19). Switching on
+/// returns to the last program this mode ran in this session, falling back to
+/// the first one.
+class _ModePowerSwitch extends StatelessWidget {
+  const _ModePowerSwitch({required this.mode});
+
+  final MainMode mode;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<AppState>();
+    final extras = Theme.of(context).extension<BalkonExtras>()!;
+    final isOn = !(state.modes[mode]?.isOff ?? true);
+
+    return BorgSwitch(
+      value: isOn,
+      // SENTRY is the one mode whose "on" is an alarm state, so it keeps the
+      // danger colour it has on the camera screen instead of the accent.
+      activeColor: mode == MainMode.sentry ? extras.danger : null,
+      onChanged: (on) {
+        context.read<Haptics>().mediumImpact();
+        // The state echo plays `confirm` for every mode except SENTRY, whose
+        // sound belongs to the arm/disarm gesture itself (see AppState).
+        if (mode == MainMode.sentry) {
+          final sounds = context.read<UiSounds>();
+          on ? sounds.powerUp() : sounds.powerDown();
+        }
+        final app = context.read<AppState>();
+        app.setSubmode(
+          mode,
+          on ? (app.lastProgram[mode] ?? Submodes.programsFor(mode).first.id) : 'off',
+        );
+      },
     );
   }
 }

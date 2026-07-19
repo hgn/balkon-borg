@@ -11,6 +11,7 @@ import 'package:balkon_borg/src/state/app_state.dart';
 import 'package:balkon_borg/src/state/settings.dart';
 import 'package:balkon_borg/src/theme/balkon_theme.dart';
 import 'package:balkon_borg/src/ui/home_screen.dart';
+import 'package:balkon_borg/src/ui/widgets/borg_switch.dart';
 
 Future<AppState> _demoAppState() async {
   SharedPreferences.setMockInitialValues({'demo_mode': true});
@@ -95,6 +96,33 @@ void main() {
     // so 'FM' is on screen twice now: the sheet row and the card behind it.
     expect(find.text('FM'), findsNWidgets(2));
     expect(find.text('COMMS'), findsWidgets); // sheet header still up
+  });
+
+  testWidgets('the header switch turns a mode off and back to its last program', (tester) async {
+    final appState = await _demoAppState();
+    addTearDown(appState.dispose);
+    final settings = Settings(await SharedPreferences.getInstance());
+
+    await tester.pumpWidget(_wrap(appState, settings));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('LUMEN'));
+    await tester.pumpAndSettle();
+
+    final running = appState.modes[MainMode.lumen]!.submode;
+    expect(running, isNot('off')); // demo data starts LUMEN on a program
+
+    // "Aus" is no longer offered as a row; it is the switch in the header. The
+    // two remaining ones are the COMMS and SENTRY cards behind the sheet, the
+    // same count as before it opened.
+    expect(find.text('Aus'), findsNWidgets(2));
+
+    await tester.tap(find.byType(BorgSwitch));
+    await tester.pumpAndSettle();
+    expect(appState.modes[MainMode.lumen]!.submode, 'off');
+
+    await tester.tap(find.byType(BorgSwitch));
+    await tester.pumpAndSettle();
+    expect(appState.modes[MainMode.lumen]!.submode, running);
   });
 
   testWidgets('a submode row is tappable across its full width', (tester) async {
