@@ -217,6 +217,14 @@ ThemeData buildBalkonTheme({required Brightness brightness}) {
       labelLarge: TextStyle(fontFamily: bodyFont, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.5, color: colorScheme.onSurfaceVariant), // eyebrow/section label, UPPERCASE in UI
       labelSmall: TextStyle(fontFamily: bodyFont, fontSize: 10, fontWeight: FontWeight.w600, color: colorScheme.onSurfaceVariant),
     ),
+    // Material's own sheet drag handle, styled to the design's 36x4 pill. It
+    // replaces the decorative grabber that used to sit inside the sheet
+    // content: that one was only a picture, and a sheet whose content scrolls
+    // could not be dragged shut at all (see borg_sheet.dart).
+    bottomSheetTheme: BottomSheetThemeData(
+      dragHandleColor: colorScheme.outline,
+      dragHandleSize: const Size(36, 4),
+    ),
     // Mono numerals (Space Grotesk) are applied ad-hoc via a helper TextStyle
     // (see balkonMonoStyle below) rather than a TextTheme slot, since Flutter
     // has no built-in "monospace variant" concept per style.

@@ -34,8 +34,6 @@ class _HealthSheetContent extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const BorgSheetGrabber(),
-          const SizedBox(height: 18),
           const BorgSheetHeader(title: 'Health'),
           const SizedBox(height: 6),
           Text(_summaryLine(), style: textTheme.bodyMedium?.copyWith(color: extras.textDim)),

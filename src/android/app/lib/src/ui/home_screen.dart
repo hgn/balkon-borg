@@ -15,7 +15,6 @@ import '../state/settings.dart';
 import '../theme/balkon_theme.dart';
 import 'widgets/animated_value.dart';
 import 'widgets/borg_sheet.dart';
-import 'widgets/device_twin.dart';
 import 'widgets/env_chart.dart';
 import 'widgets/mode_card.dart';
 import 'widgets/stat_tile.dart';
@@ -46,9 +45,7 @@ class HomeScreen extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(_statusLine(state, settings), style: textTheme.bodyMedium),
-        const SizedBox(height: 16),
-        const DeviceTwin(),
-        const SizedBox(height: 18),
+        const SizedBox(height: 22),
         _ModeGrid(state: state),
         const SizedBox(height: 22),
         _EnvStatsRow(history: state.envHistory),
@@ -154,8 +151,6 @@ class _SubmodeSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const BorgSheetGrabber(),
-            const SizedBox(height: 18),
             BorgSheetHeader(title: mode.name.toUpperCase()),
             const SizedBox(height: 12),
             for (final option in Submodes.forMode(mode)) _SubmodeRow(mode: mode, option: option),
@@ -182,15 +177,22 @@ class _SubmodeRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: GestureDetector(
+        // Opaque so the whole row width is the target, not just the glyphs
+        // (user call 2026-07-19) — the app is operated with big fingers.
+        behavior: HitTestBehavior.opaque,
         onTap: () {
           context.read<Haptics>().lightImpact();
           context.read<UiSounds>().blip();
           context.read<AppState>().setSubmode(mode, option.id);
-          Navigator.of(context).pop();
+          // The sheet stays open: picking a submode is usually one of several
+          // tries ("how does Ambient look, and Cozy?"), and a sheet that
+          // slams shut after each pick makes comparing them a chore. Close
+          // via the drag handle or the X.
         },
         child: AnimatedContainer(
           duration: balkonSpringDuration,
           curve: balkonSpring,
+          width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           decoration: BoxDecoration(
             color: selected ? scheme.primary : Colors.transparent,
@@ -293,8 +295,6 @@ class _EnvChartSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const BorgSheetGrabber(),
-          const SizedBox(height: 18),
           Row(
             children: [
               Expanded(

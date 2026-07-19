@@ -91,6 +91,31 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(appState.modes[MainMode.comms]!.submode, 'fm');
-    expect(find.text('FM'), findsOneWidget); // now shown on the card itself.
+    // The sheet deliberately stays open after a pick (user call 2026-07-19),
+    // so 'FM' is on screen twice now: the sheet row and the card behind it.
+    expect(find.text('FM'), findsNWidgets(2));
+    expect(find.text('COMMS'), findsWidgets); // sheet header still up
+  });
+
+  testWidgets('a submode row is tappable across its full width', (tester) async {
+    final appState = await _demoAppState();
+    addTearDown(appState.dispose);
+    final settings = Settings(await SharedPreferences.getInstance());
+
+    await tester.pumpWidget(_wrap(appState, settings));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('COMMS'));
+    await tester.pumpAndSettle();
+
+    // Tap near the right edge of the row, far from the label glyphs — with a
+    // shrink-wrapped row this lands on the sheet background and does nothing.
+    final row = tester.getRect(find.ancestor(
+      of: find.text('FM'),
+      matching: find.byType(AnimatedContainer),
+    ));
+    await tester.tapAt(Offset(row.right - 8, row.center.dy));
+    await tester.pumpAndSettle();
+
+    expect(appState.modes[MainMode.comms]!.submode, 'fm');
   });
 }

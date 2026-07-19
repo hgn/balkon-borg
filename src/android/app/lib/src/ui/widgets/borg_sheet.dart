@@ -16,6 +16,14 @@ import '../../theme/balkon_theme.dart';
 /// upgrades. The backdrop keeps Flutter's default `Curves.ease` fade
 /// (`PopupRoute.barrierCurve`), matching motion.md §4.
 ///
+/// The sheet carries Material's own **drag handle** rather than a decorative
+/// pill inside the content (E12 follow-up, user-reported bug): a hand-rolled
+/// grabber is only a picture, and a sheet whose content scrolls (LUMEN has
+/// ten submodes) swallows every downward drag into its scroll view, so the
+/// sheet could not be flicked shut at all. Material's handle sits outside the
+/// scrollable and always drags the sheet. Styled to the design's 36x4 pill
+/// via `bottomSheetTheme` in `balkon_theme.dart`.
+///
 /// Sheets are deliberately **opaque** (E9 follow-up): the frosted-glass
 /// variant (BackdropFilter + translucent surface3) made sheet content like
 /// the env chart hard to read against whatever shimmered through — user
@@ -32,6 +40,7 @@ Future<T?> showBorgSheet<T>({
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: isScrollControlled,
+    showDragHandle: true,
     backgroundColor: extras.surface3,
     barrierColor: const Color(0x8C05020C), // rgba(5,2,12,.55), components.md
     shape: const RoundedRectangleBorder(borderRadius: topRadius),
@@ -41,26 +50,6 @@ Future<T?> showBorgSheet<T>({
     ),
     builder: builder,
   );
-}
-
-/// Grabber pill at the top of a sheet panel (components.md: 36×4 pill, `border`).
-class BorgSheetGrabber extends StatelessWidget {
-  const BorgSheetGrabber({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Center(
-      child: Container(
-        width: 36,
-        height: 4,
-        decoration: BoxDecoration(
-          color: scheme.outline,
-          borderRadius: BorderRadius.circular(2),
-        ),
-      ),
-    );
-  }
 }
 
 /// Round close button (30×30, `surface2`) shared by every sheet header.
