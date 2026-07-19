@@ -14,6 +14,39 @@ split into src/") for why.
 
 ---
 
+## 2026-07-19 — Pi work packages: target host, secrets, agent access, clips local
+
+The Pi work is being prepared as packages for other agents, so the working conditions and
+the open questions had to be settled and written down (`src/pi/README.md`, `src/pi/tasks/`).
+
+- **Raspberry Pi OS Lite 64-bit**, not Desktop. A headless box has no business running
+  desktop services, and the RAM matters with Frigate on it. Consequence: PipeWire and the
+  whole audio session are explicit provisioning steps, since Lite ships neither.
+- **Host is `borg-pi`, resolved by the Fritz!Box.** Not mDNS (unreliable from the
+  WireGuard tunnel), not a fixed IP (which would end up duplicated in the contract, the
+  app and the scripts). The app already defaults to this name.
+- **Broker credentials go into the checked-in `shared/borg.yaml`.** The user's call: this
+  is a LAN device with no security requirement, and a second secrets mechanism is one
+  more thing to lose after an SD failure. Accepted cost: the passwords live in the git
+  history, so the repo stays private.
+- **Agents may run the scripts against the real Pi**, but may not configure it by hand.
+  The rule written into the README: anything changed on the Pi must be expressed in
+  `provision.py` first, otherwise the next SD failure loses it. Provisioning is only
+  worth anything if it is the *only* path.
+- **Packages cover M0 through M4+ now**, all of it, rather than stopping at the
+  foundation. Accepted risk: the M4 packages are written against untested assumptions
+  about container device passthrough, so they name their fallbacks instead of pretending
+  to certainty.
+
+**Deviation from U7, deliberate and temporary:** event clips start **local on the
+borg-pi** instead of on the nas-Pi over NFS. This drops the survivability argument (clips
+should outlive someone ripping the unit off the ceiling), so it is bounded: retention is
+capped by age and size, the storage path stays configurable, and NFS remains the intended
+end state. Unbounded Frigate recording onto an SD card is also how SD cards die, which is
+the second reason for the cap.
+
+---
+
 ## 2026-07-19 — App showpieces E10-E12: radar, shaders, twin, each in its leanest form
 
 Five enhancement ideas were assessed, three approved (ADS-B radar, fragment shaders,
