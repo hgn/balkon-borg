@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:balkon_borg/src/services/sound_class.dart';
 import 'package:balkon_borg/src/services/ui_sounds.dart';
 
 /// A `Random` whose draws are scripted instead of pseudo-random, so tests can
@@ -30,7 +31,7 @@ void main() {
     test('blip() picks uniformly among the short clicks', () {
       final calls = <String>[];
       final sounds = PackageUiSounds(
-        () => true,
+        (_) => true,
         random: _RiggedRandom(doubles: [0.5], ints: [0, 1, 2, 3, 4]),
         player: calls.add,
       );
@@ -42,7 +43,7 @@ void main() {
 
     test('blip() never plays a long sample — navigation stays a click', () {
       final calls = <String>[];
-      final sounds = PackageUiSounds(() => true, random: Random(42), player: calls.add);
+      final sounds = PackageUiSounds((_) => true, random: Random(42), player: calls.add);
       for (var i = 0; i < 500; i++) {
         sounds.blip();
       }
@@ -55,7 +56,7 @@ void main() {
     test('confirm() picks among the chirps when the droid draw misses', () {
       final calls = <String>[];
       final sounds = PackageUiSounds(
-        () => true,
+        (_) => true,
         random: _RiggedRandom(doubles: [0.5], ints: [0, 1, 2, 3]),
         player: calls.add,
       );
@@ -68,7 +69,7 @@ void main() {
     test('confirm() answers with droid babble when the draw hits', () {
       final calls = <String>[];
       final sounds = PackageUiSounds(
-        () => true,
+        (_) => true,
         random: _RiggedRandom(doubles: [0.001], ints: [0, 5]),
         player: calls.add,
       );
@@ -79,7 +80,7 @@ void main() {
 
     test('confirm() stays rare: the droid shows up in a small minority of changes', () {
       final calls = <String>[];
-      final sounds = PackageUiSounds(() => true, random: Random(7), player: calls.add);
+      final sounds = PackageUiSounds((_) => true, random: Random(7), player: calls.add);
       for (var i = 0; i < 1000; i++) {
         sounds.confirm();
       }
@@ -91,7 +92,7 @@ void main() {
     test('error() picks among sad-1..2', () {
       final calls = <String>[];
       final sounds = PackageUiSounds(
-        () => true,
+        (_) => true,
         random: _RiggedRandom(ints: [0, 1]),
         player: calls.add,
       );
@@ -102,7 +103,7 @@ void main() {
 
     test('powerUp/powerDown/pttDown/pttSent play their fixed asset', () {
       final calls = <String>[];
-      final sounds = PackageUiSounds(() => true, player: calls.add);
+      final sounds = PackageUiSounds((_) => true, player: calls.add);
       sounds
         ..powerUp()
         ..powerDown()
@@ -111,9 +112,9 @@ void main() {
       expect(calls, ['power-up', 'power-down', 'ptt-click', 'ptt-roger']);
     });
 
-    test('enabled() == false results in zero player interaction for every method', () {
+    test('audible() == false results in zero player interaction for every method', () {
       final calls = <String>[];
-      final sounds = PackageUiSounds(() => false, player: calls.add);
+      final sounds = PackageUiSounds((_) => false, player: calls.add);
       sounds
         ..blip()
         ..confirm()
@@ -123,6 +124,33 @@ void main() {
         ..pttSent()
         ..error();
       expect(calls, isEmpty);
+    });
+  });
+
+  group('per-class gates', () {
+    test('silencing one class leaves the others audible', () {
+      final calls = <String>[];
+      final sounds = PackageUiSounds(
+        (c) => c != SoundClass.navigation,
+        player: calls.add,
+      );
+      sounds
+        ..blip()
+        ..powerUp()
+        ..pttDown();
+      expect(calls, ['power-up', 'ptt-click']);
+    });
+
+    test('silencing the droid class keeps confirm() on chirps even on a hit draw', () {
+      final calls = <String>[];
+      final sounds = PackageUiSounds(
+        (c) => c != SoundClass.droid,
+        // A draw that would otherwise land in the droid pool.
+        random: _RiggedRandom(doubles: [0.001], ints: [0]),
+        player: calls.add,
+      );
+      sounds.confirm();
+      expect(calls, ['chirp-1']);
     });
   });
 }

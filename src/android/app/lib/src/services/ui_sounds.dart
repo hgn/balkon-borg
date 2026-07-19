@@ -1,9 +1,10 @@
 /// Systematic UI sounds (E8 follow-up, gen-sounds.py), a "second sense"
 /// alongside `services/haptics.dart` — additive, never a replacement for the
 /// haptic at the same call site. Wraps `audioplayers` behind
-/// `Settings.uiSoundsEnabled` so every audible cue in the app goes through
-/// one gate instead of scattered `AudioPlayer`/`AudioPool` calls that would
-/// ignore the setting.
+/// `Settings.soundAudible` so every audible cue in the app goes through one
+/// gate instead of scattered `AudioPlayer`/`AudioPool` calls that would
+/// ignore the setting. Each cue belongs to a `SoundClass` the user can
+/// silence on its own.
 ///
 /// Grammar mirrors `haptics.dart`'s, mapped onto the WAVs under
 /// `assets/audio/ui/`. The dividing line is **navigation vs. change**:
@@ -33,6 +34,8 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:audioplayers/audioplayers.dart';
+
+import 'sound_class.dart';
 
 abstract class UiSounds {
   void blip();
@@ -108,65 +111,68 @@ const _volume = 0.35;
 /// Real implementation backed by `package:audioplayers`'s `AudioPool` (one
 /// pool per asset, lazily created and cached, `maxPlayers: 3` — cheap and
 /// gives low-latency overlapping playback for e.g. rapid chip taps). Gated
-/// by [enabled] — evaluated fresh on every call so callers can hand this a
-/// closure over `Settings.uiSoundsEnabled` and always get the current value.
+/// per `SoundClass` by [audible].
 ///
 /// [player] is the testability seam: production code leaves it at the
 /// default (real `AudioPool` playback), tests inject a recording function so
 /// they can assert "which asset would have played" without the plugin
 /// channel `AudioPool`/`AudioPlayer` need for real playback. [random] is
-/// likewise injectable so tests can rig the blip/easter-egg/uniform-pick
-/// draws deterministically.
+/// likewise injectable so tests can rig the droid/uniform-pick draws
+/// deterministically.
 class PackageUiSounds implements UiSounds {
-  PackageUiSounds(this.enabled, {Random? random, void Function(String asset)? player})
+  PackageUiSounds(this.audible, {Random? random, void Function(String asset)? player})
       : _random = random ?? Random() {
     _player = player ?? _defaultPlay;
   }
 
-  final bool Function() enabled;
+  /// Asked fresh on every call, so a caller can hand this a closure over
+  /// `Settings.soundAudible` and always get the current master + per-class
+  /// state without re-creating the service.
+  final bool Function(SoundClass) audible;
   final Random _random;
   late final void Function(String asset) _player;
   final Map<String, Future<AudioPool>> _pools = {};
 
   @override
   void blip() {
-    if (!enabled()) return;
+    if (!audible(SoundClass.navigation)) return;
     _player(_pick(_clicks));
   }
 
   @override
   void confirm() {
-    if (!enabled()) return;
-    _player(_random.nextDouble() < _droidChance ? _pick(_droids) : _pick(_chirps));
+    if (!audible(SoundClass.confirm)) return;
+    final droid = audible(SoundClass.droid) && _random.nextDouble() < _droidChance;
+    _player(droid ? _pick(_droids) : _pick(_chirps));
   }
 
   @override
   void powerUp() {
-    if (!enabled()) return;
+    if (!audible(SoundClass.sentry)) return;
     _player('power-up');
   }
 
   @override
   void powerDown() {
-    if (!enabled()) return;
+    if (!audible(SoundClass.sentry)) return;
     _player('power-down');
   }
 
   @override
   void pttDown() {
-    if (!enabled()) return;
+    if (!audible(SoundClass.ptt)) return;
     _player('ptt-click');
   }
 
   @override
   void pttSent() {
-    if (!enabled()) return;
+    if (!audible(SoundClass.ptt)) return;
     _player('ptt-roger');
   }
 
   @override
   void error() {
-    if (!enabled()) return;
+    if (!audible(SoundClass.error)) return;
     _player(_pick(_sads));
   }
 

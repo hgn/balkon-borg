@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'src/services/haptics.dart';
 import 'src/services/mqtt_service.dart';
 import 'src/services/shader_library.dart';
+import 'src/services/sound_class.dart';
 import 'src/services/ui_sounds.dart';
 import 'src/state/app_state.dart';
 import 'src/state/settings.dart';
@@ -45,7 +46,7 @@ class BalkonBorgApp extends StatelessWidget {
         // Gated by Settings.uiSoundsEnabled (services/ui_sounds.dart), the
         // "second sense" alongside Haptics — same injection pattern.
         Provider<UiSounds>(
-          create: (_) => PackageUiSounds(() => settings.uiSoundsEnabled),
+          create: (_) => PackageUiSounds(settings.soundAudible),
         ),
         ChangeNotifierProvider(
           create: (context) => AppState(
@@ -69,7 +70,10 @@ class BalkonBorgApp extends StatelessWidget {
           // Boot-Welle (E7): runs once per cold start, revealing the shell
           // underneath — never re-triggered by resume or tab switches since
           // BootOverlay only ever mounts here, at the app root.
-          home: const BootOverlay(child: BorgShell()),
+          home: BootOverlay(
+            playSound: settings.soundAudible(SoundClass.boot),
+            child: const BorgShell(),
+          ),
         ),
       ),
     );

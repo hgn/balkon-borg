@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../build_info.dart';
 import '../models/borg_event.dart';
+import '../services/sound_class.dart';
 import '../state/settings.dart';
 import '../theme/balkon_theme.dart';
 import 'widgets/borg_chip.dart';
@@ -14,6 +15,18 @@ const _intervalOptions = [
   (seconds: 60, label: '60s'),
   (seconds: 120, label: '2 min'),
   (seconds: 300, label: '5 min'),
+];
+
+/// Sound classes as rows in the SOUNDS section, in the order they are most
+/// likely to annoy someone.
+const _soundClasses = [
+  (cls: SoundClass.navigation, label: 'Navigation', subtitle: 'Klick bei Tabs, Chips, Karten'),
+  (cls: SoundClass.confirm, label: 'Bestätigung', subtitle: 'wenn ein Moduswechsel zurückgemeldet wird'),
+  (cls: SoundClass.droid, label: 'R2D2-Gebrabbel', subtitle: 'selten statt der Bestaetigung'),
+  (cls: SoundClass.sentry, label: 'SENTRY', subtitle: 'scharf- und entschärfen'),
+  (cls: SoundClass.ptt, label: 'Push-to-Talk', subtitle: 'Sprechtaste und Sendequittung'),
+  (cls: SoundClass.error, label: 'Fehler', subtitle: 'wenn etwas nicht geklappt hat'),
+  (cls: SoundClass.boot, label: 'Startklang', subtitle: 'unter der Startanimation'),
 ];
 
 const _notifyCategories = [
@@ -71,6 +84,22 @@ class SettingsScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 22), // tokens.json spacing.sectionGap
+          _SettingsSection(
+            title: 'SOUNDS',
+            children: [
+              for (final c in _soundClasses)
+                _SwitchRow(
+                  label: c.label,
+                  subtitle: c.subtitle,
+                  value: settings.sound(c.cls),
+                  // Greyed out but still visible while the master switch is
+                  // off, so the grammar stays readable either way.
+                  enabled: settings.uiSoundsEnabled,
+                  onChanged: (on) => settings.setSound(c.cls, on),
+                ),
+            ],
+          ),
+          const SizedBox(height: 22),
           _SettingsSection(
             title: 'BROKER',
             children: [
@@ -266,12 +295,17 @@ class _SwitchRow extends StatelessWidget {
     required this.value,
     required this.onChanged,
     this.subtitle,
+    this.enabled = true,
   });
 
   final String label;
   final bool value;
   final ValueChanged<bool> onChanged;
   final String? subtitle;
+
+  /// A row that stays visible but cannot be operated (per-class sound rows
+  /// while the master UI-Sounds switch is off).
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -280,23 +314,29 @@ class _SwitchRow extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: textTheme.bodyLarge),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 2),
-                  Text(subtitle!, style: textTheme.bodySmall?.copyWith(color: extras.textDim)),
-                ],
-              ],
-            ),
+      child: Opacity(
+        opacity: enabled ? 1 : 0.4,
+        child: IgnorePointer(
+          ignoring: !enabled,
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label, style: textTheme.bodyLarge),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(subtitle!, style: textTheme.bodySmall?.copyWith(color: extras.textDim)),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              BorgSwitch(value: value, onChanged: onChanged),
+            ],
           ),
-          const SizedBox(width: 12),
-          BorgSwitch(value: value, onChanged: onChanged),
-        ],
+        ),
       ),
     );
   }

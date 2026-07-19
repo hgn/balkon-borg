@@ -48,7 +48,13 @@ class _BootTiming {
 /// so it can't desync from it and touching this file can't regress
 /// shell/home widget tests.
 class BootOverlay extends StatefulWidget {
-  const BootOverlay({super.key, required this.child, this.enabled = true, this.soundPlayer});
+  const BootOverlay({
+    super.key,
+    required this.child,
+    this.enabled = true,
+    this.playSound = true,
+    this.soundPlayer,
+  });
 
   /// Total boot duration, exposed so tests fast-forward past it without
   /// duplicating the number (it has been retuned twice on user feedback).
@@ -61,6 +67,10 @@ class BootOverlay extends StatefulWidget {
   /// paints anything boot-related) and never creates a ticking animation, so
   /// there's nothing left running for `pump()`/`pumpAndSettle()` to race.
   final bool enabled;
+
+  /// Whether the underscore is played at all (`SoundClass.boot`): the
+  /// animation still runs, it just stays silent.
+  final bool playSound;
 
   /// Injectable seam for the `start.wav` underscore (E8): widget tests pass a
   /// fake so nothing touches the real `audioplayers` plugin channel. Defaults
@@ -101,8 +111,10 @@ class _BootOverlayState extends State<BootOverlay> with SingleTickerProviderStat
     if (!widget.enabled || MediaQuery.of(context).disableAnimations) {
       _finish();
     } else {
-      _sound = widget.soundPlayer ?? PackageBootSound();
-      unawaited(_sound!.play()); // fire-and-forget; play() itself never throws.
+      if (widget.playSound) {
+        _sound = widget.soundPlayer ?? PackageBootSound();
+        unawaited(_sound!.play()); // fire-and-forget; play() never throws.
+      }
       _controller.forward();
     }
   }

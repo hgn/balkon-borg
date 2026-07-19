@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../contract/topics.dart';
 import '../models/borg_event.dart';
+import '../services/sound_class.dart';
 
 /// User settings, persisted via shared_preferences.
 class Settings extends ChangeNotifier {
@@ -40,6 +41,14 @@ class Settings extends ChangeNotifier {
   // Systematic UI sounds (E8 follow-up): gates `services/ui_sounds.dart`,
   // the "second sense" alongside haptics. Default on.
   bool get uiSoundsEnabled => _prefs.getBool('ui_sounds_enabled') ?? true;
+
+  /// Per-class sound toggles, below the master [uiSoundsEnabled] switch: a
+  /// class can be silenced without giving up the rest of the grammar. All
+  /// default on.
+  bool sound(SoundClass c) => _prefs.getBool('sound_${c.name}') ?? true;
+
+  /// Whether a sound of class [c] should actually be heard right now.
+  bool soundAudible(SoundClass c) => uiSoundsEnabled && sound(c);
 
   // Fragment-shader showpieces (E11): the SENTRY detection glitch and the
   // condensation wash. Default on, same "dezent, turn-off-able" contract as
@@ -110,6 +119,11 @@ class Settings extends ChangeNotifier {
 
   Future<void> setUiSoundsEnabled(bool on) async {
     await _prefs.setBool('ui_sounds_enabled', on);
+    notifyListeners();
+  }
+
+  Future<void> setSound(SoundClass c, bool on) async {
+    await _prefs.setBool('sound_${c.name}', on);
     notifyListeners();
   }
 

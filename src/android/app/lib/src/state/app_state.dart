@@ -36,7 +36,7 @@ class AppState extends ChangeNotifier {
   /// `Settings.uiSoundsEnabled` respectively.
   AppState(this._mqtt, this._settings, {Haptics? haptics, UiSounds? uiSounds})
       : _haptics = haptics ?? SystemHaptics(() => _settings.hapticsEnabled),
-        _uiSounds = uiSounds ?? PackageUiSounds(() => _settings.uiSoundsEnabled) {
+        _uiSounds = uiSounds ?? PackageUiSounds(_settings.soundAudible) {
     _sub = _mqtt.messages.listen(_onMessage);
     _connSub = _mqtt.connectionChanges.listen((up) {
       connected = up;
