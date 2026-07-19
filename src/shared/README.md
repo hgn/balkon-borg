@@ -84,7 +84,7 @@ The ESP publishes raw inputs; the arbiter interprets them against focus/mode sta
 | `balkon/env/recent` | arbiter | **yes** | `{"v":1,"samples":[{"ts":…,"t":…,"h":…,"p":…},…]}` — a few hours, 1/min |
 | `balkon/presence` | ESP | no | `{"v":1,"present":bool,"distance_cm":n}` |
 | `balkon/cam/events` | Frigate | no | Frigate detection events (native schema) |
-| `balkon/adsb/aircraft` | arbiter | no | live aircraft of interest (from readsb) |
+| `balkon/adsb/aircraft` | arbiter | **yes** | current sky picture (from readsb), republished ~1/s while ADS-B runs: `{"v":1,"ts":…,"aircraft":[{"hex":"3c6…","flight":"DLH1AB","lat":…,"lon":…,"alt_ft":…,"track":…,"gs":…,"dist_km":…,"bearing_deg":…},…]}`, nearest first. `dist_km`/`bearing_deg` are relative to the balcony and computed by the arbiter; a client that gets neither falls back to its own great-circle math on `lat`/`lon`. An empty sky is an empty list, not a missing message. |
 | `balkon/birds/detections` | BirdNET-Go | no | detection (native schema) |
 | `balkon/ism/recent` · `/tpms/recent` · `/aprs/recent` · `/radiosonde/recent` · `/meteor/recent` | arbiter | **yes** | `{"v":1,"entries":[…last ~50, newest first]}` (SIGINT ring-buffer pattern) |
 

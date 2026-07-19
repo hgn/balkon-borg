@@ -25,6 +25,16 @@ before the next starts.
   wiring only once go2rtc runs on the Pi** (URLs are in the contract already).
 - **Station lists (U10)** are app constants for now; they move to the Pi's config
   (retained topic) once the arbiter owns them.
+- **D6 — Visual showpieces in their leanest form** (added 2026-07-19): three ideas were
+  assessed and approved, but two of them run in a cheaper variant than originally
+  sketched. The ADS-B radar is drawn with `CustomPainter`, not Rive (Rive's input set is
+  fixed at design time and cannot carry a varying number of aircraft blips). The
+  "digital twin" is a **2D layered render** tinted live by the WLED color, not a glb
+  model in a 3D viewer (a real 3D pipeline means a model export chain, a heavyweight
+  or WebView-backed viewer package and a permanent GPU/battery cost for one decorative
+  widget). Fragment shaders stay as sketched, but hard-gated (one-shot, reduced-motion
+  aware). Each stage is developed and committed separately so a single effect can be
+  reverted without touching the others.
 
 ## Stages
 
@@ -39,6 +49,10 @@ before the next starts.
 | **E7** | Boot animation "Radar-Welle" (added 2026-07-17): logo on black, a deep-violet radar ring expands from the logo center across the screen (scaling circular container, border + blur), and the dashboard elements it sweeps over pop in staggered — as if the scan just discovered them. Fast (≤ 1.5 s), runs once per cold start. `flutter_animate` for the chained fade/scale sequences. |
 | **E8** | Polish, risk-free batch (added 2026-07-17, user-approved): boot slowed to ~2 s + `start.wav` underscore (audioplayers) · systematic haptics (central helper, grammar from selectionClick to heavyImpact incl. state-echo confirmation, settings toggle) · animated env counters (tweened values, no jumps) · health-dot sonar ping (a subtle expanding, fading ring every few seconds — the dot is alive) |
 | **E9** | Render-heavy batch (user-approved, wants an on-device look after): glassmorphism (BackdropFilter on sheets + bottom nav, translucent surfaces) · radar sweep (SIGINT) / sine wave (COMMS) behind the now-active card while receiving · WLED ambient glow (soft radial background in the current light color, morphing on change, off when LUMEN off) |
+
+| **E10** | ADS-B radar (added 2026-07-19, D6): the SIGINT background sweep becomes a real plan-position indicator. Aircraft from `balkon/adsb/aircraft` are placed at their true bearing/distance around the balcony, blips fade with the sweep, the nearest gets a callsign/altitude label. `CustomPainter` + one ticker, only while the ADS-B submode is visible. Demo mode flies plausible tracks. |
+| **E11** | Fragment shaders (added 2026-07-19, D6): a one-shot CRT/scanline glitch (~400 ms) over the camera view when SENTRY reports a person, and a condensation/droplet wash on the background above 85 % humidity. Native `.frag` assets via `flutter_shaders`/`FragmentProgram`, precompiled at startup, tickers bound to visibility, skipped under `disableAnimations`. |
+| **E12** | Twin-Lite (added 2026-07-19, D6): a 2D layered render of the enclosure seen from below (case shell, diffuser, LED dots), the diffuser tinted live by `wledColor` and dimmed by the WLED brightness, small state marks for camera/SENTRY/radio. Lives on Home above the mode cards; tapping opens the health sheet. Vector/`CustomPainter`, no model files. |
 
 ## Known unknowns
 

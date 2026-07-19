@@ -14,6 +14,41 @@ split into src/") for why.
 
 ---
 
+## 2026-07-19 — App showpieces E10-E12: radar, shaders, twin, each in its leanest form
+
+Five enhancement ideas were assessed, three approved (ADS-B radar, fragment shaders,
+digital twin) and planned as separate stages so any single effect can be reverted on
+its own. Two of them run in a cheaper variant than proposed:
+
+- **Radar via `CustomPainter`, not Rive.** A Rive state machine's inputs are fixed at
+  design time, so it cannot carry a varying number of aircraft blips; feeding it would
+  mean N pre-placed dummy blips and index juggling. The existing E9 sweep painter
+  already draws the sweep, so the radar is an extension of code that is there, with no
+  new dependency and no runtime asset.
+- **Digital twin as a 2D layered render, not a glb model.** A real 3D twin needs a
+  model export chain from the CAD, a viewer package (either heavyweight or WebView-
+  backed, both fragile across Android versions) and a permanent GPU/battery cost for
+  what is a decorative widget. A painted view from below with the diffuser tinted by
+  `wledColor` carries the same information ("that is my thing, and it is currently
+  amber") at a fraction of the cost and matches the flat design language.
+- **Shaders as sketched but hard-gated**: one-shot on an actual event, precompiled,
+  bound to widget visibility, skipped under `MediaQuery.disableAnimations`. Rejected
+  was a permanently running shader background, which is a battery drain the phone pays
+  for while the app is merely open.
+
+Also rejected: touch particle fields (against the restrained line the rest of the UI
+holds), and spatial audio panning — COMMS audio comes out of the balcony speaker, the
+phone plays nothing continuous to pan.
+
+**Contract:** `balkon/adsb/aircraft` was pinned as a **retained** sky snapshot
+(`{"v":1,"ts":…,"aircraft":[…nearest first]}`, ~1/s while ADS-B runs) instead of the
+unpinned live message it was before. Same reasoning as the SIGINT `.../recent` rings:
+a client that connects between two aircraft events would otherwise face an empty sky
+until something flies by. `dist_km`/`bearing_deg` are computed once by the arbiter
+rather than in every client, with a client-side great-circle fallback.
+
+---
+
 ## 2026-07-17 — Android app E6: watch-window service built (settings/health restyled, E1–E6 done)
 
 Stage E6 (the last one) implemented: settings/health screens in the design style, plus
