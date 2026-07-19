@@ -13,6 +13,25 @@ import 'package:balkon_borg/src/state/tabs.dart';
 import 'package:balkon_borg/src/theme/balkon_theme.dart';
 import 'package:balkon_borg/src/ui/home_screen.dart';
 import 'package:balkon_borg/src/ui/widgets/borg_switch.dart';
+import 'package:balkon_borg/src/ui/widgets/env_chart.dart';
+
+/// Records calls instead of hitting the real `HapticFeedback` platform
+/// channel (same style as `_RecordingHaptics` in app_state_test.dart).
+class _RecordingHaptics implements Haptics {
+  final List<String> calls = [];
+
+  @override
+  void selectionClick() => calls.add('selectionClick');
+
+  @override
+  void lightImpact() => calls.add('lightImpact');
+
+  @override
+  void mediumImpact() => calls.add('mediumImpact');
+
+  @override
+  void heavyImpact() => calls.add('heavyImpact');
+}
 
 Future<AppState> _demoAppState() async {
   SharedPreferences.setMockInitialValues({'demo_mode': true});
@@ -22,12 +41,12 @@ Future<AppState> _demoAppState() async {
   return appState;
 }
 
-Widget _wrap(AppState appState, Settings settings) => MultiProvider(
+Widget _wrap(AppState appState, Settings settings, {Haptics? haptics}) => MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: settings),
         ChangeNotifierProvider.value(value: appState),
         ChangeNotifierProvider(create: (_) => BorgTabs()),
-        Provider<Haptics>.value(value: const NoopHaptics()),
+        Provider<Haptics>.value(value: haptics ?? const NoopHaptics()),
         Provider<UiSounds>.value(value: const NoopUiSounds()),
       ],
       child: MaterialApp(
@@ -166,5 +185,50 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(appState.modes[MainMode.comms]!.submode, 'fm');
+  });
+
+  testWidgets('scrubbing the env chart shows the selected sample, not the current value', (
+    tester,
+  ) async {
+    final appState = await _demoAppState();
+    addTearDown(appState.dispose);
+    final settings = Settings(await SharedPreferences.getInstance());
+    final haptics = _RecordingHaptics();
+
+    await tester.pumpWidget(_wrap(appState, settings, haptics: haptics));
+    await tester.pumpAndSettle();
+
+    final latest = appState.envHistory.last;
+    final currentText = '${latest.t.toStringAsFixed(1)}°C';
+    await tester.tap(find.text('Temperatur'));
+    await tester.pumpAndSettle();
+    // Scope to the sheet: the stat tile behind it may show the same text.
+    final inSheet = find.descendant(of: find.byType(BottomSheet), matching: find.text(currentText));
+    expect(inSheet, findsOneWidget);
+
+    final chartRect = tester.getRect(find.byType(EnvChart));
+    final gesture = await tester.startGesture(chartRect.centerLeft);
+    await gesture.moveBy(const Offset(30, 0));
+    await tester.pump();
+
+    final index = nearestSampleIndex(
+      dx: 30,
+      width: chartRect.width,
+      length: appState.envHistory.length,
+    )!;
+    final selectedSample = appState.envHistory[index];
+    final expectedTime = '${selectedSample.ts.hour.toString().padLeft(2, '0')}:'
+        '${selectedSample.ts.minute.toString().padLeft(2, '0')}';
+    final scrubText = '${selectedSample.t.toStringAsFixed(1)}°C · $expectedTime';
+
+    expect(find.text(scrubText), findsOneWidget);
+    expect(inSheet, findsNothing); // current-value readout is swapped out in the sheet.
+    expect(haptics.calls, isNotEmpty);
+
+    await gesture.up();
+    await tester.pump();
+
+    expect(find.text(scrubText), findsNothing);
+    expect(inSheet, findsOneWidget); // restored, no stale selection.
   });
 }

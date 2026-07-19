@@ -363,18 +363,40 @@ class _EnvStatsRow extends StatelessWidget {
   }
 }
 
+/// `HH:MM` from a sample's real timestamp — never a fake time derived from
+/// array index. 24h, zero-padded, locale-independent (matches the footer's
+/// own "vor 24h"/"jetzt" German labelling, which isn't a locale-formatted
+/// clock either).
+String _hhmm(DateTime ts) =>
+    '${ts.hour.toString().padLeft(2, '0')}:${ts.minute.toString().padLeft(2, '0')}';
+
 /// Chart sheet (components.md "Bottom Sheet — Umgebungs-Chart"): eyebrow +
 /// big value header, [EnvChart] line chart, min/max/now footer.
-class _EnvChartSheet extends StatelessWidget {
+///
+/// Stateful only for the scrub readout: [EnvChart] reports the selected
+/// sample (or `null` on release) via `onSelectionChanged`, and this widget
+/// swaps the header between the live [AnimatedValue] and a plain value+time
+/// [Text] in the exact same slot/style, so scrubbing never changes the
+/// sheet's height.
+class _EnvChartSheet extends StatefulWidget {
   const _EnvChartSheet({required this.spec, required this.history});
 
   final _EnvStatSpec spec;
   final List<EnvSample> history;
 
   @override
+  State<_EnvChartSheet> createState() => _EnvChartSheetState();
+}
+
+class _EnvChartSheetState extends State<_EnvChartSheet> {
+  EnvChartPoint? _scrubbed;
+
+  @override
   Widget build(BuildContext context) {
     final extras = Theme.of(context).extension<BalkonExtras>()!;
-    final values = [for (final s in history) spec.select(s)];
+    final spec = widget.spec;
+    final points = [for (final s in widget.history) (ts: s.ts, value: spec.select(s))];
+    final values = [for (final p in points) p.value];
     final latest = values.isEmpty ? 0.0 : values.last;
     final minV = values.isEmpty ? 0.0 : values.reduce(math.min);
     final maxV = values.isEmpty ? 0.0 : values.reduce(math.max);
@@ -384,6 +406,8 @@ class _EnvChartSheet extends StatelessWidget {
       fontWeight: FontWeight.w600,
       color: extras.textDim,
     );
+    final readoutStyle = balkonMonoStyle(context, 26, FontWeight.w700);
+    final scrubbed = _scrubbed;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(22, 10, 22, 34),
@@ -403,13 +427,18 @@ class _EnvChartSheet extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          AnimatedValue(
-            value: latest,
-            format: spec.format,
-            style: balkonMonoStyle(context, 26, FontWeight.w700),
-          ),
+          if (scrubbed == null)
+            AnimatedValue(value: latest, format: spec.format, style: readoutStyle)
+          else
+            Text(
+              '${spec.format(scrubbed.value)} · ${_hhmm(scrubbed.ts)}',
+              style: readoutStyle,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+            ),
           const SizedBox(height: 18),
-          EnvChart(values: values),
+          EnvChart(points: points, onSelectionChanged: (p) => setState(() => _scrubbed = p)),
           const SizedBox(height: 14),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
