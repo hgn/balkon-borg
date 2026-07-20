@@ -55,6 +55,28 @@ Per capability: SDR device present (`rtl_test`), the current decoder running, da
 within a plausible window for that feed. A radiosonde silent at noon is normal; ADS-B
 silent for ten minutes in daytime Munich is not.
 
+## State (2026-07-20)
+
+Written, untested against hardware:
+
+- **Tuner arbitration** complete and unit-tested: claims, priorities, preemption, the
+  waiting queue, expiry of scheduled claims, fall back to ADS-B when everything is
+  released. Mode commands map onto consumers, and a band change announces the antenna
+  length.
+- **ADS-B** wired end to end: the arbiter polls readsb's `aircraft.json`, drops
+  positionless and stale entries, filters by range, computes distance and bearing from
+  the configured home coordinate, sorts nearest first and republishes the retained
+  snapshot once a second while ADS-B holds the tuner. The low-pass event fires with a
+  per-aircraft cooldown.
+- **readsb + tar1090** as a system quadlet (ultrafeeder image), SDR passed through,
+  map on 8078.
+
+Not written yet: the **rtl\_433, APRS and radiosonde decoders**, and the **listening**
+path (FM/DAB+/airband audio). The tuner already knows about all of them, so each is now
+a small module that starts a process, parses its output into a ring and releases the
+claim. They were deliberately left until the SDR has been seen working once, because
+every one of them depends on reception quality nobody can judge from here.
+
 ## Exit criteria
 
 - The tuner arbitration is a **pure-logic, unit-tested** state machine: claims, priorities,

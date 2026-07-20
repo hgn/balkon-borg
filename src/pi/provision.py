@@ -493,6 +493,17 @@ def build_steps() -> list[Step]:
         # M2: the audio chain. Both steps are allowed to be missing at runtime — a
         # unit with no sound card or no voice reports a degraded speaker and keeps
         # doing everything else.
+        # M4b: ADS-B. The JSON readsb rewrites every second lives in a tmpfs, not on
+        # the SD card, and the arbiter polls it from there.
+        Step("readsb-dir", "tmpfs path readsb and the arbiter share",
+             lambda h: h.probe("test -d /run/borg/readsb"),
+             lambda h: _check(h.sudo("mkdir -p /run/borg/readsb && "
+                                     "chown 1000:1000 /run/borg/readsb"),
+                              "creating /run/borg/readsb")),
+        file_step("readsb-quadlet", "readsb + tar1090 as a system container",
+                  QUADLETS / "readsb.container",
+                  "/etc/containers/systemd/readsb.container",
+                  after="systemctl daemon-reload"),
         step_pipewire(),
         step_piper(),
         step_arbiter_unit(),

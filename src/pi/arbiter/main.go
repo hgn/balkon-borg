@@ -36,6 +36,8 @@ type Arbiter struct {
 	env     *EnvHistory
 	events  *Events
 	envPub  *Coalescer
+	tuner   *Tuner
+	lowPass *LowPass
 	client  mqtt.Client
 
 	mu      sync.Mutex
@@ -66,12 +68,16 @@ func main() {
 	// A retained snapshot at most every 10s: the history only grows once a minute, so
 	// this is about not writing a retained message per ESP reading.
 	a.envPub = NewCoalescer(10*time.Second, time.Now)
+	a.tuner = NewTuner(time.Now)
+	a.lowPass = NewLowPass(cfg.Adsb.LowPassFt, cfg.Adsb.LowPassKM,
+		time.Duration(cfg.Adsb.LowPassCooldownS)*time.Second, time.Now)
 	a.registerCapabilities()
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	go a.serveHTTP(ctx)
+	go a.skyLoop(ctx)
 
 	if err := a.connect(); err != nil {
 		// Not fatal by design: the status page still answers and says the broker is
@@ -87,7 +93,7 @@ func main() {
 // broken.
 func (a *Arbiter) registerCapabilities() {
 	enabled := a.cfg.Capabilities.Enabled()
-	a.health.Register("clock", ClockProbe(execRunner), true)
+	a.health.Register("clock", ClockProbe(execRunner, time.Now), true)
 	a.health.Register("sdr", SDRProbe(execRunner), enabled["sdr"])
 	a.health.Register("speaker", SpeakerProbe(execRunner, a.speaker), enabled["speaker"])
 	a.health.Register("mic", MicrophoneProbe(execRunner), enabled["microphone"])
@@ -255,6 +261,74 @@ func (a *Arbiter) handleModeCommand(topic string, payload []byte) {
 	}
 	for _, m := range changed {
 		a.publishMode(m)
+		a.applyTuner(m)
+	}
+}
+
+// applyTuner turns a mode change into a tuner claim. The mode machine has already
+// enforced that COMMS and SIGINT cannot both run; this decides which decoder that
+// actually means, and announces the antenna length when the band changes, since the
+// whip is a manual compromise the unit can only ask about (docs/build-notes.md).
+func (a *Arbiter) applyTuner(mode Mode) {
+	state := a.modes.Get(mode)
+	consumer, wants := ConsumerForMode(mode, state.Submode)
+	if !wants {
+		if _, ok := ConsumerForMode(mode, "adsb"); ok || mode == Comms || mode == Sigint {
+			for _, c := range []Consumer{ConsumerListening, ConsumerAdsb, ConsumerIsm,
+				ConsumerAprs, ConsumerRadiosonde, ConsumerSpectrum} {
+				a.tuner.Release(c)
+			}
+		}
+		return
+	}
+
+	band := state.Submode
+	claim, changed, err := a.tuner.Request(Claim{Consumer: consumer, Band: band})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "tuner: %v\n", err)
+		return
+	}
+	if !changed {
+		return
+	}
+	fmt.Fprintf(os.Stderr, "tuner: %s (%s)\n", claim.Consumer, claim.Band)
+	if cm, ok := a.cfg.Audio.AntennaCM[band]; ok {
+		a.speaker.Announce(AntennaHint(strings.ToUpper(band), cm))
+	}
+}
+
+// skyLoop republishes the ADS-B picture while ADS-B holds the tuner.
+//
+// Once a second, which is what the contract promises and what makes the app's radar
+// look alive. When the tuner belongs to somebody else the loop idles rather than
+// publishing a stale sky: an old snapshot pretending to be current is worse than an
+// obviously empty one.
+func (a *Arbiter) skyLoop(ctx context.Context) {
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			if a.tuner.Current().Consumer != ConsumerAdsb {
+				continue
+			}
+			snap, err := ReadSnapshot(a.cfg.Adsb.AircraftJSON)
+			if err != nil {
+				// readsb not up yet, or the container is restarting. The sdr
+				// capability already says so; no need for a line every second.
+				continue
+			}
+			sky := BuildSky(snap, a.cfg.Location.Latitude, a.cfg.Location.Longitude,
+				a.cfg.Adsb.MaxRangeKM)
+			a.publish(TopicAdsbAircraft, SkyPayload(sky, time.Now()), true)
+
+			for _, hit := range a.lowPass.Check(sky) {
+				a.RecordEvent(CategoryAircraft, hit.EventText())
+			}
+		}
 	}
 }
 
@@ -286,6 +360,9 @@ func (a *Arbiter) handleEnv(topic string, payload []byte) {
 // clockOK gates every timestamped write. Before the first NTP sync the Pi thinks it is
 // 1970, and a history stamped that way is worse than a gap.
 func (a *Arbiter) clockOK() bool {
+	if !PlausibleTime(time.Now()) {
+		return false
+	}
 	c, ok := a.health.Get("clock")
 	return ok && c.State == StateOK
 }
@@ -356,9 +433,23 @@ func (a *Arbiter) serveHTTP(ctx context.Context) {
 }
 
 func (a *Arbiter) systemInfo() map[string]string {
+	claim := a.tuner.Current()
+	tuner := string(claim.Consumer)
+	if claim.Band != "" {
+		tuner += " (" + claim.Band + ")"
+	}
+	if waiting := a.tuner.Waiting(); len(waiting) > 0 {
+		parts := make([]string, 0, len(waiting))
+		for _, c := range waiting {
+			parts = append(parts, string(c))
+		}
+		tuner += ", waiting: " + strings.Join(parts, ", ")
+	}
 	return map[string]string{
 		"broker": fmt.Sprintf("%s:%d", a.cfg.Broker.Host, a.cfg.Broker.Port),
 		"build":  buildVersion(),
+		// "why is there no ADS-B right now" has to be answerable at a glance.
+		"tuner": tuner,
 	}
 }
 

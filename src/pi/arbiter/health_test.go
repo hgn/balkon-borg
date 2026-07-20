@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -160,8 +161,8 @@ func TestHardwareProbesReadToolOutput(t *testing.T) {
 		{"sdr busy", SDRProbe(fakeRunner("usb_claim_interface error -6\n", nil)), StateDegraded},
 		{"sound present", SoundProbe(fakeRunner("card 0: Device [USB Audio]\n", nil)), StateOK},
 		{"sound absent", SoundProbe(fakeRunner("no soundcards found\n", nil)), StateMissing},
-		{"clock synced", ClockProbe(fakeRunner("yes\n", nil)), StateOK},
-		{"clock unsynced", ClockProbe(fakeRunner("no\n", nil)), StateDegraded},
+		{"clock synced", ClockProbe(fakeRunner("yes\n", nil), plausibleNow), StateOK},
+		{"clock unsynced", ClockProbe(fakeRunner("no\n", nil), plausibleNow), StateDegraded},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -186,3 +187,41 @@ func TestCameraProbeChecksTheNodeWithoutOpeningIt(t *testing.T) {
 		t.Errorf("expected missing, got %s", state)
 	}
 }
+
+// plausibleNow is a clock well past the epoch floor, for probes that are not about the
+// date itself.
+func plausibleNow() time.Time { return time.Date(2026, 7, 20, 22, 0, 0, 0, time.UTC) }
+
+// The cheap sanity filter: whatever any daemon claims, a date before the floor cannot
+// be real on this device, and stamping data with it would corrupt the history for good.
+func TestAnImplausibleDateIsNeverTrusted(t *testing.T) {
+	boot := func() time.Time { return time.Unix(0, 0) } // no RTC, cold boot
+	probe := ClockProbe(fakeRunner("yes\n", nil), boot) // NTP even claims it is synced
+
+	state, reason := probe()
+	if state == StateOK {
+		t.Fatal("a 1970 clock must not be trusted, whatever timedatectl says")
+	}
+	if !strings.Contains(reason, "2026") {
+		t.Errorf("the reason should name the floor, got %q", reason)
+	}
+}
+
+func TestPlausibleTimeDrawsTheLineAtTheFloor(t *testing.T) {
+	if PlausibleTime(EpochFloor.Add(-time.Second)) {
+		t.Error("just before the floor is not plausible")
+	}
+	if !PlausibleTime(EpochFloor.Add(time.Second)) {
+		t.Error("just after the floor is plausible")
+	}
+}
+
+// A plausible date with an unreachable daemon is usable, but worth flagging.
+func TestAnUnreachableTimedatectlWithAGoodDateIsDegradedNotMissing(t *testing.T) {
+	probe := ClockProbe(fakeRunner("", errFake), plausibleNow)
+	if state, _ := probe(); state != StateDegraded {
+		t.Errorf("expected degraded, got %s", state)
+	}
+}
+
+var errFake = fmt.Errorf("no such command")

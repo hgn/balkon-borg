@@ -45,8 +45,13 @@ location:
 adsb:
   # Aircraft further out than this are not published; the app's radar draws this range.
   max_range_km: 50
-  # An overflight below this triggers the aircraft event (U5).
+  # An overflight below this altitude and within this distance triggers the aircraft
+  # event (U5). The cooldown keeps one circling helicopter from filling the event ring.
   low_pass_ft: 5000
+  low_pass_km: 8
+  low_pass_cooldown_s: 600
+  # Where readsb writes its aircraft.json (tmpfs: rewritten every second).
+  aircraft_json: /run/borg/readsb/aircraft.json
 
 environment:
   # Sample cadence for the retained env history the app charts (U4).

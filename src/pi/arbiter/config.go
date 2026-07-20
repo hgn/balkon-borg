@@ -57,6 +57,12 @@ type Location struct {
 type Adsb struct {
 	MaxRangeKM float64 `yaml:"max_range_km"`
 	LowPassFt  float64 `yaml:"low_pass_ft"`
+	// Where readsb writes aircraft.json. A tmpfs path: it is rewritten every second.
+	AircraftJSON string `yaml:"aircraft_json"`
+	// How close an overflight has to be to be worth an event, and how long before the
+	// same aircraft may trigger again.
+	LowPassKM        float64 `yaml:"low_pass_km"`
+	LowPassCooldownS int     `yaml:"low_pass_cooldown_s"`
 }
 
 type Environment struct {
@@ -145,6 +151,18 @@ func (c *Config) applyDefaults() {
 	}
 	if c.Adsb.MaxRangeKM == 0 {
 		c.Adsb.MaxRangeKM = 50
+	}
+	if c.Adsb.AircraftJSON == "" {
+		c.Adsb.AircraftJSON = "/run/borg/readsb/aircraft.json"
+	}
+	if c.Adsb.LowPassFt == 0 {
+		c.Adsb.LowPassFt = 5000
+	}
+	if c.Adsb.LowPassKM == 0 {
+		c.Adsb.LowPassKM = 8
+	}
+	if c.Adsb.LowPassCooldownS == 0 {
+		c.Adsb.LowPassCooldownS = 600
 	}
 	// Paths default to the layout provisioning creates, so a minimal config is a
 	// working config and only deviations have to be written down.

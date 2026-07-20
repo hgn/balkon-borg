@@ -1,0 +1,42 @@
+# ADS-B: readsb decodes 1090 MHz, tar1090 draws the map, and the arbiter reads the
+# aircraft.json both of them share.
+#
+# One image for both because they are two halves of the same job, and because the
+# ultrafeeder image is the one the ADS-B community actually maintains. The arbiter does
+# not use the map itself; it reads the JSON and republishes its own snapshot, so the map
+# is there for the evenings you want to look at the whole sky rather than the balcony.
+#
+# The SDR is passed through as a raw USB device. This container is the only thing
+# allowed to hold it while ADS-B runs: the arbiter stops this unit before handing the
+# tuner to another decoder (tuner.go), because two processes on one stick means neither
+# works.
+
+[Unit]
+Description=readsb + tar1090 (ADS-B)
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=ghcr.io/sdr-enthusiasts/docker-adsb-ultrafeeder:latest
+ContainerName=readsb
+PublishPort=8078:80
+AddDevice=/dev/bus/usb
+Environment=READSB_DEVICE_TYPE=rtlsdr
+Environment=READSB_GAIN=autogain
+Environment=TZ=Europe/Berlin
+# Position: readsb needs it to compute its own distances and to reject implausible
+# positions. Keep it in step with location in borg.yaml.
+Environment=READSB_LAT=48.1372
+Environment=READSB_LON=11.5000
+Environment=READSB_ALT=520m
+# The JSON the arbiter polls. tmpfs inside the container, bind-mounted out: it is
+# rewritten every second and has no business touching the SD card.
+Environment=READSB_EXTRA_ARGS=--write-json-every=1
+Volume=/run/borg/readsb:/run/readsb:z
+
+[Service]
+Restart=always
+TimeoutStartSec=180
+
+[Install]
+WantedBy=multi-user.target
