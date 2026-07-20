@@ -41,5 +41,5 @@ pcb/logs/
 .claude/*
 !.claude/skills/
 
-# Cross-compiled arbiter binary (built by `make -C src/pi build`)
-/src/pi/arbiter/borg-arbiter
+# Cross-compiled borgd binary (built by `make -C src/pi build`)
+/src/pi/borgd/borgd

@@ -53,6 +53,20 @@ adsb:
   # Where readsb writes its aircraft.json (tmpfs: rewritten every second).
   aircraft_json: /run/borg/readsb/aircraft.json
 
+ism:
+  # rtl_433, hopping between the two European ISM bands (U13): TPMS and many cheap
+  # 433 MHz sensors sit here, but most weather stations and smart-home gear transmit
+  # at 868 MHz, so a fixed capture would miss one of the two worlds.
+  hop_interval_s: 60
+  # Below this a tyre reads as low (U13's tyre-pressure event). Passenger car cold
+  # pressure is typically 220-250 kPa; TPMS dashboard warnings usually trip around 25%
+  # under that, so this flags a genuinely low tyre, not a cold-morning wobble.
+  tpms_low_kpa: 180
+  # Once a sensor id has raised a low-tyre event, wait this long before it may raise
+  # another: the same car's sensor keeps transmitting for as long as it stays parked
+  # nearby, and without this the event ring would fill with one flat tyre.
+  tpms_cooldown_s: 14400
+
 environment:
   # Sample cadence for the retained env history the app charts (U4).
   sample_interval_s: 60

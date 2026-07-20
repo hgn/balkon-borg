@@ -39,6 +39,8 @@ const (
 	TopicEventRecent   = "balkon/event/recent"
 	TopicEnvRecent     = "balkon/env/recent"
 	TopicAdsbAircraft  = "balkon/adsb/aircraft"
+	TopicIsmRecent     = "balkon/ism/recent"
+	TopicTpmsRecent    = "balkon/tpms/recent"
 	TopicKnob          = "balkon/state/knob"
 )
 

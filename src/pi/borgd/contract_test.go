@@ -37,6 +37,8 @@ func TestTopicsMatchTheContract(t *testing.T) {
 		HealthTopic("sdr"):   "balkon/health/sdr",
 		TopicModeFocus:       "balkon/mode/focus",
 		TopicAdsbAircraft:    "balkon/adsb/aircraft",
+		TopicIsmRecent:       "balkon/ism/recent",
+		TopicTpmsRecent:      "balkon/tpms/recent",
 	}
 	for got, want := range cases {
 		if got != want {

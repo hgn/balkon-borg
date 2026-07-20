@@ -42,6 +42,13 @@ type Borgd struct {
 	panel   *Panel
 	client  mqtt.Client
 
+	ism       *Ring[IsmEntry]
+	tpms      *Ring[TpmsEntry]
+	ismPub    *Coalescer
+	tpmsPub   *Coalescer
+	tpmsWatch *TpmsWatch
+	ismSup    *IsmSupervisor
+
 	mu      sync.Mutex
 	lastEnv time.Time // when the ESP last said anything, for the esp capability
 }
@@ -77,6 +84,15 @@ func main() {
 	a.storm = NewStormDetector(cfg.Storm.DropHPaPerHour, cfg.Storm.WindowHours,
 		time.Duration(cfg.Storm.MaxGapS)*time.Second,
 		time.Duration(cfg.Storm.CooldownS)*time.Second, time.Now)
+	a.ism = NewRing[IsmEntry](DefaultRingSize)
+	a.tpms = NewRing[TpmsEntry](DefaultRingSize)
+	// Same coalescing floor as the env history: this is about not writing a retained
+	// message per rtl_433 reception, not about the data itself.
+	a.ismPub = NewCoalescer(10*time.Second, time.Now)
+	a.tpmsPub = NewCoalescer(10*time.Second, time.Now)
+	a.tpmsWatch = NewTpmsWatch(cfg.Ism.TpmsLowKPa,
+		time.Duration(cfg.Ism.TpmsCooldownS)*time.Second, time.Now)
+	a.ismSup = NewIsmSupervisor(cfg.Ism.HopIntervalS, a.handleIsmLine)
 	a.registerCapabilities()
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -106,6 +122,10 @@ func (a *Borgd) registerCapabilities() {
 	a.health.Register("camera", CameraProbe(fileExists), enabled["camera"])
 	a.health.Register("esp", FreshnessProbe(a.lastEnvSeen, time.Now, 5*time.Minute,
 		"no data from the ESP yet"), enabled["esp"])
+	// Gated by the sdr switch, not a switch of its own: rtl_433 needs the same stick
+	// ADS-B does, so there is nothing to enable independently.
+	a.health.Register("ism", IsmProbe(a.ismSup, a.tuner, time.Now, IsmFreshnessWindow),
+		enabled["sdr"])
 	a.health.Register("broker", a.brokerProbe(), true)
 	// Always ok while this process is running: its whole purpose is to overwrite the
 	// retained "missing" the last will leaves behind after a crash.
@@ -161,6 +181,8 @@ func (a *Borgd) connect() error {
 		// forgotten them, and a client subscribing right now would otherwise see an
 		// empty history until the next reading.
 		a.publishEnvRecent()
+		a.publish(TopicIsmRecent, IsmRecentPayload(a.ism), true)
+		a.publish(TopicTpmsRecent, TpmsRecentPayload(a.tpms), true)
 		a.publish(TopicEventRecent, a.events.Payload(), true)
 		a.publish(TopicKnob, KnobPayload(a.panel.Knob()), true)
 	}
@@ -286,6 +308,12 @@ func (a *Borgd) handleModeCommand(topic string, payload []byte) {
 // actually means, and announces the antenna length when the band changes, since the
 // whip is a manual compromise the unit can only ask about (docs/build-notes.md).
 func (a *Borgd) applyTuner(mode Mode) {
+	// Whatever this call does to the claim table, the ISM decoder must end up
+	// running iff ISM ends up holding the tuner: it cannot share the stick with
+	// anything else, so a decoder left running past its claim breaks every other
+	// consumer (tuner.go).
+	defer a.syncIsm()
+
 	state := a.modes.Get(mode)
 	consumer, wants := ConsumerForMode(mode, state.Submode)
 	if !wants {
@@ -311,6 +339,39 @@ func (a *Borgd) applyTuner(mode Mode) {
 	if cm, ok := a.cfg.Audio.AntennaCM[band]; ok {
 		a.speaker.Announce(AntennaHint(strings.ToUpper(band), cm))
 	}
+}
+
+// syncIsm starts or stops rtl_433 to match who currently holds the tuner. Idempotent
+// (IsmSupervisor.Start/Stop are no-ops when already in the wanted state), so it is safe
+// to call after every tuner mutation rather than threading "did ISM change" through
+// every branch of applyTuner.
+func (a *Borgd) syncIsm() {
+	if a.tuner.Current().Consumer == ConsumerIsm {
+		a.ismSup.Start()
+	} else {
+		a.ismSup.Stop()
+	}
+}
+
+// handleIsmLine is rtl_433's stdout, one reception at a time. Thin on purpose: parsing,
+// splitting and the threshold check are pure and tested in ism.go/ism_test.go; this
+// just wires them to the rings, the coalescers and the event path.
+func (a *Borgd) handleIsmLine(line string) {
+	ts := time.Now()
+	r, isTPMS, err := SplitAndFeed(line, Timestamp(ts), a.cfg.Ism.TpmsLowKPa, a.ism, a.tpms)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "ism: %v: %q\n", err, line)
+		return
+	}
+	a.ismSup.NoteReading(ts)
+	if isTPMS {
+		a.tpmsPub.Touch()
+		if a.tpmsWatch.Check(r) {
+			a.RecordEvent(CategoryTPMS, TpmsEventText(r))
+		}
+		return
+	}
+	a.ismPub.Touch()
 }
 
 // skyLoop republishes the ADS-B picture while ADS-B holds the tuner.
@@ -606,6 +667,9 @@ func (a *Borgd) run(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			fmt.Fprintln(os.Stderr, "borgd: shutting down")
+			// The SDR cannot be shared: a decoder left running past process exit
+			// would hold the stick for whatever runs next.
+			a.ismSup.Stop()
 			if a.client != nil && a.client.IsConnected() {
 				a.publish(TopicHealth, Envelope(map[string]any{
 					"state": string(StateMissing), "summary": "borgd stopped",
@@ -622,6 +686,12 @@ func (a *Borgd) run(ctx context.Context) {
 			}
 			if a.envPub.Due() {
 				a.publishEnvRecent()
+			}
+			if a.ismPub.Due() {
+				a.publish(TopicIsmRecent, IsmRecentPayload(a.ism), true)
+			}
+			if a.tpmsPub.Due() {
+				a.publish(TopicTpmsRecent, TpmsRecentPayload(a.tpms), true)
 			}
 			a.checkStorm()
 			if changed := a.health.ProbeAll(); len(changed) > 0 {

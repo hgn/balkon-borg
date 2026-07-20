@@ -19,6 +19,7 @@ type Config struct {
 	Paths        Paths        `yaml:"paths"`
 	Location     Location     `yaml:"location"`
 	Adsb         Adsb         `yaml:"adsb"`
+	Ism          Ism          `yaml:"ism"`
 	Environment  Environment  `yaml:"environment"`
 	Storm        Storm        `yaml:"storm"`
 	Audio        Audio        `yaml:"audio"`
@@ -64,6 +65,23 @@ type Adsb struct {
 	// same aircraft may trigger again.
 	LowPassKM        float64 `yaml:"low_pass_km"`
 	LowPassCooldownS int     `yaml:"low_pass_cooldown_s"`
+}
+
+// Ism holds U13's rtl_433 tuning and the tyre-pressure event threshold.
+type Ism struct {
+	// HopIntervalS is rtl_433's -H argument: TPMS and most 433 MHz sensors sit on one
+	// band, most weather stations and smart-home gear on 868 MHz, so the decoder
+	// alternates between them instead of picking one and missing the other half of the
+	// neighbourhood (use-cases.md U13).
+	HopIntervalS int `yaml:"hop_interval_s"`
+	// TpmsLowKPa is the low-tyre event threshold. Passenger car cold pressure is
+	// typically 220-250 kPa; TPMS dashboard warnings usually trip around 25% under
+	// that, so this flags a genuinely low tyre rather than a cold-morning wobble.
+	TpmsLowKPa float64 `yaml:"tpms_low_kpa"`
+	// TpmsCooldownS: once a sensor id has raised an event, how long before it may
+	// raise another. The same car's sensor keeps transmitting for as long as it stays
+	// parked nearby; without this a single flat tyre fills the event ring.
+	TpmsCooldownS int `yaml:"tpms_cooldown_s"`
 }
 
 type Environment struct {
@@ -176,6 +194,15 @@ func (c *Config) applyDefaults() {
 	if c.Adsb.LowPassCooldownS == 0 {
 		c.Adsb.LowPassCooldownS = 600
 	}
+	if c.Ism.HopIntervalS == 0 {
+		c.Ism.HopIntervalS = DefaultIsmHopIntervalS
+	}
+	if c.Ism.TpmsLowKPa == 0 {
+		c.Ism.TpmsLowKPa = 180
+	}
+	if c.Ism.TpmsCooldownS == 0 {
+		c.Ism.TpmsCooldownS = 4 * 3600
+	}
 	if c.Storm.DropHPaPerHour == 0 {
 		c.Storm.DropHPaPerHour = 1.0
 	}
@@ -230,6 +257,12 @@ func (c *Config) validate() error {
 	}
 	if c.Paths.Root == "" {
 		return fmt.Errorf("paths.root is empty")
+	}
+	if c.Ism.TpmsLowKPa <= 0 {
+		return fmt.Errorf("ism.tpms_low_kpa %v must be positive", c.Ism.TpmsLowKPa)
+	}
+	if c.Ism.HopIntervalS <= 0 {
+		return fmt.Errorf("ism.hop_interval_s %v must be positive", c.Ism.HopIntervalS)
 	}
 	// Both divide into a rate below; zero or negative would make the detector either
 	// never fire or always fire on the first two samples.
