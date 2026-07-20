@@ -38,6 +38,7 @@ type Borgd struct {
 	envPub  *Coalescer
 	tuner   *Tuner
 	lowPass *LowPass
+	storm   *StormDetector
 	panel   *Panel
 	client  mqtt.Client
 
@@ -73,6 +74,9 @@ func main() {
 	a.panel = NewPanel()
 	a.lowPass = NewLowPass(cfg.Adsb.LowPassFt, cfg.Adsb.LowPassKM,
 		time.Duration(cfg.Adsb.LowPassCooldownS)*time.Second, time.Now)
+	a.storm = NewStormDetector(cfg.Storm.DropHPaPerHour, cfg.Storm.WindowHours,
+		time.Duration(cfg.Storm.MaxGapS)*time.Second,
+		time.Duration(cfg.Storm.CooldownS)*time.Second, time.Now)
 	a.registerCapabilities()
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -488,6 +492,15 @@ func (a *Borgd) publishEnvRecent() {
 	a.publish(TopicEnvRecent, a.env.Payload(), true)
 }
 
+// checkStorm runs U9.3's pressure-drop detector against the current history and
+// raises an event on a hit. Reads the same ring the app charts (U4), so nothing new
+// has to be fed in; the detector already gates its own repeats via its cooldown.
+func (a *Borgd) checkStorm() {
+	if fire, drop := a.storm.Check(a.env.Samples()); fire {
+		a.RecordEvent(CategoryStorm, StormEventText(drop, a.cfg.Storm.WindowHours))
+	}
+}
+
 // RecordEvent adds an event to the retained ring and publishes it. This ring is what
 // the app diffs to raise notifications, so an entry that never lands is a notification
 // the user never gets: it publishes immediately rather than waiting for a coalescer.
@@ -610,6 +623,7 @@ func (a *Borgd) run(ctx context.Context) {
 			if a.envPub.Due() {
 				a.publishEnvRecent()
 			}
+			a.checkStorm()
 			if changed := a.health.ProbeAll(); len(changed) > 0 {
 				for _, name := range changed {
 					if c, ok := a.health.Get(name); ok {

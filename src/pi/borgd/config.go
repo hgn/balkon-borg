@@ -20,6 +20,7 @@ type Config struct {
 	Location     Location     `yaml:"location"`
 	Adsb         Adsb         `yaml:"adsb"`
 	Environment  Environment  `yaml:"environment"`
+	Storm        Storm        `yaml:"storm"`
 	Audio        Audio        `yaml:"audio"`
 	Health       HealthConfig `yaml:"health"`
 	Capabilities Capabilities `yaml:"capabilities"`
@@ -70,6 +71,17 @@ type Environment struct {
 	HistoryHours       int     `yaml:"history_hours"`
 	CondensationOnPct  float64 `yaml:"condensation_on_pct"`
 	CondensationOffPct float64 `yaml:"condensation_off_pct"`
+}
+
+// Storm holds U9.3's pressure-drop warning thresholds. The meteorological rule of
+// thumb is a drop of about 1 hPa/h sustained over three hours; MaxGapS is the boundary
+// between "continuous weather data" and "the unit was off", so a cold boot after days
+// away never reads as a storm.
+type Storm struct {
+	DropHPaPerHour float64 `yaml:"drop_hpa_per_hour"`
+	WindowHours    float64 `yaml:"window_hours"`
+	CooldownS      int     `yaml:"cooldown_s"`
+	MaxGapS        int     `yaml:"max_gap_s"`
 }
 
 // Audio holds where Piper and its voice model live. Both are installed by
@@ -164,6 +176,18 @@ func (c *Config) applyDefaults() {
 	if c.Adsb.LowPassCooldownS == 0 {
 		c.Adsb.LowPassCooldownS = 600
 	}
+	if c.Storm.DropHPaPerHour == 0 {
+		c.Storm.DropHPaPerHour = 1.0
+	}
+	if c.Storm.WindowHours == 0 {
+		c.Storm.WindowHours = 3
+	}
+	if c.Storm.CooldownS == 0 {
+		c.Storm.CooldownS = 6 * 3600
+	}
+	if c.Storm.MaxGapS == 0 {
+		c.Storm.MaxGapS = 15 * 60
+	}
 	// Paths default to the layout provisioning creates, so a minimal config is a
 	// working config and only deviations have to be written down.
 	if c.Audio.Piper == "" {
@@ -206,6 +230,14 @@ func (c *Config) validate() error {
 	}
 	if c.Paths.Root == "" {
 		return fmt.Errorf("paths.root is empty")
+	}
+	// Both divide into a rate below; zero or negative would make the detector either
+	// never fire or always fire on the first two samples.
+	if c.Storm.DropHPaPerHour <= 0 {
+		return fmt.Errorf("storm.drop_hpa_per_hour %v must be positive", c.Storm.DropHPaPerHour)
+	}
+	if c.Storm.WindowHours <= 0 {
+		return fmt.Errorf("storm.window_hours %v must be positive", c.Storm.WindowHours)
 	}
 	return nil
 }

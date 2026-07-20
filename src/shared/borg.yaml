@@ -62,6 +62,17 @@ environment:
   condensation_on_pct: 85.0
   condensation_off_pct: 82.0
 
+storm:
+  # Meteorological rule of thumb: a sustained pressure drop around this rate over the
+  # window below is the classic sign of an approaching low front (U9.3).
+  drop_hpa_per_hour: 1.0
+  window_hours: 3
+  # Once triggered, wait this long before warning again for the same weather system.
+  cooldown_s: 21600
+  # A gap between consecutive samples wider than this means the unit was off, not
+  # that the weather changed; the detector refuses to read a gap as a drop.
+  max_gap_s: 900
+
 audio:
   # Piper and its voice model, installed by provisioning. A missing model means the
   # unit is quiet, not broken: announcements go silent, everything else keeps running.
