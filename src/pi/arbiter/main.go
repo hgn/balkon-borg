@@ -47,8 +47,7 @@ func main() {
 		os.Exit(2)
 	}
 	if *checkOnly {
-		fmt.Printf("%s ok: broker %s:%d, %d users\n", *configPath,
-			cfg.Broker.Host, cfg.Broker.Port, len(cfg.Broker.Users))
+		fmt.Printf("%s ok: broker %s:%d\n", *configPath, cfg.Broker.Host, cfg.Broker.Port)
 		return
 	}
 
@@ -106,7 +105,7 @@ func (a *Arbiter) connect() error {
 		AddBroker(fmt.Sprintf("tcp://%s:%d", a.cfg.Broker.Host, a.cfg.Broker.Port)).
 		SetClientID("borg-arbiter").
 		SetUsername("arbiter").
-		SetPassword(a.cfg.Broker.Users["arbiter"]).
+		SetPassword(a.cfg.Broker.Password).
 		SetCleanSession(true).
 		SetAutoReconnect(true).
 		SetConnectRetry(true).

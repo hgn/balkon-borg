@@ -10,14 +10,18 @@
 broker:
   host: borg-pi
   port: 1883
-  # Plain MQTT on the LAN, no TLS anywhere in this system (settled; see the decision
-  # log). Passwords are checked in deliberately: this is a private repo for a device
-  # behind the router, and a second secrets mechanism is one more thing to lose after
-  # an SD failure. Change them here, re-run provisioning, update app and ESP.
-  users:
-    arbiter: NBBpyXtAsvG9EZgrX491
-    app: vue0KFqFb0kZUdtbH6kX
-    esp: BUn7aCkTdd1WWFMPHJWl
+  # One pre-shared password for every client, checked in deliberately: this is a
+  # private repo for a device behind the router, and per-client secrets would only mean
+  # three things to lose after an SD failure instead of one. No TLS anywhere in this
+  # system either (settled; see the decision log).
+  #
+  # The user names stay separate so the broker ACL can still enforce who may write
+  # what (arbiter owns state, app sends commands, esp sends input). They all
+  # authenticate with this one password.
+  #
+  # To change it: edit here, run `./provision.py --only mosquitto-passwd`, then enter
+  # the new value in the Android app and the ESP config.
+  password: uklgehV0nGdErJ9XyYqpkx7XlWfh
 
 http:
   # The status page and media endpoints. Port 80 works from a user unit thanks to the

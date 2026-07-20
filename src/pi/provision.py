@@ -306,16 +306,20 @@ def step_quadlet_dir() -> Step:
     )
 
 
-def read_broker_users(path: Path) -> dict[str, str]:
-    """Pulls broker.users out of borg.yaml without a YAML library.
+# The accounts the broker ACL distinguishes. They share one password: the separation
+# exists so the broker can enforce who may write what, not to keep secrets from each
+# other (borg.yaml explains the reasoning).
+BROKER_USERS = ["arbiter", "app", "esp"]
+
+
+def read_broker_password(path: Path) -> str:
+    """Pulls broker.password out of borg.yaml without a YAML library.
 
     provision.py is standard library only (it has to run on a bare control machine),
-    and this is the one value it needs from the config. The parser is deliberately
-    narrow: the users block of our own file, two levels of indentation, nothing else.
-    Anything unexpected raises rather than guessing.
+    and this is the one value it needs from the config, which is what keeps a
+    fifteen-line parser reasonable instead of embarrassing.
     """
-    users: dict[str, str] = {}
-    in_broker = in_users = False
+    in_broker = False
     for raw in path.read_text().splitlines():
         line = raw.split("#", 1)[0].rstrip()
         if not line.strip():
@@ -324,39 +328,34 @@ def read_broker_users(path: Path) -> dict[str, str]:
         stripped = line.strip()
         if indent == 0:
             in_broker = stripped == "broker:"
-            in_users = False
             continue
-        if in_broker and indent == 2:
-            in_users = stripped == "users:"
-            continue
-        if in_users and indent == 4 and ":" in stripped:
-            name, _, value = stripped.partition(":")
-            users[name.strip()] = value.strip().strip("\"'")
-    if not users:
-        raise StepFailed(f"{path}: found no broker.users entries")
-    return users
+        if in_broker and indent == 2 and stripped.startswith("password:"):
+            password = stripped.partition(":")[2].strip().strip("\"'")
+            if not password:
+                raise StepFailed(f"{path}: broker.password is empty")
+            return password
+    raise StepFailed(f"{path}: found no broker.password")
 
 
 def step_mosquitto_passwd() -> Step:
     """Builds the broker's password file from borg.yaml.
 
     Hashing happens inside the Mosquitto image itself, so the Pi needs no mosquitto
-    tools of its own. The probe compares the user list rather than the hashes, which
-    are salted and differ on every run: a changed *password* therefore needs
-    `--only mosquitto-passwd` after editing borg.yaml, and that is written down in
-    setup.md rather than solved with a hash the file does not contain.
+    tools of its own. The probe can only compare the user list: the hashes are salted
+    and differ on every run, so a *changed password* is invisible to it. Changing the
+    password therefore means `--only mosquitto-passwd`, which setup.md says out loud.
     """
     remote = "/srv/borg/mosquitto/config/passwd"
 
     def probe(host: Host) -> bool:
-        users = sorted(read_broker_users(SHARED / "borg.yaml"))
+        read_broker_password(SHARED / "borg.yaml")  # fail here if the config is broken
         got = host.sh(f"cut -d: -f1 {shlex.quote(remote)} 2>/dev/null | sort")
-        return got.ok and got.out.split() == users
+        return got.ok and got.out.split() == sorted(BROKER_USERS)
 
     def apply(host: Host) -> None:
-        users = read_broker_users(SHARED / "borg.yaml")
+        password = read_broker_password(SHARED / "borg.yaml")
         _check(host.sudo(f"rm -f {shlex.quote(remote)}"), "clearing the password file")
-        for i, (user, password) in enumerate(sorted(users.items())):
+        for i, user in enumerate(sorted(BROKER_USERS)):
             create = "-c " if i == 0 else ""
             cmd = (f"podman run --rm -v /srv/borg/mosquitto/config:/mosquitto/config:Z "
                    f"docker.io/library/eclipse-mosquitto:2 "
@@ -365,7 +364,7 @@ def step_mosquitto_passwd() -> Step:
             _check(host.sudo(cmd), f"adding broker user {user}")
         _check(host.sudo(f"chmod 0700 {shlex.quote(remote)}"), "protecting the password file")
 
-    return Step("mosquitto-passwd", "broker users from borg.yaml", probe, apply)
+    return Step("mosquitto-passwd", "broker users, one shared password", probe, apply)
 
 
 def step_arbiter_unit() -> Step:

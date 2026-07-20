@@ -186,7 +186,10 @@ are on the always-on nas-Pi; a minimal listing there is possible later if wanted
 
 ## Broker auth (Mosquitto)
 
-Password file + ACL, no TLS (LAN + WireGuard only):
+Password file + ACL, no TLS (LAN + WireGuard only). **One pre-shared password for every
+account**, kept in `borg.yaml`: the user names exist so the ACL can enforce who writes
+what, not to keep secrets from each other. Three separate secrets would only mean three
+things to lose after an SD failure.
 
 | User | May write | May read |
 |---|---|---|

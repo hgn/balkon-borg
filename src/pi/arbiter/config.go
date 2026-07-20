@@ -24,10 +24,15 @@ type Config struct {
 	Capabilities Capabilities `yaml:"capabilities"`
 }
 
+// BrokerUsers are the accounts the ACL distinguishes. They share one password: the
+// separation exists so the broker can enforce who may write what, not to keep secrets
+// from each other.
+var BrokerUsers = []string{"arbiter", "app", "esp"}
+
 type Broker struct {
-	Host  string            `yaml:"host"`
-	Port  int               `yaml:"port"`
-	Users map[string]string `yaml:"users"`
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	Password string `yaml:"password"`
 }
 
 type HTTPConfig struct {
@@ -150,13 +155,8 @@ func (c *Config) applyDefaults() {
 }
 
 func (c *Config) validate() error {
-	if _, ok := c.Broker.Users["arbiter"]; !ok {
-		return fmt.Errorf("broker.users needs an 'arbiter' entry, that is who connects")
-	}
-	for user, password := range c.Broker.Users {
-		if password == "" {
-			return fmt.Errorf("broker.users.%s has an empty password", user)
-		}
+	if c.Broker.Password == "" {
+		return fmt.Errorf("broker.password is empty; every client needs it to connect")
 	}
 	if c.Location.Latitude < -90 || c.Location.Latitude > 90 {
 		return fmt.Errorf("location.latitude %v is out of range", c.Location.Latitude)

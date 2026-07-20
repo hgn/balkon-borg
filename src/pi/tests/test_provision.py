@@ -261,31 +261,34 @@ def test_only_rejects_an_unknown_step(capsys: pytest.CaptureFixture[str]) -> Non
 # --- borg.yaml parsing (stdlib only, so it gets its own tests) -------------------
 
 
-def test_broker_users_are_read_from_the_config(tmp_path: Path) -> None:
+def test_the_broker_password_is_read_from_the_config(tmp_path: Path) -> None:
     config = tmp_path / "borg.yaml"
     config.write_text(
         "broker:\n"
         "  host: borg-pi\n"
-        "  users:\n"
-        "    arbiter: secret1\n"
-        "    app: secret2  # inline comment\n"
+        "  password: s3cret  # inline comment\n"
         "http:\n"
         "  port: 80\n"
     )
-    assert provision.read_broker_users(config) == {"arbiter": "secret1", "app": "secret2"}
+    assert provision.read_broker_password(config) == "s3cret"
 
 
-def test_a_config_without_users_is_an_error(tmp_path: Path) -> None:
+def test_a_config_without_a_password_is_an_error(tmp_path: Path) -> None:
     config = tmp_path / "borg.yaml"
     config.write_text("http:\n  port: 80\n")
-    with pytest.raises(StepFailed, match="broker.users"):
-        provision.read_broker_users(config)
+    with pytest.raises(StepFailed, match="broker.password"):
+        provision.read_broker_password(config)
 
 
-def test_the_shipped_config_has_the_three_broker_users() -> None:
-    users = provision.read_broker_users(provision.SHARED / "borg.yaml")
-    assert set(users) == {"arbiter", "app", "esp"}
-    assert all(users.values()), "no broker user may have an empty password"
+def test_an_empty_password_is_an_error(tmp_path: Path) -> None:
+    config = tmp_path / "borg.yaml"
+    config.write_text("broker:\n  password:\n")
+    with pytest.raises(StepFailed, match="empty"):
+        provision.read_broker_password(config)
+
+
+def test_the_shipped_config_carries_a_password() -> None:
+    assert len(provision.read_broker_password(provision.SHARED / "borg.yaml")) >= 16
 
 
 def test_password_file_probe_compares_the_user_list() -> None:

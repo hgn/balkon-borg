@@ -9,8 +9,7 @@ import (
 
 const minimalConfig = `
 broker:
-  users:
-    arbiter: secret
+  password: secret
 location:
   latitude: 48.1
   longitude: 11.5
@@ -43,22 +42,15 @@ func TestAnUnknownKeyIsAnError(t *testing.T) {
 	}
 }
 
-func TestConfigNeedsTheArbiterUser(t *testing.T) {
-	_, err := ParseConfig([]byte("broker:\n  users:\n    app: x\nlocation:\n  latitude: 0\n  longitude: 0\n"))
-	if err == nil || !strings.Contains(err.Error(), "arbiter") {
-		t.Fatalf("expected a complaint about the arbiter user, got %v", err)
-	}
-}
-
-func TestEmptyPasswordIsRefused(t *testing.T) {
-	_, err := ParseConfig([]byte("broker:\n  users:\n    arbiter: \"\"\nlocation:\n  latitude: 0\n  longitude: 0\n"))
+func TestAMissingPasswordIsRefused(t *testing.T) {
+	_, err := ParseConfig([]byte("broker:\n  host: x\nlocation:\n  latitude: 0\n  longitude: 0\n"))
 	if err == nil || !strings.Contains(err.Error(), "password") {
-		t.Fatalf("expected a complaint about the empty password, got %v", err)
+		t.Fatalf("expected a complaint about the missing password, got %v", err)
 	}
 }
 
 func TestOutOfRangeCoordinatesAreRefused(t *testing.T) {
-	_, err := ParseConfig([]byte("broker:\n  users:\n    arbiter: x\nlocation:\n  latitude: 120\n  longitude: 0\n"))
+	_, err := ParseConfig([]byte("broker:\n  password: x\nlocation:\n  latitude: 120\n  longitude: 0\n"))
 	if err == nil || !strings.Contains(err.Error(), "latitude") {
 		t.Fatalf("expected a complaint about the latitude, got %v", err)
 	}
@@ -83,8 +75,8 @@ func TestTheShippedConfigIsValid(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the shipped borg.yaml does not load: %v", err)
 	}
-	if _, ok := cfg.Broker.Users["app"]; !ok {
-		t.Error("the app needs broker credentials of its own")
+	if cfg.Broker.Password == "" {
+		t.Error("the shipped config must carry the broker password")
 	}
 	if cfg.Adsb.MaxRangeKM <= 0 {
 		t.Error("the radar range must be positive")

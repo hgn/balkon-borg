@@ -70,6 +70,21 @@ make -C src/pi provision
 It is idempotent: run it again any time, and every step that is already true says so and
 does nothing. If it fails, it names the step and what it saw.
 
+## Changing the broker password
+
+`broker.password` in `src/shared/borg.yaml` is one pre-shared secret for the arbiter,
+the app and the ESP. To change it:
+
+```
+./provision.py --only mosquitto-passwd
+```
+
+The plain provisioning run will not notice on its own: the hashes in the broker's
+password file are salted, so they differ on every run and cannot be compared against
+the config. The step therefore only checks *which accounts* exist, and a changed
+password needs the explicit call above. Then enter the new value in the Android app's
+settings and in the ESP config.
+
 ## After an SD card dies
 
 Repeat steps 1 to 3. That is the whole recovery procedure, and it is the reason the
