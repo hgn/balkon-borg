@@ -59,3 +59,25 @@ const (
 
 // Timestamp is local time with offset, the contract's timestamp format.
 func Timestamp(t time.Time) string { return t.Format(time.RFC3339) }
+
+// Envelope wraps a payload the way the contract requires: schema version first.
+func Envelope(fields map[string]any) map[string]any {
+	out := map[string]any{"v": SchemaVersion}
+	for k, v := range fields {
+		out[k] = v
+	}
+	return out
+}
+
+// CapabilityPayload builds the balkon/health/<capability> message.
+//
+// The key is "detail", not "reason": that is what the contract says and what the app
+// already parses. Built here rather than inline at the publish site so the naming is
+// testable against the document instead of trusted.
+func CapabilityPayload(state, detail, since string) map[string]any {
+	return Envelope(map[string]any{"state": state, "detail": detail, "since": since})
+}
+
+// The arbiter's own capability, set to missing by the last will so a dead arbiter is
+// visible rather than silently stale (contract: "arbiter down" vs "all quiet").
+const CapabilityArbiter = "arbiter"

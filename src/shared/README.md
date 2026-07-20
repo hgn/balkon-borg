@@ -118,8 +118,9 @@ One topic per capability plus an aggregate; this is the degraded-services interf
 | `balkon/health/<capability>` | `{"v":1,"state":"ok"\|"degraded"\|"missing"\|"disabled","detail":"…","since":ts,"last_ok":ts}` |
 
 Capabilities (initial set): `clock` (NTP sync), `sdr`, `mic`, `speaker`, `camera`,
-`esp` (mapped from ESPHome availability), `wled`, `arbiter`, and one per service
-(`frigate`, `birdnet`, `readsb`, …). The **arbiter's LWT** sets
+`esp` (mapped from ESPHome availability), `broker`, `arbiter`, later `wled` and one per
+service (`frigate`, `birdnet`, `readsb`, …). **Implemented as of M1:** clock, sdr, mic,
+speaker, camera, esp, broker, arbiter. The **arbiter's LWT** sets
 `balkon/health/arbiter` to `missing` if it dies uncleanly, so the app can tell "arbiter
 down" from "all quiet". Probes re-run periodically — hardware plugged in later comes up
 without restart.

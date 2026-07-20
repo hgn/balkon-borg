@@ -76,11 +76,14 @@ func (a *Arbiter) registerCapabilities() {
 	a.health.Register("clock", ClockProbe(execRunner), true)
 	a.health.Register("sdr", SDRProbe(execRunner), enabled["sdr"])
 	a.health.Register("speaker", SoundProbe(execRunner), enabled["speaker"])
-	a.health.Register("microphone", MicrophoneProbe(execRunner), enabled["microphone"])
+	a.health.Register("mic", MicrophoneProbe(execRunner), enabled["microphone"])
 	a.health.Register("camera", CameraProbe(fileExists), enabled["camera"])
 	a.health.Register("esp", FreshnessProbe(a.lastEnvSeen, time.Now, 5*time.Minute,
 		"no data from the ESP yet"), enabled["esp"])
 	a.health.Register("broker", a.brokerProbe(), true)
+	// Always ok while this process is running: its whole purpose is to overwrite the
+	// retained "missing" the last will leaves behind after a crash.
+	a.health.Register(CapabilityArbiter, func() (State, string) { return StateOK, "" }, true)
 }
 
 func (a *Arbiter) lastEnvSeen() time.Time {
@@ -112,13 +115,12 @@ func (a *Arbiter) connect() error {
 		SetConnectRetryInterval(10 * time.Second).
 		SetMaxReconnectInterval(60 * time.Second)
 
-	// The LWT: a dead arbiter must be visible rather than silently stale, since every
-	// client renders retained state that would otherwise look current forever.
-	lwt, _ := json.Marshal(map[string]any{
-		"v": SchemaVersion, "state": string(StateMissing),
-		"summary": "arbiter offline", "ts": Timestamp(time.Now()),
-	})
-	opts.SetWill(TopicHealth, string(lwt), QoSState, true)
+	// The LWT lands on the arbiter's own capability topic, per the contract: that is
+	// what lets a client tell "arbiter down" from "all quiet". The aggregate stays
+	// whatever it last was, which is honest, since nobody is updating it any more.
+	lwt, _ := json.Marshal(CapabilityPayload(string(StateMissing), "arbiter offline",
+		Timestamp(time.Now())))
+	opts.SetWill(HealthTopic(CapabilityArbiter), string(lwt), QoSState, true)
 
 	opts.OnConnect = func(c mqtt.Client) {
 		fmt.Fprintln(os.Stderr, "mqtt: connected")
@@ -154,18 +156,9 @@ func (a *Arbiter) publish(topic string, payload any, retained bool) {
 	a.client.Publish(topic, QoSState, retained, data)
 }
 
-// envelope wraps a payload the way the contract requires: schema version first.
-func envelope(fields map[string]any) map[string]any {
-	out := map[string]any{"v": SchemaVersion}
-	for k, v := range fields {
-		out[k] = v
-	}
-	return out
-}
-
 func (a *Arbiter) publishMode(mode Mode) {
 	s := a.modes.Get(mode)
-	a.publish(ModeTopic(mode), envelope(map[string]any{
+	a.publish(ModeTopic(mode), Envelope(map[string]any{
 		"submode": s.Submode, "chan": nilIfEmpty(s.Chan), "pinned": s.Pinned, "since": s.Since,
 	}), true)
 }
@@ -175,16 +168,16 @@ func (a *Arbiter) publishAllModes() {
 		a.publishMode(mode)
 	}
 	focus := a.modes.Focus()
-	a.publish(TopicModeFocus, envelope(map[string]any{"focus": nilIfEmpty(string(focus))}), true)
+	a.publish(TopicModeFocus, Envelope(map[string]any{"focus": nilIfEmpty(string(focus))}), true)
 }
 
 func (a *Arbiter) publishHealth() {
 	for _, c := range a.health.All() {
-		a.publish(HealthTopic(c.Name), envelope(map[string]any{
+		a.publish(HealthTopic(c.Name), Envelope(map[string]any{
 			"state": string(c.State), "reason": c.Reason, "since": c.Since,
 		}), true)
 	}
-	a.publish(TopicHealth, envelope(map[string]any{
+	a.publish(TopicHealth, Envelope(map[string]any{
 		"state": string(a.health.Aggregate()), "summary": a.health.Summary(),
 		"ts": Timestamp(time.Now()),
 	}), true)
@@ -249,7 +242,7 @@ func (a *Arbiter) handleFocus(payload []byte) {
 		return
 	}
 	if a.modes.SetFocus(Mode(cmd.Focus)) {
-		a.publish(TopicModeFocus, envelope(map[string]any{"focus": nilIfEmpty(cmd.Focus)}), true)
+		a.publish(TopicModeFocus, Envelope(map[string]any{"focus": nilIfEmpty(cmd.Focus)}), true)
 	}
 }
 
@@ -314,7 +307,7 @@ func (a *Arbiter) run(ctx context.Context) {
 		case <-ctx.Done():
 			fmt.Fprintln(os.Stderr, "arbiter: shutting down")
 			if a.client != nil && a.client.IsConnected() {
-				a.publish(TopicHealth, envelope(map[string]any{
+				a.publish(TopicHealth, Envelope(map[string]any{
 					"state": string(StateMissing), "summary": "arbiter stopped",
 					"ts": Timestamp(time.Now()),
 				}), true)
