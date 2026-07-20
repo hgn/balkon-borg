@@ -120,19 +120,24 @@ it is already correct. Re-running the whole thing is a no-op and must stay a no-
 
 ```
 src/pi/
-  provision.py         provisioning tool (control machine, stdlib + ssh/rsync only)
-  pyproject.toml       arbiter package + dev deps
-  arbiter/
-    main.py            asyncio entry point
-    modes/             mode state machine
-    audio/             priority mixer, TTS
-    buffers/           ring buffers + retained snapshots
-    health/            capability registry and probes
-    http/              status page, media serving, talk-down upload
+  provision.py         provisioning tool (control machine, Python, stdlib only)
+  tests/               its tests (pytest)
+  arbiter/             the arbiter (Go, one static binary)
+    contract.go        topics and payload envelopes, mirroring shared/README.md
+    modes.go           mode state machine, incl. the single-tuner rule
+    health.go          capability registry
+    probes.go          the only code that touches hardware
+    status.go          the status page and health.json
+    main.go            MQTT + HTTP wiring
   config/              systemd units, mosquitto.conf, udev rules, timesyncd.conf
   quadlets/            *.container for the third-party services
   tasks/               the work packages
 ```
+
+**Two languages on purpose** (decided 2026-07-20, see the decision log): the arbiter is
+Go because it ships as one static binary with no runtime to maintain on the Pi, and
+`provision.py` is Python because it runs on the control machine, needs no build step,
+and must still work when everything else is broken.
 
 `../shared/borg.yaml` is the runtime configuration, shared with the other components.
 
@@ -159,7 +164,24 @@ Separator is `-`, **never `_`**, for every file type: `ring-buffer.py`, `mosquit
 use one lowercase word (`buffers/rings.py`); fall back to `_` only if one word is truly
 impossible.
 
-### Python
+### Go (the arbiter)
+
+- `gofmt` decides formatting; run `make fmt`. `go vet` must be clean.
+- Errors are values and are wrapped with context (`fmt.Errorf("...: %w", err)`); the
+  message says what was being attempted, because it will be read from a journal by
+  someone who was not there.
+- Diagnostics to stderr with `fmt.Fprintf(os.Stderr, ...)`, results to stdout. **No
+  logging framework**: systemd captures both streams and `journalctl` is the log.
+- Standard library first. The three dependencies that earned their place are
+  `paho.mqtt.golang`, `yaml.v3` and nothing else; `net/http` covers the rest.
+- Anything that touches hardware or the network goes behind a small function type
+  (see `probes.go`'s `commandRunner`), so the logic around it stays testable with no
+  hardware present. That is not architecture for its own sake: there is no Pi to test
+  against, so what is not injectable is not verified.
+- Tests are `*_test.go` next to the code, table-driven where it helps. A test that
+  needs a device does not belong here.
+
+### Python (the provisioning tool)
 
 - Shebang `#!/usr/bin/env python3` on anything executable, and `chmod +x` it.
 - Target **3.12+**. **Type hints are mandatory**, checked with **mypy strict**.

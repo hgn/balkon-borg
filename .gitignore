@@ -40,3 +40,6 @@ pcb/logs/
 # Claude Code: track the shared project skills, ignore local/personal config
 .claude/*
 !.claude/skills/
+
+# Cross-compiled arbiter binary (built by `make -C src/pi build`)
+/src/pi/arbiter/borg-arbiter

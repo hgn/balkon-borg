@@ -28,6 +28,8 @@ MIN_PYTHON = (3, 12)
 
 HERE = Path(__file__).resolve().parent
 CONFIG = HERE / "config"
+QUADLETS = HERE / "quadlets"
+SHARED = HERE.parent / "shared"
 
 # Everything the Pi needs from the distribution. Deliberately unpinned: this box
 # tracks Raspberry Pi OS, and pinning would only mean fighting apt later.
@@ -118,6 +120,18 @@ class Host:
 
     def probe(self, command: str) -> bool:
         return self.sh(command).ok
+
+    def user_run(self, command: str) -> Result:
+        """Runs a *mutating* command as the login user (user units live there).
+
+        Separate from [sh] on purpose: sh is for probes and must stay read-only, so a
+        dry run can call it freely. Anything that changes the host goes through here
+        or [sudo] and is recorded rather than executed while planning.
+        """
+        if self.dry_run:
+            self.planned.append(command)
+            return Result(0)
+        return self.sh(command)
 
     def sudo(self, command: str, stdin: bytes | None = None) -> Result:
         """Runs a command as root. Recorded rather than executed in dry-run mode."""
@@ -292,6 +306,91 @@ def step_quadlet_dir() -> Step:
     )
 
 
+def read_broker_users(path: Path) -> dict[str, str]:
+    """Pulls broker.users out of borg.yaml without a YAML library.
+
+    provision.py is standard library only (it has to run on a bare control machine),
+    and this is the one value it needs from the config. The parser is deliberately
+    narrow: the users block of our own file, two levels of indentation, nothing else.
+    Anything unexpected raises rather than guessing.
+    """
+    users: dict[str, str] = {}
+    in_broker = in_users = False
+    for raw in path.read_text().splitlines():
+        line = raw.split("#", 1)[0].rstrip()
+        if not line.strip():
+            continue
+        indent = len(line) - len(line.lstrip())
+        stripped = line.strip()
+        if indent == 0:
+            in_broker = stripped == "broker:"
+            in_users = False
+            continue
+        if in_broker and indent == 2:
+            in_users = stripped == "users:"
+            continue
+        if in_users and indent == 4 and ":" in stripped:
+            name, _, value = stripped.partition(":")
+            users[name.strip()] = value.strip().strip("\"'")
+    if not users:
+        raise StepFailed(f"{path}: found no broker.users entries")
+    return users
+
+
+def step_mosquitto_passwd() -> Step:
+    """Builds the broker's password file from borg.yaml.
+
+    Hashing happens inside the Mosquitto image itself, so the Pi needs no mosquitto
+    tools of its own. The probe compares the user list rather than the hashes, which
+    are salted and differ on every run: a changed *password* therefore needs
+    `--only mosquitto-passwd` after editing borg.yaml, and that is written down in
+    setup.md rather than solved with a hash the file does not contain.
+    """
+    remote = "/srv/borg/mosquitto/config/passwd"
+
+    def probe(host: Host) -> bool:
+        users = sorted(read_broker_users(SHARED / "borg.yaml"))
+        got = host.sh(f"cut -d: -f1 {shlex.quote(remote)} 2>/dev/null | sort")
+        return got.ok and got.out.split() == users
+
+    def apply(host: Host) -> None:
+        users = read_broker_users(SHARED / "borg.yaml")
+        _check(host.sudo(f"rm -f {shlex.quote(remote)}"), "clearing the password file")
+        for i, (user, password) in enumerate(sorted(users.items())):
+            create = "-c " if i == 0 else ""
+            cmd = (f"podman run --rm -v /srv/borg/mosquitto/config:/mosquitto/config:Z "
+                   f"docker.io/library/eclipse-mosquitto:2 "
+                   f"mosquitto_passwd -b {create}/mosquitto/config/passwd "
+                   f"{shlex.quote(user)} {shlex.quote(password)}")
+            _check(host.sudo(cmd), f"adding broker user {user}")
+        _check(host.sudo(f"chmod 0700 {shlex.quote(remote)}"), "protecting the password file")
+
+    return Step("mosquitto-passwd", "broker users from borg.yaml", probe, apply)
+
+
+def step_arbiter_unit() -> Step:
+    """Installs and enables the arbiter's user unit (the binary arrives via `make deploy`)."""
+    local = CONFIG / "borg-arbiter.service"
+    remote = f"~/.config/systemd/user/borg-arbiter.service"
+
+    def probe(host: Host) -> bool:
+        if not host.file_matches(local, remote.replace("~", f"/home/{host.user}")):
+            return False
+        r = host.sh("systemctl --user is-enabled borg-arbiter 2>/dev/null")
+        return r.ok and r.out.strip() == "enabled"
+
+    def apply(host: Host) -> None:
+        path = f"/home/{host.user}/.config/systemd/user/borg-arbiter.service"
+        _check(host.put(local, path, owner=f"{host.user}:{host.user}"),
+               "installing the arbiter unit")
+        _check(host.user_run("systemctl --user daemon-reload && "
+                             "systemctl --user enable borg-arbiter"),
+               "enabling the arbiter unit")
+
+    return Step("arbiter-unit", "arbiter starts at boot (needs `make deploy` for the binary)",
+                probe, apply)
+
+
 def build_steps() -> list[Step]:
     """The plan, in order. Each entry is independent of the ones after it."""
     return [
@@ -318,6 +417,19 @@ def build_steps() -> list[Step]:
                   CONFIG / "borg-sdr.rules", "/etc/udev/rules.d/99-borg-sdr.rules",
                   after="udevadm control --reload-rules && udevadm trigger"),
         step_groups(),
+        # M1: the broker and the arbiter's unit. The arbiter binary itself is not
+        # provisioned, it is deployed (`make deploy`), because it changes far more
+        # often than the system underneath it.
+        file_step("mosquitto-conf", "broker configuration",
+                  CONFIG / "mosquitto.conf", "/srv/borg/mosquitto/config/mosquitto.conf"),
+        file_step("mosquitto-acl", "broker access rules",
+                  CONFIG / "mosquitto-acl", "/srv/borg/mosquitto/config/acl"),
+        step_mosquitto_passwd(),
+        file_step("mosquitto-quadlet", "broker runs as a system container",
+                  QUADLETS / "mosquitto.container",
+                  "/etc/containers/systemd/mosquitto.container",
+                  after="systemctl daemon-reload && systemctl start mosquitto"),
+        step_arbiter_unit(),
     ]
 
 

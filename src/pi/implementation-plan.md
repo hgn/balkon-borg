@@ -23,16 +23,21 @@ requires a user session; linger enabled). Port 80 for the status page via the
 `net.ipv4.ip_unprivileged_port_start=80` sysctl (one provisioning step) rather than
 capability gymnastics. Rootless remains a per-service option if it's ever free.
 
-**D3 — Arbiter: one asyncio process, modular inside.** `aiomqtt` + `aiohttp`. Packages:
-`modes/` (state machine), `audio/` (priority mixer), `buffers/` (ring buffers + retained
-snapshots), `health/` (see below), `http/` (status page, image serving U14/U18, talk-down
-upload U21). No microservices — the coupling (mode state ↔ mixer ↔ resource table) is
-central by design.
+**D3 — Arbiter: one process, modular inside.** No microservices; the coupling (mode
+state ↔ mixer ↔ resource table) is central by design. Areas: mode state machine, audio
+mixer, ring buffers + retained snapshots, health registry, HTTP (status page, image
+serving U14/U18, talk-down upload U21).
 
-**D4 — Python stack:** 3.12+ (expect 3.13 on current Pi OS; M0 verifies). venv + pip from
-`pyproject.toml`, no uv/poetry on the Pi. Deps: `aiomqtt`, `aiohttp`, `PyYAML`,
-**`pydantic`** (config validation — a typo in `borg.yaml` fails at startup, not at
-runtime). mypy strict, pytest for the pure-logic modules.
+**D3a — Written in Go** (revised 2026-07-20, superseding the asyncio/`aiomqtt` plan):
+one statically linked binary, cross-compiled `GOOS=linux GOARCH=arm64` and rsynced to
+the Pi. The argument is not speed (this process waits on messages and timers) but that
+there is no runtime to install or maintain on the box: no venv, no pip, no dependency
+drift across distribution upgrades. `paho.mqtt.golang`, `net/http`, `yaml.v3`.
+
+**D4 — Python stays for provisioning only:** `provision.py` runs on the *control
+machine*, standard library only, no build step, checked with mypy strict and pytest. A
+recovery tool that must be compiled before it can rescue a dead Pi would be a step
+backwards, which is where the language boundary sits.
 
 **D5 — Deploy loop: rsync push, no git on the Pi.** `make deploy` (rsync `src/pi/` +
 `src/shared/` → Pi, reload units, restart), `make logs` / `make status` / `make shell`.
@@ -63,6 +68,7 @@ Concretely, the arbiter keeps a **health registry**:
 |---|---|---|
 | **M0** | `provision.py` + base steps: packages, NTP pool + sync gate, linger, Podman, directory layout, udev groups, port-80 sysctl | re-run = no-op |
 | **M1** | Mosquitto quadlet (+ auth) · arbiter skeleton: retained `balkon/mode/*` defaults, **health registry + status page (:80)**, user unit · deploy loop | `mosquitto_sub`, browser |
+| | *(M0 and M1 written 2026-07-20, untested against hardware: no Pi yet)* |
 | **M2** | Audio chain: USB card, PipeWire, Piper, mixer skeleton → "Borg online" on boot; audio capability health | speaker only |
 | **M3** | Ring-buffer framework + retained snapshots (`env/recent`, …) — ESP topics as optional source, empty is fine | fake publisher |
 | **M4+** | Services by value, one per step, each with its health probe: BirdNET-Go → readsb/tar1090 → Frigate+go2rtc → SIGINT extras → U14/U18 → APK hosting (`/apk/`) | per hardware |

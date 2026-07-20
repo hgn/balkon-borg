@@ -1,0 +1,27 @@
+# The MQTT broker: the bus everything on this device talks over.
+#
+# A system quadlet (root), not rootless: system units start at boot without a login and
+# get device and port access without workarounds. systemd generates the real unit from
+# this file on every daemon-reload, so this file is the description, not a copy of one.
+
+[Unit]
+Description=Mosquitto MQTT broker
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=docker.io/library/eclipse-mosquitto:2
+ContainerName=mosquitto
+PublishPort=1883:1883
+Volume=/srv/borg/mosquitto/config:/mosquitto/config:Z
+Volume=/srv/borg/mosquitto/data:/mosquitto/data:Z
+# Retained state is the whole client model here: a phone that connects for thirty
+# seconds must get the full picture, so persistence has to survive a broker restart.
+Volume=/srv/borg/mosquitto/data:/mosquitto/log:Z
+
+[Service]
+Restart=always
+TimeoutStartSec=120
+
+[Install]
+WantedBy=multi-user.target

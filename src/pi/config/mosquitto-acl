@@ -1,0 +1,17 @@
+# Who may write what. The arbiter owns all state; clients send commands and read.
+# One writer per topic is a contract rule (shared/README.md), and this is where it is
+# actually enforced rather than just agreed.
+
+user arbiter
+topic readwrite #
+
+user app
+topic read balkon/#
+topic write balkon/cmd/#
+
+user esp
+topic read balkon/mode/#
+topic read balkon/cmd/#
+topic write balkon/input/#
+topic write balkon/env/#
+topic write balkon/presence

@@ -1,0 +1,68 @@
+# Balkon-Borg runtime configuration, shared by the Pi and read by provisioning.
+#
+# The borg-pi5 is the master of this system: values about the world and the device
+# live here, not in the clients (see README.md, "the Pi owns the facts"). Clients may
+# hold a fallback for the moment before the Pi answers, never an authority.
+#
+# Validated with pydantic at arbiter startup, so a typo fails immediately with the
+# field named instead of turning into odd behaviour later.
+
+broker:
+  host: borg-pi
+  port: 1883
+  # Plain MQTT on the LAN, no TLS anywhere in this system (settled; see the decision
+  # log). Passwords are checked in deliberately: this is a private repo for a device
+  # behind the router, and a second secrets mechanism is one more thing to lose after
+  # an SD failure. Change them here, re-run provisioning, update app and ESP.
+  users:
+    arbiter: NBBpyXtAsvG9EZgrX491
+    app: vue0KFqFb0kZUdtbH6kX
+    esp: BUn7aCkTdd1WWFMPHJWl
+
+http:
+  # The status page and media endpoints. Port 80 works from a user unit thanks to the
+  # ip_unprivileged_port_start sysctl the provisioning sets.
+  port: 80
+
+paths:
+  root: /srv/borg
+  media: /srv/borg/media          # tmpfs, volatile on purpose (U14 FIFO)
+  clips: /srv/borg/clips          # local for now, NFS to the nas-Pi later (U7)
+  timelapse: /srv/borg/media/timelapse
+  apk: /srv/borg/apk
+
+location:
+  # The balcony, used for ADS-B distance/bearing (U5) and sun/sky times. The app has
+  # the same numbers as a fallback today and must take these once they arrive.
+  latitude: 48.1372
+  longitude: 11.5000
+  altitude_m: 520
+
+adsb:
+  # Aircraft further out than this are not published; the app's radar draws this range.
+  max_range_km: 50
+  # An overflight below this triggers the aircraft event (U5).
+  low_pass_ft: 5000
+
+environment:
+  # Sample cadence for the retained env history the app charts (U4).
+  sample_interval_s: 60
+  history_hours: 24
+  # Above this relative humidity the app tints the background (E11); hysteresis keeps
+  # a sensor sitting on the threshold from flickering the effect.
+  condensation_on_pct: 85.0
+  condensation_off_pct: 82.0
+
+health:
+  # How often each capability is re-probed. Plugging the SDR in later must bring it
+  # back without a restart.
+  probe_interval_s: 30
+
+capabilities:
+  # Switch a capability off here and it reports `disabled` instead of `missing`: the
+  # difference between "not wanted" and "wanted but broken".
+  sdr: true
+  camera: true
+  microphone: true
+  speaker: true
+  esp: true

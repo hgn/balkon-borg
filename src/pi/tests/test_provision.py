@@ -256,3 +256,39 @@ def test_list_prints_the_plan_without_touching_anything(capsys: pytest.CaptureFi
 def test_only_rejects_an_unknown_step(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["--only", "nonsense", "--dry-run"]) == 2
     assert "no such step" in capsys.readouterr().err
+
+
+# --- borg.yaml parsing (stdlib only, so it gets its own tests) -------------------
+
+
+def test_broker_users_are_read_from_the_config(tmp_path: Path) -> None:
+    config = tmp_path / "borg.yaml"
+    config.write_text(
+        "broker:\n"
+        "  host: borg-pi\n"
+        "  users:\n"
+        "    arbiter: secret1\n"
+        "    app: secret2  # inline comment\n"
+        "http:\n"
+        "  port: 80\n"
+    )
+    assert provision.read_broker_users(config) == {"arbiter": "secret1", "app": "secret2"}
+
+
+def test_a_config_without_users_is_an_error(tmp_path: Path) -> None:
+    config = tmp_path / "borg.yaml"
+    config.write_text("http:\n  port: 80\n")
+    with pytest.raises(StepFailed, match="broker.users"):
+        provision.read_broker_users(config)
+
+
+def test_the_shipped_config_has_the_three_broker_users() -> None:
+    users = provision.read_broker_users(provision.SHARED / "borg.yaml")
+    assert set(users) == {"arbiter", "app", "esp"}
+    assert all(users.values()), "no broker user may have an empty password"
+
+
+def test_password_file_probe_compares_the_user_list() -> None:
+    step = provision.step_mosquitto_passwd()
+    assert step.probe(host_with([("cut -d:", Result(0, "app\narbiter\nesp\n"))])) is True
+    assert step.probe(host_with([("cut -d:", Result(0, "arbiter\n"))])) is False

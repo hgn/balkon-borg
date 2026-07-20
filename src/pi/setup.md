@@ -85,14 +85,14 @@ manual part is kept this small.
 control machine (this repo)                     borg-pi
 ─────────────────────────────                   ───────────────────────────────────
 provision.py ── ssh/rsync ──────────────────▶   system units + config
-make deploy  ── rsync ──────────────────────▶   /srv/borg/app + restart
+go build (arm64) + rsync ───────────────────▶   /srv/borg/app/borg-arbiter
 
                                                 systemd (system)
                                                   └─ Podman quadlets
                                                        mosquitto, frigate, go2rtc,
                                                        readsb/tar1090, birdnet-go
                                                 systemd (user, lingering)
-                                                  ├─ arbiter (asyncio: MQTT + HTTP)
+                                                  ├─ borg-arbiter (Go: MQTT + HTTP)
                                                   └─ pipewire + wireplumber
 ```
 
@@ -158,25 +158,36 @@ Why this shape:
   exercise. The box is protected, not internet-facing, and this was the user's explicit
   call (2026-07-17). Rootless stays available per service if it is ever free.
 
-## The arbiter: one asyncio process
+## The arbiter: one Go binary
 
-The application logic is a single Python process running as a **user** systemd unit with
-`loginctl enable-linger` so it starts at boot without a login.
+The application logic is a single statically linked Go binary running as a **user**
+systemd unit with `loginctl enable-linger`, so it starts at boot without a login.
 
-- **`aiomqtt`** for MQTT: an async context-manager API over paho, so subscriptions are
-  `async for` loops rather than callback soup.
-- **`aiohttp`** for the HTTP side: status page, health JSON, media serving, talk-down
-  upload. Server-rendered HTML, no build step, no frontend framework. This page has to
-  still work in five years from a phone browser in the garden.
-- **`pydantic`** for config validation: a typo in `borg.yaml` fails at startup with the
-  field named, instead of turning into odd behaviour at three in the morning.
-- **`PyYAML`** to read the config.
+Go rather than Python, decided 2026-07-20. The deciding argument is not speed (this
+process waits on MQTT messages and timers, and would bore either language) but
+deployment and longevity: `GOOS=linux GOARCH=arm64 go build` produces one file that
+rsync puts on the Pi, with no interpreter, no virtualenv, no pip and no four runtime
+dependencies to keep alive across distribution upgrades. A binary built today still
+runs in five years; a venv rots. BirdNET-Go on the same box is Go for similar reasons.
 
-Inside, packages rather than microservices: `modes/` (state machine), `audio/` (priority
-mixer, TTS), `buffers/` (ring buffers and retained snapshots), `health/` (capability
-registry and probes), `http/`. The coupling between mode state, the mixer and the tuner
-resource table is real; splitting it across processes would buy nothing and cost an IPC
-layer.
+- **MQTT**: `github.com/eclipse/paho.mqtt.golang`, with auto-reconnect and a **last
+  will** so a dead arbiter is visible rather than silently stale.
+- **HTTP**: `net/http` from the standard library. Server-rendered HTML, no build step,
+  no framework. The status page has to still work in five years from a phone browser
+  in the garden.
+- **Config**: `gopkg.in/yaml.v3` with `KnownFields(true)`, so an unknown key is an
+  error. A typo fails at startup naming the field instead of turning into odd
+  behaviour at three in the morning.
+
+Files rather than packages while it is small: `contract.go` (topics and envelopes),
+`modes.go` (the state machine and the single-tuner rule), `health.go` (capability
+registry), `probes.go` (the only code that touches hardware), `status.go` (the page),
+`main.go` (the wiring). Packages appear when one of them grows enough to earn the
+import.
+
+**`provision.py` stays Python.** It runs on the control machine, not the Pi, needs no
+build step and only the standard library. A recovery tool that must be compiled before
+it can rescue a dead Pi would be a step backwards.
 
 **Port 80 from a user unit** comes from one sysctl, `net.ipv4.ip_unprivileged_port_start=80`,
 rather than capabilities or a reverse proxy. One line, no extra moving part.
@@ -240,7 +251,7 @@ so there is never a question of which side is ahead. `make logs`, `make status` 
 - **No TLS.** LAN plus WireGuard, no certificate infrastructure that expires and bricks
   the unit in three years. Settled, not up for revisiting.
 - **No logging framework.** Results to stdout, diagnostics to stderr, and systemd
-  captures both. `journalctl -u borg-arbiter` is the log.
+  captures both. `journalctl --user -u borg-arbiter` is the log.
 - **No database** beyond what BirdNET-Go brings for itself. Ring buffers in RAM plus
   retained MQTT snapshots cover what the clients need.
 - **No frontend build.** The status page is server-rendered HTML.

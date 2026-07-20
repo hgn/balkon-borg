@@ -14,6 +14,37 @@ split into src/") for why.
 
 ---
 
+## 2026-07-20 — The arbiter is Go, provisioning stays Python
+
+The plan said asyncio with `aiomqtt`/`aiohttp`/`pydantic`. The user asked whether Go
+would not be the better fit, and it is, though not for the reason usually given.
+
+**Speed is the weakest argument.** The arbiter waits on MQTT messages, timers and HTTP
+requests; it is not CPU-bound, and the real computation on this box happens inside
+Frigate, readsb and BirdNET, which are containers either way.
+
+**Deployment and longevity are the real ones.** `GOOS=linux GOARCH=arm64 go build`
+produces a single static binary that rsync puts on the Pi. No interpreter, no venv, no
+pip, no four runtime dependencies to keep alive across distribution upgrades, and one
+provisioning step fewer, namely exactly the step that would break when it is needed. A
+binary built today still runs in five years; a venv rots. For a device whose stated goal
+is five years of stability and rebuildability from the repo after an SD failure, that is
+decisive. BirdNET-Go on the same box is Go for similar reasons.
+
+**Where the line sits:** `provision.py` stays Python. It runs on the control machine,
+needs no build step, and uses only the standard library. A recovery tool that must be
+compiled before it can rescue a dead Pi is a step backwards.
+
+**Cost paid:** the Python arbiter modules written earlier the same day (contract, health
+registry, mode machine, config, status page) were thrown away and rewritten in Go, about
+600 lines. Cheap now, expensive after M4, which is why the question was worth answering
+immediately.
+
+Also settled: Go is not in the project's global conventions (Python and C). It is now,
+for this directory, and `src/pi/README.md` says so.
+
+---
+
 ## 2026-07-19 — One tuner, enforced in one place
 
 The COMMS/SIGINT displacement rule (there is a single RTL-SDR, so starting one radio
