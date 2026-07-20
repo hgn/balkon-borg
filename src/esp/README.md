@@ -1,8 +1,26 @@
 # src/esp — ESP32 front panel
 
-ESPHome config for the ESP32-DevKitC on the carrier board. Reads the buttons,
-encoder, LD2410B radar and BME280, and controls the **WLED light directly over
-MQTT**.
+ESPHome config for the ESP32-DevKitC on the carrier board. Reads the buttons, encoder,
+LD2410B radar and BME280, and **publishes them as raw input** — it does not decide
+anything.
+
+The panel is deliberately dumb (decision 2026-07-20): the arbiter on the borg-pi owns
+mode state, brightness, volume and the light. An earlier version drove WLED directly,
+which contradicted the contract and would have given one lamp two owners. The one
+local behaviour left is the button LEDs, driven from the retained mode topics so the
+panel still shows the last known state while the Pi is off.
+
+| Publishes | Payload |
+|---|---|
+| `balkon/input/button` | `{"v":1,"id":1..4,"action":"short"\|"long"}` |
+| `balkon/input/encoder` | `{"v":1,"delta":±1}` or `{"v":1,"action":"push"}` |
+| `balkon/presence` | `{"v":1,"present":bool,"distance_cm":n}` |
+| `balkon/env/temperature` · `/humidity` · `/pressure` | plain numbers |
+
+| Subscribes | For |
+|---|---|
+| `balkon/mode/lumen` · `/comms` · `/sentry` | button LEDs 1-3 |
+| `balkon/state/knob` | LED 4: lit when the encoder drives the volume |
 
 ## Pin mapping
 
@@ -45,9 +63,10 @@ scenes become LUMEN submodes on Button 2, and the whole device is switched at th
 
 ## Prerequisites
 
-- **WLED** with MQTT enabled, device topic `wled/balkon` (else adjust
-  `substitutions.wled_topic`). Create presets 1/2 in WLED.
-- **Mosquitto** on the borg-pi5 (the hub); credentials in `secrets.yaml`.
+- **Mosquitto** on the borg-pi5 (the hub); credentials in `secrets.yaml`, user `esp`
+  with the shared password from `../shared/borg.yaml`.
+- **WLED** with MQTT enabled, device topic `wled/balkon`, and presets matching
+  `arbiter/wled.go`. The ESP no longer talks to it; the arbiter does.
 
 ## Build / flash
 

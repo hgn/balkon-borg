@@ -14,6 +14,36 @@ split into src/") for why.
 
 ---
 
+## 2026-07-20 — The ESP is a dumb input device, the arbiter owns the light
+
+`src/esp/balkon-borg.yaml` was written during the hardware phase and drives WLED
+directly over MQTT: button 1 toggles the light, the encoder sets brightness, the radar
+switches it on. The contract (U2, `shared/README.md`) says the opposite: the ESP
+publishes raw inputs on `balkon/input/*`, and the arbiter owns mode state and the light.
+
+Both cannot be true. As it stood, the first time the ESP and the Pi run together they
+would fight over the same lamp, and the app would show a state the panel had already
+overridden. Resolved in favour of the contract:
+
+- **The ESP publishes events, not decisions**: button presses (short/long), encoder
+  deltas and pushes, the radar's presence and distance, the BME280 readings. It keeps
+  exactly one local behaviour, driving its own button LEDs from the retained mode
+  topics, because those have to keep working when the Pi is off — which it usually is.
+- **The arbiter interprets them**: focus, submode, channel, the knob target
+  (`balkon/state/knob`), brightness and volume, and it is the only thing that talks to
+  WLED.
+
+**Why this way round** and not "let the panel keep the light": the panel cannot know
+what the app or a schedule did a second ago, and a light with two owners drifts out of
+sync in a way nobody can debug from the outside. The cost is that the buttons need the
+Pi to be awake to do anything beyond lighting themselves, which is acceptable: the Pi is
+on whenever the unit is doing something.
+
+Consequence for U1 (presence-driven light): the radar's distance ramp moves to the
+arbiter too. The ESP reports centimetres; the curve is the Pi's business.
+
+---
+
 ## 2026-07-20 — The arbiter is Go, provisioning stays Python
 
 The plan said asyncio with `aiomqtt`/`aiohttp`/`pydantic`. The user asked whether Go

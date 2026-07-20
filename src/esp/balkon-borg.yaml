@@ -1,35 +1,25 @@
 # Balkon-Borg ESP32 front panel (ESPHome).
 #
-# Reads the 4 illuminated buttons, the rotary encoder, the LD2410B presence radar
-# and the BME280, and controls the WLED light directly over MQTT. Pin mapping
-# follows the carrier board (pcb/docs/board-spec.md / gen-netlist.py).
+# The panel is a **dumb input device** (decision 2026-07-20, src/log/decisions.md): it
+# reports what happened and never decides what it means. Buttons, encoder, radar and
+# BME280 are published on `balkon/input/*`, `balkon/presence` and `balkon/env/*`; the
+# arbiter on the borg-pi owns mode state, brightness, volume and the light.
 #
-# Light control (all via WLED's MQTT API, no wire to WLED):
-#   Button 1 : toggle light on/off
-#   Button 2 : scene "cozy"  (WLED preset 1)
-#   Button 3 : scene "party" (WLED preset 2)
-#   Button 4 : toggle presence-automatic (radar auto-on)
-#   Encoder  : brightness up/down;  encoder push: light off
-#   Radar    : when automatic is on, presence turns the light on, absence off
-# Button LEDs: LED1 = presence, LED2/LED3 = active scene (cozy/party), LED4 = automatic.
+# It used to drive WLED directly. That contradicted the contract and would have meant
+# two owners for one lamp, drifting apart in a way nobody can debug from the outside.
+#
+# The one local behaviour left: the **button LEDs**, driven from the retained mode
+# topics. Those keep working when the Pi is off, which it usually is, so the panel at
+# least shows the last known state instead of going dark.
+#
+# Pin mapping follows the carrier board (pcb/docs/board-spec.md / gen-netlist.py).
 
 substitutions:
   name: balkon-borg
-  wled_topic: "wled/balkon"          # WLED device MQTT topic (set in WLED config)
 
 esphome:
   name: ${name}
   friendly_name: Balkon-Borg
-  on_boot:
-    priority: -100
-    then:
-      - if:
-          condition:
-            lambda: "return id(auto_mode);"
-          then:
-            - output.turn_on: led4
-          else:
-            - output.turn_off: led4
 
 esp32:
   board: esp32dev                    # ESP32-DevKitC (WROOM-32)
@@ -53,19 +43,48 @@ ota:
 
 mqtt:
   broker: !secret mqtt_broker        # the borg-pi5 Mosquitto (the hub)
-  username: !secret mqtt_user
+  username: !secret mqtt_user        # "esp", see shared/borg.yaml
   password: !secret mqtt_password
-  discovery: true
+  # ESPHome's own discovery topics are noise on this broker: the app and the arbiter
+  # speak the contract, not Home Assistant's schema.
+  discovery: false
+  # Presence is a boolean the arbiter needs a shape for, so it is published by hand
+  # below rather than through ESPHome's sensor topics.
+  topic_prefix: balkon/esp
 
-globals:
-  - id: brightness
-    type: int
-    restore_value: yes
-    initial_value: "128"
-  - id: auto_mode
-    type: bool
-    restore_value: yes
-    initial_value: "true"
+  # Local feedback: the button LEDs. The only thing the panel decides for itself, and
+  # only about its own LEDs. Driven from the retained mode topics, so a panel that
+  # boots while the Pi is off still shows the last known state rather than nothing.
+  on_json_message:
+    - topic: balkon/mode/lumen
+      then:
+        - lambda: |-
+            const char *sub = x["submode"];
+            bool on = sub && strcmp(sub, "off") != 0;
+            if (on) id(led1).turn_on(); else id(led1).turn_off();
+
+    - topic: balkon/mode/comms
+      then:
+        - lambda: |-
+            const char *sub = x["submode"];
+            bool on = sub && strcmp(sub, "off") != 0;
+            if (on) id(led2).turn_on(); else id(led2).turn_off();
+
+    - topic: balkon/mode/sentry
+      then:
+        - lambda: |-
+            const char *sub = x["submode"];
+            bool armed = sub && strcmp(sub, "off") != 0;
+            if (armed) id(led3).turn_on(); else id(led3).turn_off();
+
+    # LED 4 shows what the knob is pointing at: lit for audio, dark for light. One
+    # glance answers "why is turning this not changing the brightness".
+    - topic: balkon/state/knob
+      then:
+        - lambda: |-
+            const char *target = x["target"];
+            bool audio = target && strcmp(target, "audio") == 0;
+            if (audio) id(led4).turn_on(); else id(led4).turn_off();
 
 # ---- Buses --------------------------------------------------------------------
 i2c:
@@ -83,36 +102,38 @@ uart:
 ld2410:
   uart_id: uart_radar
 
-# ---- Helpers ------------------------------------------------------------------
-script:
-  - id: send_brightness
-    then:
-      - mqtt.publish_json:
-          topic: "${wled_topic}/api"
-          payload: |-
-            root["bri"] = id(brightness);
-
-# ---- Environment sensors ------------------------------------------------------
+# ---- Environment (plain numbers, per the contract) ----------------------------
 sensor:
   - platform: bme280_i2c
     address: 0x76
     temperature:
       name: "Balkon Temperatur"
+      state_topic: balkon/env/temperature
     humidity:
       name: "Balkon Luftfeuchte"
+      state_topic: balkon/env/humidity
     pressure:
       name: "Balkon Luftdruck"
+      state_topic: balkon/env/pressure
     update_interval: 30s
 
+  # The radar reports centimetres, not a decision. The distance-to-brightness curve
+  # (U1) belongs to the arbiter, which is the only thing that knows what else is going
+  # on at the time.
   - platform: ld2410
     moving_distance:
+      id: moving_distance
       name: "Radar Bewegungsdistanz"
+      internal: true
     still_distance:
+      id: still_distance
       name: "Radar Ruhedistanz"
+      internal: true
 
-  # Rotary encoder -> brightness.
+  # Encoder: every detent is an event, the arbiter decides what it adjusts.
   - platform: rotary_encoder
     id: enc
+    internal: true
     pin_a:
       number: GPIO32
       mode: INPUT_PULLUP          # M8: EC11 contacts to GND; no external pull-ups
@@ -120,11 +141,17 @@ sensor:
       number: GPIO33
       mode: INPUT_PULLUP
     on_clockwise:
-      - lambda: "id(brightness) = min(255, id(brightness) + 16);"
-      - script.execute: send_brightness
+      - mqtt.publish_json:
+          topic: balkon/input/encoder
+          payload: |-
+            root["v"] = 1;
+            root["delta"] = 1;
     on_anticlockwise:
-      - lambda: "id(brightness) = max(0, id(brightness) - 16);"
-      - script.execute: send_brightness
+      - mqtt.publish_json:
+          topic: balkon/input/encoder
+          payload: |-
+            root["v"] = 1;
+            root["delta"] = -1;
 
 # ---- Button LEDs (via NPN, GPIO high = on) ------------------------------------
 output:
@@ -143,101 +170,158 @@ output:
 
 # ---- Inputs -------------------------------------------------------------------
 binary_sensor:
-  # Presence radar.
+  # Presence: published as the contract's shape, with the distance the arbiter needs
+  # for the U1 ramp.
   - platform: ld2410
     has_target:
       id: presence
       name: "Präsenz"
+      internal: true
       filters:
-        - delayed_off: 120s          # keep "present" 2 min after last detection
+        - delayed_off: 120s          # keep "present" 2 min after the last detection
       on_press:
-        - output.turn_on: led1
-        - if:
-            condition:
-              lambda: "return id(auto_mode);"
-            then:
-              - mqtt.publish:
-                  topic: "${wled_topic}"
-                  payload: "ON"
+        - mqtt.publish_json:
+            topic: balkon/presence
+            payload: |-
+              root["v"] = 1;
+              root["present"] = true;
+              root["distance_cm"] = (int) id(moving_distance).state;
       on_release:
-        - output.turn_off: led1
-        - if:
-            condition:
-              lambda: "return id(auto_mode);"
-            then:
-              - mqtt.publish:
-                  topic: "${wled_topic}"
-                  payload: "OFF"
+        - mqtt.publish_json:
+            topic: balkon/presence
+            payload: |-
+              root["v"] = 1;
+              root["present"] = false;
+              root["distance_cm"] = 0;
 
-  # Button 1: toggle light.
+  # Buttons 1-4. Short and long press are distinguished here because the timing is a
+  # property of the switch, not of the mode logic; what each one *means* is in
+  # arbiter/inputs.go.
   - platform: gpio
     name: "Taster 1"
+    id: button1
+    internal: true
     pin:
       number: GPIO13
       mode: INPUT_PULLUP
       inverted: true
-    on_press:
-      - mqtt.publish:
-          topic: "${wled_topic}"
-          payload: "T"
+    on_click:
+      - min_length: 30ms
+        max_length: 600ms
+        then:
+          - mqtt.publish_json:
+              topic: balkon/input/button
+              payload: |-
+                root["v"] = 1;
+                root["id"] = 1;
+                root["action"] = "short";
+      - min_length: 700ms
+        max_length: 4000ms
+        then:
+          - mqtt.publish_json:
+              topic: balkon/input/button
+              payload: |-
+                root["v"] = 1;
+                root["id"] = 1;
+                root["action"] = "long";
 
-  # Button 2: scene cozy (preset 1).
   - platform: gpio
     name: "Taster 2"
+    id: button2
+    internal: true
     pin:
       number: GPIO14
       mode: INPUT_PULLUP
       inverted: true
-    on_press:
-      - mqtt.publish_json:
-          topic: "${wled_topic}/api"
-          payload: |-
-            root["ps"] = 1;
-      - output.turn_on: led2          # M9: LED2 marks the active scene (cozy)
-      - output.turn_off: led3
+    on_click:
+      - min_length: 30ms
+        max_length: 600ms
+        then:
+          - mqtt.publish_json:
+              topic: balkon/input/button
+              payload: |-
+                root["v"] = 1;
+                root["id"] = 2;
+                root["action"] = "short";
+      - min_length: 700ms
+        max_length: 4000ms
+        then:
+          - mqtt.publish_json:
+              topic: balkon/input/button
+              payload: |-
+                root["v"] = 1;
+                root["id"] = 2;
+                root["action"] = "long";
 
-  # Button 3: scene party (preset 2).
   - platform: gpio
     name: "Taster 3"
+    id: button3
+    internal: true
     pin:
       number: GPIO27
       mode: INPUT_PULLUP
       inverted: true
-    on_press:
-      - mqtt.publish_json:
-          topic: "${wled_topic}/api"
-          payload: |-
-            root["ps"] = 2;
-      - output.turn_on: led3          # M9: LED3 marks the active scene (party)
-      - output.turn_off: led2
+    on_click:
+      - min_length: 30ms
+        max_length: 600ms
+        then:
+          - mqtt.publish_json:
+              topic: balkon/input/button
+              payload: |-
+                root["v"] = 1;
+                root["id"] = 3;
+                root["action"] = "short";
+      - min_length: 700ms
+        max_length: 4000ms
+        then:
+          - mqtt.publish_json:
+              topic: balkon/input/button
+              payload: |-
+                root["v"] = 1;
+                root["id"] = 3;
+                root["action"] = "long";
 
-  # Button 4: toggle presence-automatic.
   - platform: gpio
-    name: "Taster 4 (Automatik)"
+    name: "Taster 4"
+    id: button4
+    internal: true
     pin:
       number: GPIO26
       mode: INPUT_PULLUP
       inverted: true
-    on_press:
-      - lambda: "id(auto_mode) = !id(auto_mode);"
-      - if:
-          condition:
-            lambda: "return id(auto_mode);"
-          then:
-            - output.turn_on: led4
-          else:
-            - output.turn_off: led4
+    on_click:
+      - min_length: 30ms
+        max_length: 600ms
+        then:
+          - mqtt.publish_json:
+              topic: balkon/input/button
+              payload: |-
+                root["v"] = 1;
+                root["id"] = 4;
+                root["action"] = "short";
+      - min_length: 700ms
+        max_length: 4000ms
+        then:
+          - mqtt.publish_json:
+              topic: balkon/input/button
+              payload: |-
+                root["v"] = 1;
+                root["id"] = 4;
+                root["action"] = "long";
 
-  # Encoder push: light off.
+  # Encoder push: toggles what the knob adjusts (light or volume). The arbiter owns
+  # that state and publishes it back on balkon/state/knob.
   - platform: gpio
-    name: "Encoder-Taster"
+    name: "Encoder Druck"
+    id: encoder_push
+    internal: true
     pin:
       number: GPIO25
       mode: INPUT_PULLUP
       inverted: true
     on_press:
-      - mqtt.publish:
-          topic: "${wled_topic}"
-          payload: "OFF"
-      - output.turn_off: led2          # M9: clear the scene LEDs when the light is off
-      - output.turn_off: led3
+      - mqtt.publish_json:
+          topic: balkon/input/encoder
+          payload: |-
+            root["v"] = 1;
+            root["action"] = "push";

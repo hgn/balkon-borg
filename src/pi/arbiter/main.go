@@ -38,6 +38,7 @@ type Arbiter struct {
 	envPub  *Coalescer
 	tuner   *Tuner
 	lowPass *LowPass
+	panel   *Panel
 	client  mqtt.Client
 
 	mu      sync.Mutex
@@ -69,6 +70,7 @@ func main() {
 	// this is about not writing a retained message per ESP reading.
 	a.envPub = NewCoalescer(10*time.Second, time.Now)
 	a.tuner = NewTuner(time.Now)
+	a.panel = NewPanel()
 	a.lowPass = NewLowPass(cfg.Adsb.LowPassFt, cfg.Adsb.LowPassKM,
 		time.Duration(cfg.Adsb.LowPassCooldownS)*time.Second, time.Now)
 	a.registerCapabilities()
@@ -156,6 +158,7 @@ func (a *Arbiter) connect() error {
 		// empty history until the next reading.
 		a.publishEnvRecent()
 		a.publish(TopicEventRecent, a.events.Payload(), true)
+		a.publish(TopicKnob, KnobPayload(a.panel.Knob()), true)
 	}
 	opts.OnConnectionLost = func(_ mqtt.Client, err error) {
 		fmt.Fprintf(os.Stderr, "mqtt: connection lost: %v\n", err)
@@ -230,6 +233,12 @@ func (a *Arbiter) onMessage(_ mqtt.Client, msg mqtt.Message) {
 		a.handleModeCommand(topic, msg.Payload())
 	case topic == TopicCmdFocus:
 		a.handleFocus(msg.Payload())
+	case topic == TopicCmdBrightness:
+		a.handleLevel(topic, msg.Payload(), func(v int) { a.setBrightness(v) })
+	case topic == TopicCmdVolume:
+		a.handleLevel(topic, msg.Payload(), func(v int) { a.setVolume(v) })
+	case strings.HasPrefix(topic, "balkon/input/"):
+		a.handleInput(topic, msg.Payload())
 	case strings.HasPrefix(topic, "balkon/env/"):
 		a.mu.Lock()
 		a.lastEnv = time.Now()
@@ -262,6 +271,9 @@ func (a *Arbiter) handleModeCommand(topic string, payload []byte) {
 	for _, m := range changed {
 		a.publishMode(m)
 		a.applyTuner(m)
+		if m == Lumen {
+			a.applyLumen()
+		}
 	}
 }
 
@@ -329,6 +341,111 @@ func (a *Arbiter) skyLoop(ctx context.Context) {
 				a.RecordEvent(CategoryAircraft, hit.EventText())
 			}
 		}
+	}
+}
+
+// handleLevel reads the {"value":n} shape both level commands share.
+func (a *Arbiter) handleLevel(topic string, payload []byte, apply func(int)) {
+	var cmd struct {
+		Value *int `json:"value"`
+	}
+	if err := json.Unmarshal(payload, &cmd); err != nil || cmd.Value == nil {
+		fmt.Fprintf(os.Stderr, "%s: expected {\"value\":n}, got %q\n", topic, payload)
+		return
+	}
+	apply(*cmd.Value)
+}
+
+// setBrightness is the one path to the light's brightness, whether the command came
+// from the app, the panel's encoder or a mode change.
+func (a *Arbiter) setBrightness(value int) {
+	a.panel.SetBrightness(value)
+	a.publishWLED(WLEDBrightness(a.panel.Brightness()))
+}
+
+func (a *Arbiter) setVolume(value int) {
+	a.panel.SetVolume(value)
+	v := a.panel.Volume()
+	// wpctl talks to the same PipeWire session the arbiter plays through, so this is
+	// the volume everything hears, not a per-stream one.
+	if out, err := execRunner("wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@",
+		fmt.Sprintf("%d%%", v)); err != nil {
+		fmt.Fprintf(os.Stderr, "volume: %v: %s\n", err, strings.TrimSpace(out))
+	}
+}
+
+// publishWLED sends a command to the light. WLED speaks its own API and is the only
+// device the arbiter talks to in a foreign dialect, which is why the translation lives
+// in wled.go and this only ships the result.
+func (a *Arbiter) publishWLED(cmd WLEDCommand) {
+	data, err := cmd.Encode()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "wled: %v\n", err)
+		return
+	}
+	if a.client == nil || !a.client.IsConnected() {
+		return
+	}
+	a.client.Publish(WLEDAPITopic(), QoSState, false, data)
+}
+
+// applyLumen pushes a LUMEN submode to the light. Every other mode is the arbiter's
+// own business; this one has a device of its own that has to be told.
+func (a *Arbiter) applyLumen() {
+	state := a.modes.Get(Lumen)
+	cmd, err := WLEDForSubmode(state.Submode, a.panel.Brightness())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "wled: %v\n", err)
+		return
+	}
+	a.publishWLED(cmd)
+}
+
+// handleInput turns a panel event into its effect and carries it out. The panel is a
+// dumb device by design (decision 2026-07-20): it reports what happened, this decides
+// what it means.
+func (a *Arbiter) handleInput(topic string, payload []byte) {
+	var raw map[string]any
+	if err := json.Unmarshal(payload, &raw); err != nil {
+		fmt.Fprintf(os.Stderr, "%s: bad payload: %v\n", topic, err)
+		return
+	}
+	action, ok := ParseInputTopic(topic, raw)
+	if !ok {
+		return
+	}
+
+	effect := a.panel.Handle(action, a.modes)
+	switch {
+	case effect.Focus != nil:
+		if a.modes.SetFocus(*effect.Focus) {
+			a.publish(TopicModeFocus, Envelope(map[string]any{
+				"focus": string(*effect.Focus)}), true)
+		}
+	case effect.Unpin != nil:
+		if a.modes.Pin(*effect.Unpin, false) {
+			a.publishMode(*effect.Unpin)
+		}
+	case effect.SetSubmode != nil:
+		c := effect.SetSubmode
+		changed, err := a.modes.Apply(c.Mode, c.Submode, c.Chan)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "panel: %v\n", err)
+			return
+		}
+		for _, m := range changed {
+			a.publishMode(m)
+			a.applyTuner(m)
+			if m == Lumen {
+				a.applyLumen()
+			}
+		}
+	case effect.Brightness != nil:
+		a.setBrightness(*effect.Brightness)
+	case effect.Volume != nil:
+		a.setVolume(*effect.Volume)
+	case effect.KnobTarget != nil:
+		a.publish(TopicKnob, KnobPayload(*effect.KnobTarget), true)
 	}
 }
 

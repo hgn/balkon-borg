@@ -39,6 +39,7 @@ const (
 	TopicEventRecent   = "balkon/event/recent"
 	TopicEnvRecent     = "balkon/env/recent"
 	TopicAdsbAircraft  = "balkon/adsb/aircraft"
+	TopicKnob          = "balkon/state/knob"
 )
 
 // Subscriptions is everything the arbiter listens to: commands from clients and raw
