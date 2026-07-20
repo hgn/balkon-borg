@@ -14,7 +14,7 @@ anything in here, not the hardware log.
 | `pi/` | Software running on the borg-pi5 hub: orchestration/MQTT-side logic, plus the Podman quadlets in `pi/quadlets/` (Mosquitto, Frigate, readsb/tar1090, BirdNET-Go). |
 | `esp/` | The ESP32 application (moved from `firmware/esphome/`): ESPHome config reading the buttons/encoder/radar/BME280 and driving WLED over MQTT. |
 | `android/` | The phone app. |
-| `shared/` | **The interface contract** ([`shared/README.md`](shared/README.md)): all MQTT topics/payloads, HTTP endpoints/ports, media storage paths — authoritative for arbiter, ESP, app and services. Runtime config (`borg.yaml`) joins it. |
+| `shared/` | **The interface contract** ([`shared/README.md`](shared/README.md)): all MQTT topics/payloads, HTTP endpoints/ports, media storage paths — authoritative for borgd, ESP, app and services. Runtime config (`borg.yaml`) joins it. |
 
 ## Architecture
 

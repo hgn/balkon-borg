@@ -1,6 +1,6 @@
 # M2 — Audio chain
 
-Give the unit a voice, and give the arbiter a way to decide who gets the speaker.
+Give the unit a voice, and give borgd a way to decide who gets the speaker.
 
 ## Starting state
 
@@ -20,7 +20,7 @@ capability, not a startup failure.
 ### Piper TTS
 
 Local text-to-speech, no cloud. A voice model on disk, a small synthesis wrapper the
-arbiter can call. Synthesis is not on the hot path of anything, but it must not block the
+borgd can call. Synthesis is not on the hot path of anything, but it must not block the
 event loop either; run it off the loop and treat a failure as a degraded capability.
 
 Announcements the system already owes: "Borg online" at boot (this package's visible

@@ -1,13 +1,13 @@
-# ADS-B: readsb decodes 1090 MHz, tar1090 draws the map, and the arbiter reads the
+# ADS-B: readsb decodes 1090 MHz, tar1090 draws the map, and borgd reads the
 # aircraft.json both of them share.
 #
 # One image for both because they are two halves of the same job, and because the
-# ultrafeeder image is the one the ADS-B community actually maintains. The arbiter does
+# ultrafeeder image is the one the ADS-B community actually maintains. Borgd does
 # not use the map itself; it reads the JSON and republishes its own snapshot, so the map
 # is there for the evenings you want to look at the whole sky rather than the balcony.
 #
 # The SDR is passed through as a raw USB device. This container is the only thing
-# allowed to hold it while ADS-B runs: the arbiter stops this unit before handing the
+# allowed to hold it while ADS-B runs: borgd stops this unit before handing the
 # tuner to another decoder (tuner.go), because two processes on one stick means neither
 # works.
 
@@ -29,7 +29,7 @@ Environment=TZ=Europe/Berlin
 Environment=READSB_LAT=48.1372
 Environment=READSB_LON=11.5000
 Environment=READSB_ALT=520m
-# The JSON the arbiter polls. tmpfs inside the container, bind-mounted out: it is
+# The JSON borgd polls. tmpfs inside the container, bind-mounted out: it is
 # rewritten every second and has no business touching the SD card.
 Environment=READSB_EXTRA_ARGS=--write-json-every=1
 Volume=/run/borg/readsb:/run/readsb:z

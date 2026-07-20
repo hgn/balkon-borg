@@ -23,7 +23,7 @@ import 'settings.dart';
 enum AggregateHealth { unknown, ok, degraded, bad }
 
 /// Central app state: interprets the MQTT contract into typed state and
-/// exposes commands. Renders only what the arbiter echoes back — no
+/// exposes commands. Renders only what borgd echoes back — no
 /// optimistic UI (contract convention: the state topic is the ack).
 ///
 /// Feeds from either the real broker (`MqttService`) or `DemoSource`
@@ -195,7 +195,7 @@ class AppState extends ChangeNotifier {
   }
 
   // Commands — fire-and-forget; the retained state echo updates the UI. In
-  // demo mode there is no arbiter to echo the state topic back, so the
+  // demo mode there is no borgd to echo the state topic back, so the
   // change is additionally applied straight to local state (E2) — real mode
   // relies solely on the echo, no optimistic UI (contract convention).
   void setSubmode(MainMode m, String submode, {String? chan}) {
@@ -263,7 +263,7 @@ class AppState extends ChangeNotifier {
   /// tuner, returning `true` if something was actually displaced so the caller
   /// can say so. Turning a mode *off* displaces nothing.
   ///
-  /// The arbiter is the authority on this in the real system (it owns the
+  /// Borgd is the authority on this in the real system (it owns the
   /// tuner); the app applies the same rule so the UI does not offer a state
   /// the hardware cannot reach, and so demo mode behaves like the real thing.
   bool setSubmodeExclusive(MainMode m, String submode, {String? chan}) {

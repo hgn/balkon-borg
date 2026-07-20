@@ -37,7 +37,7 @@ scenes (dimmer, warmer, quieter). The former **Party** main mode is dissolved: i
 **Displacement on resource conflict only:** most main modes coexist (LUMEN + COMMS at
 once — different resources). Where two need the *same* exclusive resource, turning one on
 **displaces** the other: **COMMS** and **SIGINT** both need the single SDR tuner, so
-switching one on drops the other to *off*. This is the arbiter enforcing the resource
+switching one on drops the other to *off*. This is borgd enforcing the resource
 table (§4 of `../src/architecture.md`); it only happens when such a conflict actually
 exists.
 
@@ -157,8 +157,8 @@ the phone is never *required* — it is one option among several, not the only w
 
 **Implementation:**
 - **Buttons/encoder** are on the ESP32 (ESPHome, wired per the carrier board). Each
-  press/turn becomes an MQTT message to the arbiter (`balkon/input/*`), which owns the
-  mode state and the brightness/volume targets; the arbiter applies the change (WLED
+  press/turn becomes an MQTT message to borgd (`balkon/input/*`), which owns the
+  mode state and the brightness/volume targets; borgd applies the change (WLED
   preset/brightness, or the audio volume) and publishes the per-main-mode state topics
   (`balkon/mode/<main>` + `balkon/mode/focus` — the authoritative scheme is
   `src/shared/README.md`). Button LEDs are driven locally by the ESP from the retained
@@ -199,15 +199,15 @@ the unit feel intentional and fun, not a utilitarian lamp, without any extra har
 **Implementation:**
 - The effect scenes are **WLED presets** on the Athom controller — WLED's built-in 2D
   effect engine (no custom firmware): disco = a colourful 2D effect, strobe = strobe with
-  colour, police = a blue-red rotating preset. The arbiter selects the preset over MQTT
+  colour, police = a blue-red rotating preset. Borgd selects the preset over MQTT
   (`wled/balkon/api {ps: N}`) when Button 2 lands on that LUMEN submode.
 - The **info-ticker** (U3.2/3) uses WLED's 2D scrolling text: time/temperature from the
   BME ring buffer (U4), next flight from the SIGINT if it is running (the flight line is
   only fresh while the SDR is on ADS-B — the tuner conflict from the mode overview),
-  bird-of-the-day from BirdNET, a welcome message. Content rotates or is arbiter-pushed.
+  bird-of-the-day from BirdNET, a welcome message. Content rotates or is borgd-pushed.
 - The **visualiser** (U3.4) is deliberately simple: the Pi measures the mic's amplitude/
   beat (lightweight, fan-out from the mic stream alongside BirdNET) and publishes a
-  level/beat over MQTT; the arbiter maps it to a WLED effect's intensity/brightness so the
+  level/beat over MQTT; borgd maps it to a WLED effect's intensity/brightness so the
   panel pulses to the music. No per-pixel streaming — a full FFT-spectrum bar display
   (Pi → DDP realtime pixels) was rejected as too much effort for the payoff on an 8×25.
 - Exactly one LUMEN submode runs at a time (Button 2), with an explicit *off*.
@@ -236,7 +236,7 @@ cannot honestly deliver.
 
 **Implementation:** the ESP32 already reads the BME280 over I²C and publishes
 `balkon/env/{temperature,humidity,pressure}` over MQTT (ESPHome), sampled roughly **once a
-minute** (slow signals, no need for more). No database: the arbiter keeps the recent
+minute** (slow signals, no need for more). No database: borgd keeps the recent
 samples in an **in-RAM ring buffer** (a few hours' worth, each entry timestamped), which is
 enough to compute local trends (a pressure drop → weather turning) and to serve the current
 values + short trend. **Delivery follows the same pattern as the SIGINT feeds**
@@ -282,7 +282,7 @@ screen. The low altitude ceiling keeps it a treat, not noise.
 - **readsb** decodes 1090 MHz; **tar1090** gives the map UI and bundles the **offline
   aircraft database** (hex → registration → type → operator) that readsb/tar1090 already
   ship — so type/operator/registration enrichment is local, no lookup service.
-- The arbiter reads readsb's `aircraft.json` (position, altitude, callsign, hex, squawk)
+- Borgd reads readsb's `aircraft.json` (position, altitude, callsign, hex, squawk)
   and applies the trigger rules: *low overflight* = distance(aircraft, Laim) < R **and**
   altitude < ceiling; *special* = hex in a military range, or callsign prefix (e.g. GAF),
   or type in a rare set (A388 / B74x / An-124 / rotorcraft …), or squawk ∈ {7700, 7600,
@@ -290,7 +290,7 @@ screen. The low altitude ceiling keeps it a treat, not noise.
   not a data grave).
 - Airline + flight number come from the callsign (ICAO airline prefix → name, e.g. DLH →
   Lufthansa). The ticker text and the TTS line are built from that + the DB enrichment.
-- Announcement channels per requirement 3/4: ticker on WLED (via the arbiter), TTS via the
+- Announcement channels per requirement 3/4: ticker on WLED (via borgd), TTS via the
   speaker chain for the special triggers (subject to the overlay priority, §5), plus a
   short LUMEN flash.
 - **Config** in `src/shared/`: Laim lat/lon, radius, altitude ceiling, and the
@@ -327,8 +327,8 @@ device), and the normalisation is exactly what keeps the stats meaningful despit
   in its own SQLite database** (a single file, its native store). This is *not* the
   InfluxDB/Grafana "data grave" dropped for live telemetry — discrete bird sightings are
   what a small event log is for, and they're wanted. BirdNET-Go's own UI browses the log;
-  the arbiter also queries the SQLite for the ticker/TTS and the normalised stats.
-- **Uptime normalisation:** the arbiter logs the unit's on-intervals (a tiny table); a
+  borgd also queries the SQLite for the ticker/TTS and the normalised stats.
+- **Uptime normalisation:** borgd logs the unit's on-intervals (a tiny table); a
   species' rate = detections ÷ on-hours in the window, so the gaps don't distort the
   trend.
 - **Always-open mic (fan-out):** the USB mic is a **PipeWire** source (the modern Pi OS
@@ -440,7 +440,7 @@ module was considered and rejected — the user wants it on the SDR if at all.
 
 ## U9 — Audio feedback
 
-U9 is the device's **voice** — and the **audio-overlay arbiter**: it owns the speaker and
+U9 is the device's **voice** — and the **audio-overlay borgd**: it owns the speaker and
 decides what plays when several things want it (U5 announcements, U6 bird TTS, U11 alarm,
 U21 talk-down, storm/EWF warnings).
 
@@ -467,12 +467,12 @@ alarm, and a storm warning never waits behind a radio track.
   grounds. Clips are small pre-recorded WAVs.
 - **Audio path:** USB sound card → PAM8403 amp → Visaton BF 45 (the hardware chain,
   `power-distribution.md`).
-- **The arbiter owns the speaker.** Every audio request — clip, TTS line, COMMS radio
+- **Borgd owns the speaker.** Every audio request — clip, TTS line, COMMS radio
   audio, talk-down — goes through a small **priority mixer**: the highest-priority active
   source plays, lower ones **duck** (radio/media volume drops under a talk-over) or
   **queue** (event-TTS waits for a gap). The alarm pre-empts and re-asserts; a safety
   warning pre-empts talk-down and media; event-TTS plays only when nothing above is active.
-- **Storm trigger** (U9.3): the arbiter watches the BME pressure ring buffer (U4); a fast
+- **Storm trigger** (U9.3): borgd watches the BME pressure ring buffer (U4); a fast
   drop over a short window → a TTS warning + a red panel flash.
 - This is the concrete implementation of the audio overlays in the mode model
   (`../src/architecture.md` §5).
@@ -851,7 +851,7 @@ the radio for a moment, using it never means losing your station.
   unmasked. No new persistent storage — it is a live pass-through.
 - **Talk-down (U21.2):** **record-then-send** (a walkie-talkie clip), not a live stream —
   simple and robust over a flaky mobile link, and it is exactly the WAV playback U9 already
-  does. App holds → records WAV, releases → uploads to the Pi → the arbiter plays it
+  does. App holds → records WAV, releases → uploads to the Pi → borgd plays it
   through the **priority mixer** at the **talk-down (intercom) level** of the U9 ladder
   (`src/architecture.md` §5): it ducks/pre-empts COMMS radio, media and ambient, then they
   resume (U21.4). A safety warning or alarm still cuts into it (safety over comfort).

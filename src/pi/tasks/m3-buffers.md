@@ -32,7 +32,7 @@ Around it, a publisher that mirrors a ring to its retained topic. Two things mat
 ### Environment history
 
 `env/recent`: one sample per minute over a few hours, from the ESP's live topics. The ESP
-publishes plain numbers (ESPHome), the arbiter aggregates them into the timestamped
+publishes plain numbers (ESPHome), borgd aggregates them into the timestamped
 snapshot the app charts. **An absent ESP is normal**: the feed stays empty, the capability
 reports `missing`, nothing crashes.
 
@@ -53,8 +53,8 @@ log with a gap.
 
 - A fake publisher feeding the ESP topics produces a correct `env/recent` snapshot, and a
   client subscribing afterwards receives the history immediately.
-- Restarting the arbiter does not lose the retained snapshot for a connecting client.
-- With no ESP present at all, the arbiter runs, the capability reports missing, and no
+- Restarting borgd does not lose the retained snapshot for a connecting client.
+- With no ESP present at all, borgd runs, the capability reports missing, and no
   other feed is affected.
 - Ring behaviour (capacity, ordering, eviction, serialisation) is unit-tested.
 - `make check` green.

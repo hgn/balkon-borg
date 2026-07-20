@@ -1,18 +1,12 @@
 [project]
-name = "borg-pi"
+name = "borg-provision"
 version = "0.1.0"
-description = "borg-pi5 orchestration: provisioning tool and arbiter"
+description = "borg-pi5 provisioning tool (the Pi daemon itself is Go, see borgd/)"
 requires-python = ">=3.12"
 
-# The arbiter's runtime dependencies (installed into a venv on the Pi, see setup.md).
-# provision.py deliberately depends on none of them: it must run on a bare control
-# machine, so it stays standard library only.
-dependencies = [
-    "aiomqtt",
-    "aiohttp",
-    "pydantic",
-    "PyYAML",
-]
+# Deliberately empty: provision.py is standard library only, so it runs on a bare
+# control machine with no install step. That matters on the day the SD card died.
+dependencies = []
 
 [project.optional-dependencies]
 dev = ["mypy", "pytest"]
@@ -21,7 +15,6 @@ dev = ["mypy", "pytest"]
 python_version = "3.12"
 strict = true
 warn_unreachable = true
-# The tests import provision.py by path (it is a script, not a package member).
 mypy_path = "."
 
 [tool.pytest.ini_options]

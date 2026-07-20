@@ -15,7 +15,7 @@ only the nas-Pi5 is truly always-on.
 
 | Component | Host | Powered | Role |
 |---|---|---|---|
-| **Mode arbiter** ("the brain") | borg-pi5 — Python, host systemd service | with unit | owns `balkon/mode/*`, resolves pin-vs-auto, applies the YAML config, starts/stops the service quadlets to enforce exclusivity |
+| **borgd** ("the brain") | borg-pi5 — Go, user systemd service | with unit | owns `balkon/mode/*`, resolves pin-vs-auto, applies the YAML config, starts/stops the service quadlets to enforce exclusivity |
 | **MQTT broker** (Mosquitto) | borg-pi5 | with unit | the bus everything talks over |
 | **System monitor:** Netdata | borg-pi5 | with unit | CPU/temp/health, own UI (watch the thermals under vision load) |
 | **Frigate** | borg-pi5 | with unit | security surveillance (~2 FPS while absent), event clips off-site to nas-Pi; own UI |
@@ -54,7 +54,7 @@ affected capability, not the system. Each capability has a health probe and a st
 status page at `http://borg-pi:80`. Capabilities re-probe periodically, so hardware
 plugged in later comes up without a restart. If hardware and kernel are fine, everything
 is usable; failures are messages, not crashes. (User's Grundsatz, 2026-07-17; the
-implementation is the arbiter's health registry, `pi/implementation-plan.md`.)
+implementation is borgd's health registry, `pi/implementation-plan.md`.)
 
 ---
 
@@ -326,7 +326,7 @@ and re-asserts until its condition clears:
 **Human override always wins:** an explicit app/button action is honoured immediately
 (it pins the mode, §6) — except the alarm, which re-asserts until the security
 condition itself is resolved. **Confirmed:** a safety warning (2) **cuts into a live
-talk-down** (3) — safety over comfort. TTS is **Piper** (local, offline); the arbiter
+talk-down** (3) — safety over comfort. TTS is **Piper** (local, offline); borgd
 runs the ducking/queue mixer (see `../docs/use-cases.md` U9).
 
 **Panel overlays (confirmed):** the ladder above governs the speaker; the panel has
@@ -346,10 +346,10 @@ layer. Same tie-breaker as audio: higher pre-empts lower, restore on clear.
 
 - **Manual pin:** app or buttons set a submode explicitly → it stays pinned until
   changed or released (Button 1 long-press) back to automatic.
-- **Automatic:** with no active pin, the arbiter picks submodes from triggers (radar
+- **Automatic:** with no active pin, borgd picks submodes from triggers (radar
   pattern, time of day, presence/absence). SENTRY is never automatic — armed only by
   explicit user action (U11).
-- **One writer:** only the arbiter (on the borg-pi5) writes the `balkon/mode/*` state
+- **One writer:** only borgd (on the borg-pi5) writes the `balkon/mode/*` state
   topics, to avoid competing writers; everyone else sends `balkon/cmd/*`.
 - **Buttons vs app:** Button 1 cycles the focus, Button 2 the submode, Button 3 the
   sub-submode — a curated subset. The app addresses the full space, including submodes
@@ -363,7 +363,7 @@ Priority answer to the old open question: **app/manual > automation** while pinn
 
 The unit is all-on/all-off (§2), so every boot needs a defined, safe starting state —
 nothing garish, loud or surprising, and no stale state carried across a power cycle. On
-power-on the arbiter comes up in **automatic** (no manual pin ever survives a reboot),
+power-on borgd comes up in **automatic** (no manual pin ever survives a reboot),
 and each axis takes a calm default:
 
 These defaults are the **amber-highlighted states** in the §3 diagram.
@@ -390,18 +390,18 @@ the physical picture. The mode layer publishes **one retained state topic per ma
 mode** (`balkon/mode/lumen`/`comms`/`sigint`/`sentry`, each `{submode, chan, pinned}`)
 plus `balkon/mode/focus` — the earlier single `balkon/mode` + `/sub` + `/chan` triple is
 superseded (it could not represent four parallel main modes). All mode state is written
-only by the arbiter; clients send `balkon/cmd/*` and render the state echo. The
+only by borgd; clients send `balkon/cmd/*` and render the state echo. The
 mode→per-service settings map is a central declarative config (`shared/borg.yaml`,
 schema grows per service).
 
 **No telemetry database.** The unit's own live data (environment, presence, mode) stays
-on MQTT; the arbiter keeps a short **in-RAM ring buffer** for recent trends (e.g. the
+on MQTT; borgd keeps a short **in-RAM ring buffer** for recent trends (e.g. the
 BME pressure trend for U4). The **app is the live dashboard**; each capture service keeps
 its own UI (tar1090, BirdNET-Go, Frigate) and Netdata covers system health. Persisting
 that live telemetry would be a data grave across the unit's downtime, so there is
 deliberately no InfluxDB/Grafana. **The one persistent database** is **BirdNET-Go's own
 SQLite** bird log (U6) — discrete species-sighting *events*, the service's native file
-store, not our infra; the arbiter also records the unit's on-intervals there so bird
+store, not our infra; borgd also records the unit's on-intervals there so bird
 stats can be **uptime-normalised** (detections ÷ on-hours). A few tiny bounded auxiliary
 files persist alongside it (U5 first-seen set, U18 time-lapse frames) — the "no data
 grave" line targets unbounded telemetry logging, not these.
@@ -437,7 +437,7 @@ ring → local Android notifications, per-category switchable; idle after that
 longevity over certificate infrastructure (user's call).
 
 *Resolved:* the Pi-power coupling worry (§2, unit is all-on/all-off); the combinable-
-feature model + resource table (§3–4); the software stack (Python arbiter as a host
+feature model + resource table (§3–4); the software stack (borgd as a user
 systemd service, YAML config in `shared/`, Netdata for system health, **no telemetry
 DB** — live data on MQTT + an in-RAM ring buffer, the app as the dashboard, each service
 its own UI; see the decision log); Frigate vs MediaPipe (both kept, time-shared on the

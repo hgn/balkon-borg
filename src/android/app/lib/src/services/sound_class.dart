@@ -9,7 +9,7 @@ enum SoundClass {
   /// Navigation and selection: tabs, chips, presets, cards, radar blips.
   navigation,
 
-  /// State echo — the arbiter reporting that something really changed.
+  /// State echo — borgd reporting that something really changed.
   confirm,
 
   /// The rare droid babble that answers a state echo instead of a chirp.

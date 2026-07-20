@@ -1,0 +1,20 @@
+# borgd as a user unit: it needs the user session for PipeWire, and linger keeps it
+# running without a login. A single static Go binary, so there is no interpreter, no
+# virtualenv and nothing to keep up to date underneath it.
+
+[Unit]
+Description=Balkon-Borg daemon
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/srv/borg/app/borgd --config /srv/borg/app/shared/borg.yaml
+Restart=always
+RestartSec=5
+# Diagnostics go to stderr and systemd captures them: journalctl is the log.
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

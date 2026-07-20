@@ -22,7 +22,7 @@ user-initiated listening displaces observation; the antenna is a manual compromi
 mode switch retunes the tuner, not the antenna, and the system may *announce* the antenna
 length to extend rather than pretending it can do it itself).
 
-Build a **tuner resource owner** in the arbiter: a table of claims with priorities, a
+Build a **tuner resource owner** in borgd: a table of claims with priorities, a
 current owner, clean handover (stop the previous decoder, start the next), and a return to
 the idle default when a claim is released. Decoder processes are supervised: one that dies
 is restarted with backoff, and repeated failures degrade the capability rather than
@@ -37,7 +37,7 @@ answerable at a glance.
 Each is a small module that knows how to start, stop and parse one thing, feeding the ring
 buffer framework from M3 and its retained snapshot topic:
 
-- **readsb** plus tar1090 (its own quadlet, its own port). The arbiter publishes the sky
+- **readsb** plus tar1090 (its own quadlet, its own port). Borgd publishes the sky
   snapshot the app's radar draws: retained, roughly once a second while ADS-B runs,
   nearest first, with distance and bearing relative to the balcony **computed here** so
   every client does not repeat the trigonometry. The exact payload is already pinned in
@@ -63,7 +63,7 @@ Written, untested against hardware:
   waiting queue, expiry of scheduled claims, fall back to ADS-B when everything is
   released. Mode commands map onto consumers, and a band change announces the antenna
   length.
-- **ADS-B** wired end to end: the arbiter polls readsb's `aircraft.json`, drops
+- **ADS-B** wired end to end: borgd polls readsb's `aircraft.json`, drops
   positionless and stale entries, filters by range, computes distance and bearing from
   the configured home coordinate, sorts nearest first and republishes the retained
   snapshot once a second while ADS-B holds the tuner. The low-pass event fires with a

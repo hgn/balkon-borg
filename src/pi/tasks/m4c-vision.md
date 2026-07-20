@@ -54,7 +54,7 @@ clips local on the borg-pi.** Implement local, but:
 
 ### Talk-down (U21)
 
-The phone records a message and POSTs it to the arbiter's talk-down endpoint. The arbiter
+The phone records a message and POSTs it to borgd's talk-down endpoint. Borgd
 takes the speaker via the M2 mixer, plays it, and returns the speaker to whatever had it.
 The app also sends an **effect parameter** to lay over the WAV; it is already in the UI and
 currently goes nowhere. Define what the effects are, or reject the ones you will not
@@ -64,7 +64,7 @@ support, and say which.
 
 - Live view works in the app over WebRTC, with MJPEG proving the fallback.
 - The SENTRY ladder runs end to end: presence, person, effector, recording, notification.
-- Retriggering behaves per the exit rule; arming survives an arbiter restart.
+- Retriggering behaves per the exit rule; arming survives an borgd restart.
 - Talk-down plays on the balcony speaker and the previous audio resumes.
 - Clip retention is bounded and the bound is written down.
 - `make check` green.

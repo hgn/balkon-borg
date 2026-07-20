@@ -6,9 +6,9 @@ given has enough to work correctly. Read it fully before writing code.
 
 - **How the Pi is set up and what it is built from:** [`setup.md`](setup.md) — the
   manual first steps (image, WiFi, SSH) and the technology in detail: Podman quadlets,
-  the asyncio arbiter, PipeWire, time sync, health, storage, deployment.
+  borgd, PipeWire, time sync, health, storage, deployment.
 - **What is being built:** [`implementation-plan.md`](implementation-plan.md) (decided
-  2026-07-17: Python provisioning tool, system quadlets + user-session arbiter, pydantic
+  2026-07-17: Python provisioning tool, system quadlets + user-session borgd, pydantic
   config, health registry, milestones M0-M4+).
 - **The work packages:** [`tasks/`](tasks/) — one file per package, in order. Each names
   its own exit criteria.
@@ -122,7 +122,7 @@ it is already correct. Re-running the whole thing is a no-op and must stay a no-
 src/pi/
   provision.py         provisioning tool (control machine, Python, stdlib only)
   tests/               its tests (pytest)
-  arbiter/             the arbiter (Go, one static binary)
+  borgd/             borgd (Go, one static binary)
     contract.go        topics and payload envelopes, mirroring shared/README.md
     modes.go           mode state machine, incl. the single-tuner rule
     health.go          capability registry
@@ -134,7 +134,7 @@ src/pi/
   tasks/               the work packages
 ```
 
-**Two languages on purpose** (decided 2026-07-20, see the decision log): the arbiter is
+**Two languages on purpose** (decided 2026-07-20, see the decision log): borgd is
 Go because it ships as one static binary with no runtime to maintain on the Pi, and
 `provision.py` is Python because it runs on the control machine, needs no build step,
 and must still work when everything else is broken.
@@ -164,7 +164,7 @@ Separator is `-`, **never `_`**, for every file type: `ring-buffer.py`, `mosquit
 use one lowercase word (`buffers/rings.py`); fall back to `_` only if one word is truly
 impossible.
 
-### Go (the arbiter)
+### Go (borgd)
 
 - `gofmt` decides formatting; run `make fmt`. `go vet` must be clean.
 - Errors are values and are wrapped with context (`fmt.Errorf("...: %w", err)`); the

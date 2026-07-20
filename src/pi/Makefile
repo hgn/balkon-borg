@@ -11,9 +11,9 @@ REMOTE := /srv/borg/app
 
 PYTHON := python3
 
-# The arbiter is a single static binary, cross-compiled for the Pi from here. The
+# borgd is a single static binary, cross-compiled for the Pi from here. The
 # version is stamped in so the status page can say which tree is running.
-ARBITER := arbiter/borg-arbiter
+BORGD := borgd/borgd
 VERSION := $(shell git rev-list --count HEAD 2>/dev/null || echo 0)
 COMMIT  := $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 GOFLAGS := -trimpath -ldflags "-s -w -X main.version=r$(VERSION)+$(COMMIT)"
@@ -24,20 +24,20 @@ all: check build ## what CI would do: checks, then the binary
 
 check: types test ## mypy strict + go vet + both test suites
 
-types: ## static checks (mypy strict for the tool, go vet for the arbiter)
+types: ## static checks (mypy strict for the tool, go vet for borgd)
 	$(PYTHON) -m mypy --strict provision.py tests
-	cd arbiter && go vet ./...
+	cd borgd && go vet ./...
 
 test: ## run both test suites
 	$(PYTHON) -m pytest -q
-	cd arbiter && go test ./...
+	cd borgd && go test ./...
 
-build: ## cross-compile the arbiter for the Pi (linux/arm64)
-	cd arbiter && GOOS=linux GOARCH=arm64 go build $(GOFLAGS) -o borg-arbiter .
-	@ls -lh $(ARBITER) | awk '{print "  " $$9 ": " $$5}'
+build: ## cross-compile borgd for the Pi (linux/arm64)
+	cd borgd && GOOS=linux GOARCH=arm64 go build $(GOFLAGS) -o borgd .
+	@ls -lh $(BORGD) | awk '{print "  " $$9 ": " $$5}'
 
 fmt: ## format the Go sources
-	cd arbiter && gofmt -w *.go
+	cd borgd && gofmt -w *.go
 
 provision: ## bring the Pi to the target state (idempotent)
 	./provision.py --host $(HOST) --user $(USER)
@@ -48,18 +48,18 @@ plan: ## show what provisioning would do, changing nothing
 report: ## read-only: what hardware the Pi currently sees
 	./provision.py --host $(HOST) --user $(USER) --report
 
-deploy: build ## push the arbiter binary and the shared config, then restart it
+deploy: build ## push the borgd binary and the shared config, then restart it
 	ssh $(TARGET) 'mkdir -p $(REMOTE)/shared'
-	rsync -a $(ARBITER) $(TARGET):$(REMOTE)/borg-arbiter
+	rsync -a $(BORGD) $(TARGET):$(REMOTE)/borgd
 	rsync -a ../shared/borg.yaml $(TARGET):$(REMOTE)/shared/borg.yaml
-	ssh $(TARGET) 'systemctl --user restart borg-arbiter'
+	ssh $(TARGET) 'systemctl --user restart borgd'
 	@echo "deployed r$(VERSION)+$(COMMIT)"
 
-logs: ## follow the arbiter's log
-	ssh $(TARGET) 'journalctl --user -u borg-arbiter -f'
+logs: ## follow borgd's log
+	ssh $(TARGET) 'journalctl --user -u borgd -f'
 
 status: ## unit and container status at a glance
-	ssh $(TARGET) 'systemctl --user status borg-arbiter --no-pager; podman ps'
+	ssh $(TARGET) 'systemctl --user status borgd --no-pager; podman ps'
 
 shell: ## open a shell on the Pi
 	ssh $(TARGET)
@@ -67,7 +67,7 @@ shell: ## open a shell on the Pi
 clean: ## remove caches and build leftovers
 	find . -name __pycache__ -type d -prune -exec rm -rf {} +
 	rm -rf .mypy_cache .pytest_cache
-	rm -f $(ARBITER)
+	rm -f $(BORGD)
 
 distclean: clean ## fresh-checkout state
 

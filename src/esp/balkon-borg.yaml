@@ -3,7 +3,7 @@
 # The panel is a **dumb input device** (decision 2026-07-20, src/log/decisions.md): it
 # reports what happened and never decides what it means. Buttons, encoder, radar and
 # BME280 are published on `balkon/input/*`, `balkon/presence` and `balkon/env/*`; the
-# arbiter on the borg-pi owns mode state, brightness, volume and the light.
+# borgd on the borg-pi owns mode state, brightness, volume and the light.
 #
 # It used to drive WLED directly. That contradicted the contract and would have meant
 # two owners for one lamp, drifting apart in a way nobody can debug from the outside.
@@ -45,10 +45,10 @@ mqtt:
   broker: !secret mqtt_broker        # the borg-pi5 Mosquitto (the hub)
   username: !secret mqtt_user        # "esp", see shared/borg.yaml
   password: !secret mqtt_password
-  # ESPHome's own discovery topics are noise on this broker: the app and the arbiter
+  # ESPHome's own discovery topics are noise on this broker: the app and borgd
   # speak the contract, not Home Assistant's schema.
   discovery: false
-  # Presence is a boolean the arbiter needs a shape for, so it is published by hand
+  # Presence is a boolean borgd needs a shape for, so it is published by hand
   # below rather than through ESPHome's sensor topics.
   topic_prefix: balkon/esp
 
@@ -118,7 +118,7 @@ sensor:
     update_interval: 30s
 
   # The radar reports centimetres, not a decision. The distance-to-brightness curve
-  # (U1) belongs to the arbiter, which is the only thing that knows what else is going
+  # (U1) belongs to borgd, which is the only thing that knows what else is going
   # on at the time.
   - platform: ld2410
     moving_distance:
@@ -130,7 +130,7 @@ sensor:
       name: "Radar Ruhedistanz"
       internal: true
 
-  # Encoder: every detent is an event, the arbiter decides what it adjusts.
+  # Encoder: every detent is an event, borgd decides what it adjusts.
   - platform: rotary_encoder
     id: enc
     internal: true
@@ -170,7 +170,7 @@ output:
 
 # ---- Inputs -------------------------------------------------------------------
 binary_sensor:
-  # Presence: published as the contract's shape, with the distance the arbiter needs
+  # Presence: published as the contract's shape, with the distance borgd needs
   # for the U1 ramp.
   - platform: ld2410
     has_target:
@@ -196,7 +196,7 @@ binary_sensor:
 
   # Buttons 1-4. Short and long press are distinguished here because the timing is a
   # property of the switch, not of the mode logic; what each one *means* is in
-  # arbiter/inputs.go.
+  # borgd/inputs.go.
   - platform: gpio
     name: "Taster 1"
     id: button1
@@ -309,7 +309,7 @@ binary_sensor:
                 root["id"] = 4;
                 root["action"] = "long";
 
-  # Encoder push: toggles what the knob adjusts (light or volume). The arbiter owns
+  # Encoder push: toggles what the knob adjusts (light or volume). Borgd owns
   # that state and publishes it back on balkon/state/knob.
   - platform: gpio
     name: "Encoder Druck"

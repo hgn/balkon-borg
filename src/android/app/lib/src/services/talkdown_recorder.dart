@@ -33,7 +33,7 @@ abstract class TalkdownRecorder {
 ///
 /// **Format decision:** WAV (`AudioEncoder.wav`, PCM16 with headers) rather
 /// than the package's default AAC/M4A — `src/shared/README.md`'s
-/// `POST /api/talkdown` contract expects a WAV body, and the arbiter just
+/// `POST /api/talkdown` contract expects a WAV body, and borgd just
 /// plays it back (no server-side transcoding). Mono is enough for a talk-down
 /// clip and keeps the upload small (contract caps it at ~5 MB / 30 s).
 class PackageTalkdownRecorder implements TalkdownRecorder {

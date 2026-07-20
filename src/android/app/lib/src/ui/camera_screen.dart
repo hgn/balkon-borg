@@ -150,7 +150,7 @@ class _CameraScreenState extends State<CameraScreen> {
     if (path == null) return;
 
     if (demoMode) {
-      // Not a real network result (no arbiter to succeed/fail against) —
+      // Not a real network result (no borgd to succeed/fail against) —
       // stays silent, matching that no haptic fires here either.
       _snack(messenger, textStyle, snackColor, 'Demo — nicht gesendet');
       return;
@@ -441,7 +441,7 @@ class _SentryCard extends StatelessWidget {
   /// Status line per SENTRY submode (docs/use-cases.md §U11 lifecycle:
   /// off · arming · armed · grace · alarm). Only `off`/`armed` exist in the
   /// wire contract today (`contract/submodes.dart`); `arming`/`grace`/`alarm`
-  /// are handled defensively for when the arbiter starts sending them.
+  /// are handled defensively for when borgd starts sending them.
   String _statusText(String submode) => switch (submode) {
         'off' => 'Nicht scharf',
         'arming' => 'Scharfschaltung läuft…',

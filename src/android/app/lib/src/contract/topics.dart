@@ -6,7 +6,7 @@ library;
 enum MainMode { lumen, comms, sigint, sentry }
 
 abstract final class Topics {
-  // State (retained, arbiter-owned).
+  // State (retained, borgd-owned).
   static String mode(MainMode m) => 'balkon/mode/${m.name}';
   static const modeFocus = 'balkon/mode/focus';
   static const stateKnob = 'balkon/state/knob';
@@ -46,7 +46,7 @@ abstract final class Topics {
 /// Balcony coordinates, used to fall back to client-side great-circle math
 /// (`models/aircraft.dart`'s `GreatCircle`) when `balkon/adsb/aircraft`
 /// carries `lat`/`lon` but no `dist_km`/`bearing_deg`. Munich Laim, read off
-/// a map — an approximation, not surveyed; moves to app settings/arbiter
+/// a map — an approximation, not surveyed; moves to app settings/borgd
 /// config once the real balcony position matters for more than a radar
 /// picture (decisions log 2026-07-19).
 abstract final class BorgGeo {

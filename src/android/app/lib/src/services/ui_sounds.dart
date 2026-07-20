@@ -15,7 +15,7 @@
 ///   rows, cards. Uniform pick among the short clicks, no surprises ever.
 /// - `confirm` — the "state-echo confirmation" counterpart to
 ///   `mediumImpact()` fired from `AppState._applyModeUpdate`, i.e. the
-///   arbiter reporting back that COMMS really went from off to FM. Usually
+///   borgd reporting back that COMMS really went from off to FM. Usually
 ///   a chirp, at `_droidChance` a burst of droid babble instead. Suppressed
 ///   for SENTRY submode changes (see `app_state.dart`) since those already
 ///   get `powerUp`/`powerDown` at the switch itself.

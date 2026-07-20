@@ -11,7 +11,7 @@ The storage model is deliberate and slightly counterintuitive, so do not "fix" i
 
 - The Pi keeps a **rolling FIFO of about 50 images in tmpfs**. Volatile on purpose, since
   the Pi is not on all the time and its SD card is not an archive.
-- On each new image the arbiter publishes a **retained pointer** (id, timestamp,
+- On each new image borgd publishes a **retained pointer** (id, timestamp,
   satellite, HTTP URL) and serves the file over HTTP.
 - The **phone** fetches it and keeps the permanent collection. The archive lives on the
   device that is always with the user, not on the box under the balcony.
@@ -31,7 +31,7 @@ the camera is otherwise doing, and must not fail when SENTRY has the camera pinn
 
 ## HTTP endpoints
 
-Served by the arbiter's aiohttp alongside the status page from M1:
+Served by borgd's HTTP server alongside the status page from M1:
 
 - the media paths for the two feeds above;
 - the **talk-down upload** endpoint (implemented in M4c, routed here);

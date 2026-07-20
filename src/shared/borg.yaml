@@ -4,7 +4,7 @@
 # live here, not in the clients (see README.md, "the Pi owns the facts"). Clients may
 # hold a fallback for the moment before the Pi answers, never an authority.
 #
-# Validated with pydantic at arbiter startup, so a typo fails immediately with the
+# Validated at borgd startup, so a typo fails immediately with the
 # field named instead of turning into odd behaviour later.
 
 broker:
@@ -16,7 +16,7 @@ broker:
   # system either (settled; see the decision log).
   #
   # The user names stay separate so the broker ACL can still enforce who may write
-  # what (arbiter owns state, app sends commands, esp sends input). They all
+  # what (borgd owns state, app sends commands, esp sends input). They all
   # authenticate with this one password.
   #
   # To change it: edit here, run `./provision.py --only mosquitto-passwd`, then enter

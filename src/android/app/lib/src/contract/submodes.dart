@@ -59,7 +59,7 @@ abstract final class Submodes {
   /// (see `sentry` above); `grace`/`alarm` are named here as a forward-
   /// looking extension of the same armed family (docs/use-cases.md §U11
   /// lifecycle: off · arming · armed · grace · alarm) so both call sites
-  /// don't need a follow-up change if/when the arbiter starts sending them.
+  /// don't need a follow-up change if/when borgd starts sending them.
   static const sentryArmedSubmodes = {'armed', 'grace', 'alarm'};
 
   static List<Submode> forMode(MainMode m) => switch (m) {
@@ -76,7 +76,7 @@ abstract final class Submodes {
       forMode(m).where((s) => s.id != 'off').toList(growable: false);
 
   /// Display label for a wire submode id; falls back to the raw id for
-  /// values not in the list (defensive — the arbiter is the source of truth,
+  /// values not in the list (defensive — borgd is the source of truth,
   /// a future submode not yet mirrored here should still render as *something*).
   static String labelFor(MainMode m, String id) => forMode(m)
       .firstWhere((s) => s.id == id, orElse: () => Submode(id, id))

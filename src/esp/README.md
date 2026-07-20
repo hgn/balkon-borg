@@ -4,7 +4,7 @@ ESPHome config for the ESP32-DevKitC on the carrier board. Reads the buttons, en
 LD2410B radar and BME280, and **publishes them as raw input** — it does not decide
 anything.
 
-The panel is deliberately dumb (decision 2026-07-20): the arbiter on the borg-pi owns
+The panel is deliberately dumb (decision 2026-07-20): borgd on the borg-pi owns
 mode state, brightness, volume and the light. An earlier version drove WLED directly,
 which contradicted the contract and would have given one lamp two owners. The one
 local behaviour left is the button LEDs, driven from the retained mode topics so the
@@ -66,7 +66,7 @@ scenes become LUMEN submodes on Button 2, and the whole device is switched at th
 - **Mosquitto** on the borg-pi5 (the hub); credentials in `secrets.yaml`, user `esp`
   with the shared password from `../shared/borg.yaml`.
 - **WLED** with MQTT enabled, device topic `wled/balkon`, and presets matching
-  `arbiter/wled.go`. The ESP no longer talks to it; the arbiter does.
+  `borgd/wled.go`. The ESP no longer talks to it; borgd does.
 
 ## Build / flash
 

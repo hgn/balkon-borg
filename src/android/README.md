@@ -52,5 +52,5 @@ E1–E6 done: theme, shell (header/health-dot/settings gear), all four tabs (Hom
 Kamera/Radio/Log) in the design style, the settings + health screens restyled, and the
 watch-window notification service. Live view (WebRTC against go2rtc) stays deferred
 until go2rtc runs on the Pi (D5); talk-down (`/api/talkdown`) is wired but untested
-against a real arbiter. Demo mode (`DemoSource`) keeps every screen developable without
+against a real borgd. Demo mode (`DemoSource`) keeps every screen developable without
 the Pi broker.

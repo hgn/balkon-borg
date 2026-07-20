@@ -1,6 +1,6 @@
 # src/shared — the interface contract
 
-The authoritative contract between all components: **borg-pi5 arbiter, ESP32, Android
+The authoritative contract between all components: **borg-pi5 daemon (`borgd`), ESP32, Android
 app, and the capture services**. Everything that crosses a component boundary is
 specified here — MQTT topics and payloads, HTTP endpoints and ports, and where media
 files live. `docs/network.md` keeps the physical picture and a summary; on conflict,
@@ -27,7 +27,7 @@ here for the first time.
 - **Retained:** state, snapshots, media pointers and health are retained (a fresh client
   gets the full picture on subscribe). Commands, inputs and events are never retained.
 - **Commands are fire-and-forget; the state topic is the ack.** A client sends a
-  command, the arbiter applies it (or refuses) and publishes the resulting state —
+  command, borgd applies it (or refuses) and publishes the resulting state —
   clients render state, never their own optimistic guess.
 - **The borg-pi5 is the master; clients are mostly displays.** Every fact about the
   world or the device belongs to the Pi and reaches clients over MQTT: home coordinates,
@@ -37,11 +37,11 @@ here for the first time.
   answered yet, never an authority. Only pure UI preferences (sounds, haptics, effects,
   theme, display name, check interval) belong to the client, because they differ per
   phone and per person by definition.
-- **One writer per topic.** The arbiter owns `balkon/mode/*`, `balkon/health/*`,
+- **One writer per topic.** Borgd owns `balkon/mode/*`, `balkon/health/*`,
   `balkon/event/*` and all `.../recent` snapshots; the ESP owns `balkon/env/*` (live),
   `balkon/presence`, `balkon/input/*`; services own their feed topics.
 
-## MQTT — state (retained, arbiter-owned)
+## MQTT — state (retained, borgd-owned)
 
 The four main modes run in parallel; each has its own state topic. The old single
 `balkon/mode` + `/sub` + `/chan` triple is **superseded** (it could not represent four
@@ -60,28 +60,28 @@ parallel modes).
 (station/frequency/preset) or `null`. SENTRY's lifecycle states (arming → armed →
 grace → alarm) are submode values, so the app renders them from the same topic.
 
-## MQTT — commands (not retained, arbiter subscribes)
+## MQTT — commands (not retained, borgd subscribes)
 
 | Topic | Payload | Effect |
 |---|---|---|
 | `balkon/cmd/mode/<main>` | `{"v":1,"submode":"disco"}` and/or `{"chan":"bayern3"}` | set submode / channel; `<main>` ∈ lumen/comms/sigint/sentry |
 | `balkon/cmd/focus` | `{"v":1,"focus":"comms"}` | switch button focus |
-| `balkon/cmd/brightness` | `{"v":1,"value":0..255}` | LUMEN brightness (arbiter → WLED) |
+| `balkon/cmd/brightness` | `{"v":1,"value":0..255}` | LUMEN brightness (borgd → WLED) |
 | `balkon/cmd/volume` | `{"v":1,"value":0..100}` | speaker volume |
 
-Invalid commands (unknown submode, resource conflict the arbiter refuses) are dropped
+Invalid commands (unknown submode, resource conflict borgd refuses) are dropped
 with a log line; the unchanged state topic is the signal. Arming SENTRY via
 `cmd/mode/sentry {"submode":"armed"}` starts the *arming* sequence (exit handling,
 U11), it does not jump straight to armed.
 
-## MQTT — inputs (ESP → arbiter, not retained)
+## MQTT — inputs (ESP → borgd, not retained)
 
 | Topic | Payload |
 |---|---|
 | `balkon/input/button` | `{"v":1,"id":1..4,"action":"short"\|"long"}` |
 | `balkon/input/encoder` | `{"v":1,"delta":±n}` or `{"v":1,"action":"push"}` |
 
-The ESP publishes raw inputs; the arbiter interprets them against focus/mode state
+The ESP publishes raw inputs; borgd interprets them against focus/mode state
 (U2). Button LEDs are driven locally by the ESP from the retained mode topics.
 
 ## MQTT — telemetry and feeds
@@ -89,14 +89,14 @@ The ESP publishes raw inputs; the arbiter interprets them against focus/mode sta
 | Topic | Owner | Retained | Payload |
 |---|---|---|---|
 | `balkon/env/temperature` · `/humidity` · `/pressure` | ESP | no | plain number (ESPHome) |
-| `balkon/env/recent` | arbiter | **yes** | `{"v":1,"samples":[{"ts":…,"t":…,"h":…,"p":…},…]}` — a few hours, 1/min |
+| `balkon/env/recent` | borgd | **yes** | `{"v":1,"samples":[{"ts":…,"t":…,"h":…,"p":…},…]}` — a few hours, 1/min |
 | `balkon/presence` | ESP | no | `{"v":1,"present":bool,"distance_cm":n}` |
 | `balkon/cam/events` | Frigate | no | Frigate detection events (native schema) |
-| `balkon/adsb/aircraft` | arbiter | **yes** | current sky picture (from readsb), republished ~1/s while ADS-B runs: `{"v":1,"ts":…,"aircraft":[{"hex":"3c6…","flight":"DLH1AB","lat":…,"lon":…,"alt_ft":…,"track":…,"gs":…,"dist_km":…,"bearing_deg":…},…]}`, nearest first. `dist_km`/`bearing_deg` are relative to the balcony and computed by the arbiter; a client that gets neither falls back to its own great-circle math on `lat`/`lon`. An empty sky is an empty list, not a missing message. |
+| `balkon/adsb/aircraft` | borgd | **yes** | current sky picture (from readsb), republished ~1/s while ADS-B runs: `{"v":1,"ts":…,"aircraft":[{"hex":"3c6…","flight":"DLH1AB","lat":…,"lon":…,"alt_ft":…,"track":…,"gs":…,"dist_km":…,"bearing_deg":…},…]}`, nearest first. `dist_km`/`bearing_deg` are relative to the balcony and computed by borgd; a client that gets neither falls back to its own great-circle math on `lat`/`lon`. An empty sky is an empty list, not a missing message. |
 | `balkon/birds/detections` | BirdNET-Go | no | detection (native schema) |
-| `balkon/ism/recent` · `/tpms/recent` · `/aprs/recent` · `/radiosonde/recent` · `/meteor/recent` | arbiter | **yes** | `{"v":1,"entries":[…last ~50, newest first]}` (SIGINT ring-buffer pattern) |
+| `balkon/ism/recent` · `/tpms/recent` · `/aprs/recent` · `/radiosonde/recent` · `/meteor/recent` | borgd | **yes** | `{"v":1,"entries":[…last ~50, newest first]}` (SIGINT ring-buffer pattern) |
 
-## MQTT — media pointers (retained, arbiter-owned)
+## MQTT — media pointers (retained, borgd-owned)
 
 | Topic | Payload |
 |---|---|
@@ -107,7 +107,7 @@ The ESP publishes raw inputs; the arbiter interprets them against focus/mode sta
 The app fetches the URL and keeps its own FIFO-50 gallery (U14); the Pi keeps a rolling
 FIFO-50 in tmpfs so an offline phone can catch up.
 
-## MQTT — health (retained, arbiter-owned)
+## MQTT — health (retained, borgd-owned)
 
 One topic per capability plus an aggregate; this is the degraded-services interface
 (stability principle, `architecture.md` §2):
@@ -118,14 +118,14 @@ One topic per capability plus an aggregate; this is the degraded-services interf
 | `balkon/health/<capability>` | `{"v":1,"state":"ok"\|"degraded"\|"missing"\|"disabled","detail":"…","since":ts,"last_ok":ts}` |
 
 Capabilities (initial set): `clock` (NTP sync), `sdr`, `mic`, `speaker`, `camera`,
-`esp` (mapped from ESPHome availability), `broker`, `arbiter`, later `wled` and one per
+`esp` (mapped from ESPHome availability), `broker`, `borgd`, later `wled` and one per
 service (`frigate`, `birdnet`, `readsb`, …). **Implemented as of M1:** clock, sdr, mic,
-speaker, camera, esp, broker, arbiter. The **arbiter's LWT** sets
-`balkon/health/arbiter` to `missing` if it dies uncleanly, so the app can tell "arbiter
+speaker, camera, esp, broker, borgd. The **borgd's LWT** sets
+`balkon/health/borgd` to `missing` if it dies uncleanly, so the app can tell "borgd
 down" from "all quiet". Probes re-run periodically — hardware plugged in later comes up
 without restart.
 
-## MQTT — events (not retained, arbiter-owned)
+## MQTT — events (not retained, borgd-owned)
 
 | Topic | When |
 |---|---|
@@ -150,7 +150,7 @@ All LAN/WireGuard only; nothing is internet-exposed.
 
 | Port | Service | Purpose |
 |---|---|---|
-| **80** | arbiter (aiohttp) | status page `/`, `GET /health.json`, `GET /media/…`, `GET /apk/…`, `POST /api/talkdown` |
+| **80** | borgd | status page `/`, `GET /health.json`, `GET /media/…`, `GET /apk/…`, `POST /api/talkdown` |
 | 1883 | Mosquitto | MQTT |
 | 1984 | go2rtc | live camera: WebRTC/MJPEG stream API (U21 live view) |
 | 8971 | Frigate | UI + clip archive |
@@ -160,7 +160,7 @@ All LAN/WireGuard only; nothing is internet-exposed.
 | 19999 | Netdata | system health (host metrics) |
 
 - **`POST /api/talkdown`** — body: WAV (≤ ~30 s, ≤ 5 MB), response `202 {"id":…}`; the
-  arbiter plays it at talk-down priority (U21); whatever was ducked resumes.
+  borgd plays it at talk-down priority (U21); whatever was ducked resumes.
 - **Live view (U21):** the app talks to go2rtc directly — **WebRTC** via
   `flutter_webrtc` against go2rtc's WebRTC endpoint (low latency, the primary path),
   MJPEG (`http://borg-pi:1984/api/stream.mjpeg?src=cam`) as the dumb fallback.
@@ -194,7 +194,7 @@ things to lose after an SD failure.
 
 | User | May write | May read |
 |---|---|---|
-| `arbiter` | everything | everything |
+| `borgd` | everything | everything |
 | `esp` | `balkon/env/*`, `balkon/presence`, `balkon/input/*`, `wled/*` | `balkon/mode/#` |
 | `app` | `balkon/cmd/#` | everything |
 | `svc-<name>` (per service) | its own feed topics | as needed |

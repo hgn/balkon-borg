@@ -14,6 +14,25 @@ split into src/") for why.
 
 ---
 
+## 2026-07-20 — "arbiter" renamed to borgd
+
+The central process on the Pi was called the arbiter, after what it does: it decides
+between competing consumers (one SDR and six appetites, one speaker and five sources,
+one lamp and three ways to control it). The user did not recognise the word, which is
+the only test that matters for a name you will read in a journal in five years. Renamed
+to **borgd**, the obvious daemon name for this project.
+
+Renamed everywhere it is visible: the directory (`src/pi/borgd/`), the Go module, the
+binary, the systemd unit, the broker account and the `balkon/health/borgd` capability.
+Done now rather than later precisely because nothing is deployed yet: the wire-visible
+parts (account name, capability name) cost nothing today and would have to be migrated
+on a running system afterwards.
+
+Entries above this line still say "arbiter" and are left as written; a decision log that
+gets retroactively edited is not a record of anything.
+
+---
+
 ## 2026-07-20 — The ESP is a dumb input device, the arbiter owns the light
 
 `src/esp/balkon-borg.yaml` was written during the hardware phase and drives WLED

@@ -72,7 +72,7 @@ does nothing. If it fails, it names the step and what it saw.
 
 ## Changing the broker password
 
-`broker.password` in `src/shared/borg.yaml` is one pre-shared secret for the arbiter,
+`broker.password` in `src/shared/borg.yaml` is one pre-shared secret for borgd,
 the app and the ESP. To change it:
 
 ```
@@ -100,19 +100,19 @@ manual part is kept this small.
 control machine (this repo)                     borg-pi
 ─────────────────────────────                   ───────────────────────────────────
 provision.py ── ssh/rsync ──────────────────▶   system units + config
-go build (arm64) + rsync ───────────────────▶   /srv/borg/app/borg-arbiter
+go build (arm64) + rsync ───────────────────▶   /srv/borg/app/borgd
 
                                                 systemd (system)
                                                   └─ Podman quadlets
                                                        mosquitto, frigate, go2rtc,
                                                        readsb/tar1090, birdnet-go
                                                 systemd (user, lingering)
-                                                  ├─ borg-arbiter (Go: MQTT + HTTP)
+                                                  ├─ borgd (Go: MQTT + HTTP)
                                                   └─ pipewire + wireplumber
 ```
 
 The split is deliberate: containers need device access and run as system units, while
-audio needs a user session and so does the arbiter that drives it.
+audio needs a user session and so does borgd that drives it.
 
 ## Provisioning: plain Python over SSH
 
@@ -173,7 +173,7 @@ Why this shape:
   exercise. The box is protected, not internet-facing, and this was the user's explicit
   call (2026-07-17). Rootless stays available per service if it is ever free.
 
-## The arbiter: one Go binary
+## Borgd: one Go binary
 
 The application logic is a single statically linked Go binary running as a **user**
 systemd unit with `loginctl enable-linger`, so it starts at boot without a login.
@@ -186,7 +186,7 @@ dependencies to keep alive across distribution upgrades. A binary built today st
 runs in five years; a venv rots. BirdNET-Go on the same box is Go for similar reasons.
 
 - **MQTT**: `github.com/eclipse/paho.mqtt.golang`, with auto-reconnect and a **last
-  will** so a dead arbiter is visible rather than silently stale.
+  will** so a dead borgd is visible rather than silently stale.
 - **HTTP**: `net/http` from the standard library. Server-rendered HTML, no build step,
   no framework. The status page has to still work in five years from a phone browser
   in the garden.
@@ -280,7 +280,7 @@ timestamp. Published as retained MQTT and rendered on the status page.
 Retained matters: a phone that connects for thirty seconds every half hour has to get the
 full picture on subscribe rather than waiting for the next change. Probes are periodic,
 so plugging the SDR in later brings it back without a restart, and a probe that throws
-is a degraded capability rather than a crashed arbiter.
+is a degraded capability rather than a crashed borgd.
 
 ## Storage
 
@@ -304,7 +304,7 @@ so there is never a question of which side is ahead. `make logs`, `make status` 
 - **No TLS.** LAN plus WireGuard, no certificate infrastructure that expires and bricks
   the unit in three years. Settled, not up for revisiting.
 - **No logging framework.** Results to stdout, diagnostics to stderr, and systemd
-  captures both. `journalctl --user -u borg-arbiter` is the log.
+  captures both. `journalctl --user -u borgd` is the log.
 - **No database** beyond what BirdNET-Go brings for itself. Ring buffers in RAM plus
   retained MQTT snapshots cover what the clients need.
 - **No frontend build.** The status page is server-rendered HTML.

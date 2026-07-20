@@ -1,6 +1,6 @@
-/// Additional MQTT topics outside the arbiter-owned contract in `topics.dart`
+/// Additional MQTT topics outside borgd-owned contract in `topics.dart`
 /// (`src/shared/README.md` is authoritative there). This file holds feeds
-/// published directly by a component rather than the arbiter.
+/// published directly by a component rather than borgd.
 library;
 
 abstract final class Feeds {
@@ -13,8 +13,8 @@ abstract final class Feeds {
   /// WLED's own built-in MQTT status topic (`<mqttDeviceTopic>/v`, WLED's
   /// "verbose state" JSON), read directly for the ambient glow (E9). Not
   /// under `balkon/*` — the ESP/WLED integration publishes its native
-  /// on/bri/seg payload here independently of the arbiter contract; the
-  /// arbiter still owns brightness *commands* via `balkon/cmd/brightness`.
+  /// on/bri/seg payload here independently of borgd contract; the
+  /// borgd still owns brightness *commands* via `balkon/cmd/brightness`.
   /// `parseWledColor` (`models/wled_state.dart`) parses it defensively.
   static const wledState = 'wled/balkon/v';
 }

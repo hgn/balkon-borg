@@ -5,7 +5,7 @@ agent together with [`../README.md`](../README.md) (the working agreement) and
 [`../../shared/README.md`](../../shared/README.md) (the wire contract).
 
 [`../setup.md`](../setup.md) describes the technology each package builds on (Podman
-quadlets, the asyncio arbiter, PipeWire, time sync, health, storage, deploy). Read it
+quadlets, borgd, PipeWire, time sync, health, storage, deploy). Read it
 before the first package you touch.
 
 **Read [`../README.md`](../README.md) first, every time.** It carries the conventions, the
@@ -16,7 +16,7 @@ well it works.
 | Package | Content | Depends on |
 |---|---|---|
 | [m0-provisioning.md](m0-provisioning.md) | `provision.py`, base system, packages, directories, time sync, Podman, PipeWire install | — |
-| [m1-broker-arbiter.md](m1-broker-arbiter.md) | Mosquitto, arbiter skeleton, mode topics, health registry, status page, deploy loop | M0 |
+| [m1-broker-borgd.md](m1-broker-borgd.md) | Mosquitto, borgd skeleton, mode topics, health registry, status page, deploy loop | M0 |
 | [m2-audio.md](m2-audio.md) | USB sound card, PipeWire user session, Piper TTS, priority mixer | M1 |
 | [m3-buffers.md](m3-buffers.md) | Ring-buffer framework, retained snapshots, env history, event ring | M1 |
 | [m4a-birdnet.md](m4a-birdnet.md) | BirdNET-Go, bird detections, bird-of-day, audio arbitration against COMMS | M2, M3 |

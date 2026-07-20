@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Provision borg-pi5 from a fresh Pi OS Lite image to a host ready for the arbiter.
+"""Provision borg-pi5 from a fresh Pi OS Lite image to a host ready for borgd.
 
 Runs on the control machine, not on the Pi: standard library only, driving OpenSSH and
 rsync, so it works on a bare machine with no virtualenv. That matters, because the day
@@ -56,7 +56,7 @@ VOICE_BASE = ("https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE
               "thorsten/medium/de_DE-thorsten-medium")
 PIPER_DIR = "/srv/borg/piper"
 
-# Groups the arbiter's user needs for the hardware it touches.
+# Groups borgd's user needs for the hardware it touches.
 GROUPS = ["audio", "video", "plugdev", "dialout"]
 
 STORAGE_DIRS = [
@@ -320,7 +320,7 @@ def step_quadlet_dir() -> Step:
 # The accounts the broker ACL distinguishes. They share one password: the separation
 # exists so the broker can enforce who may write what, not to keep secrets from each
 # other (borg.yaml explains the reasoning).
-BROKER_USERS = ["arbiter", "app", "esp"]
+BROKER_USERS = ["borgd", "app", "esp"]
 
 
 def read_broker_password(path: Path) -> str:
@@ -429,26 +429,26 @@ def step_piper() -> Step:
     return Step("piper", "local text-to-speech (German voice)", probe, apply)
 
 
-def step_arbiter_unit() -> Step:
-    """Installs and enables the arbiter's user unit (the binary arrives via `make deploy`)."""
-    local = CONFIG / "borg-arbiter.service"
-    remote = f"~/.config/systemd/user/borg-arbiter.service"
+def step_borgd_unit() -> Step:
+    """Installs and enables borgd's user unit (the binary arrives via `make deploy`)."""
+    local = CONFIG / "borgd.service"
+    remote = "~/.config/systemd/user/borgd.service"
 
     def probe(host: Host) -> bool:
         if not host.file_matches(local, remote.replace("~", f"/home/{host.user}")):
             return False
-        r = host.sh("systemctl --user is-enabled borg-arbiter 2>/dev/null")
+        r = host.sh("systemctl --user is-enabled borgd 2>/dev/null")
         return r.ok and r.out.strip() == "enabled"
 
     def apply(host: Host) -> None:
-        path = f"/home/{host.user}/.config/systemd/user/borg-arbiter.service"
+        path = f"/home/{host.user}/.config/systemd/user/borgd.service"
         _check(host.put(local, path, owner=f"{host.user}:{host.user}"),
-               "installing the arbiter unit")
+               "installing the borgd unit")
         _check(host.user_run("systemctl --user daemon-reload && "
-                             "systemctl --user enable borg-arbiter"),
-               "enabling the arbiter unit")
+                             "systemctl --user enable borgd"),
+               "enabling the borgd unit")
 
-    return Step("arbiter-unit", "arbiter starts at boot (needs `make deploy` for the binary)",
+    return Step("borgd-unit", "borgd starts at boot (needs `make deploy` for the binary)",
                 probe, apply)
 
 
@@ -478,7 +478,7 @@ def build_steps() -> list[Step]:
                   CONFIG / "borg-sdr.rules", "/etc/udev/rules.d/99-borg-sdr.rules",
                   after="udevadm control --reload-rules && udevadm trigger"),
         step_groups(),
-        # M1: the broker and the arbiter's unit. The arbiter binary itself is not
+        # M1: the broker and borgd's unit. Borgd binary itself is not
         # provisioned, it is deployed (`make deploy`), because it changes far more
         # often than the system underneath it.
         file_step("mosquitto-conf", "broker configuration",
@@ -494,8 +494,8 @@ def build_steps() -> list[Step]:
         # unit with no sound card or no voice reports a degraded speaker and keeps
         # doing everything else.
         # M4b: ADS-B. The JSON readsb rewrites every second lives in a tmpfs, not on
-        # the SD card, and the arbiter polls it from there.
-        Step("readsb-dir", "tmpfs path readsb and the arbiter share",
+        # the SD card, and borgd polls it from there.
+        Step("readsb-dir", "tmpfs path readsb and borgd share",
              lambda h: h.probe("test -d /run/borg/readsb"),
              lambda h: _check(h.sudo("mkdir -p /run/borg/readsb && "
                                      "chown 1000:1000 /run/borg/readsb"),
@@ -506,7 +506,7 @@ def build_steps() -> list[Step]:
                   after="systemctl daemon-reload"),
         step_pipewire(),
         step_piper(),
-        step_arbiter_unit(),
+        step_borgd_unit(),
     ]
 
 

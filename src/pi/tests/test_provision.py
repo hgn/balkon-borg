@@ -293,8 +293,8 @@ def test_the_shipped_config_carries_a_password() -> None:
 
 def test_password_file_probe_compares_the_user_list() -> None:
     step = provision.step_mosquitto_passwd()
-    assert step.probe(host_with([("cut -d:", Result(0, "app\narbiter\nesp\n"))])) is True
-    assert step.probe(host_with([("cut -d:", Result(0, "arbiter\n"))])) is False
+    assert step.probe(host_with([("cut -d:", Result(0, "app\nborgd\nesp\n"))])) is True
+    assert step.probe(host_with([("cut -d:", Result(0, "borgd\n"))])) is False
 
 
 # --- M2 steps -------------------------------------------------------------------

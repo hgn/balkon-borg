@@ -1,8 +1,8 @@
-# Who may write what. The arbiter owns all state; clients send commands and read.
+# Who may write what. borgd owns all state; clients send commands and read.
 # One writer per topic is a contract rule (shared/README.md), and this is where it is
 # actually enforced rather than just agreed.
 
-user arbiter
+user borgd
 topic readwrite #
 
 user app

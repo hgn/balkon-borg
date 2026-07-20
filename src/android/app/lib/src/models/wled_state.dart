@@ -1,7 +1,7 @@
 import 'dart:ui' show Color;
 
 /// Parses WLED's own "verbose state" JSON (`wled/balkon/v`, WLED's built-in
-/// MQTT status topic — not part of the arbiter contract in
+/// MQTT status topic — not part of borgd contract in
 /// `src/shared/README.md`, see `contract/feeds.dart`). Used only for the
 /// ambient glow (E9 — implementation-plan.md), so all this needs is a color;
 /// everything else in the payload (effects, per-LED state, ...) is ignored.

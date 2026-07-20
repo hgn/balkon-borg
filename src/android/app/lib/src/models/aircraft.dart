@@ -1,6 +1,6 @@
 /// One aircraft of the retained `balkon/adsb/aircraft` sky snapshot
 /// (`src/shared/README.md`, `contract/topics.dart`'s `Topics.adsbAircraft`).
-/// The arbiter computes `dist_km`/`bearing_deg` relative to the balcony; a
+/// Borgd computes `dist_km`/`bearing_deg` relative to the balcony; a
 /// client that gets neither (or only one) falls back to its own
 /// [GreatCircle] math on `lat`/`lon`, per the contract.
 library;

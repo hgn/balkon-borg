@@ -1,6 +1,6 @@
 # M0 — Provisioning tool and base system
 
-Bring a freshly imaged Pi from "answers over SSH" to "ready to run the arbiter", entirely
+Bring a freshly imaged Pi from "answers over SSH" to "ready to run borgd", entirely
 from a script, repeatably.
 
 ## Starting state
@@ -41,17 +41,17 @@ venv and no install step.
    Pin nothing that does not need pinning; the box tracks the distro.
 3. **Time sync.** The Pi has no RTC and boots cold, but timestamps are load-bearing (bird
    log, events). Configure `systemd-timesyncd` against a **pool** of servers and keep
-   retrying until sync succeeds. Expose "time is synced" as something the arbiter can
+   retrying until sync succeeds. Expose "time is synced" as something borgd can
    read, because timestamped writes are gated on it (see M3). Never persist a record
    stamped with an unsynced clock.
 4. **Directory layout** under `/srv/borg/` per the contract's storage map, with the right
    ownership, plus the tmpfs mount for the volatile media directory.
-5. **User session**: `loginctl enable-linger pfeifer` so the arbiter and audio survive
+5. **User session**: `loginctl enable-linger pfeifer` so borgd and audio survive
    without a login.
 6. **Podman**: system-level (root) quadlet support, socket/units in place, storage
    configured on the SD card sensibly.
 7. **Unprivileged port 80**: `net.ipv4.ip_unprivileged_port_start=80` as a sysctl drop-in,
-   so the arbiter's status page binds :80 from a user unit without capabilities games.
+   so borgd's status page binds :80 from a user unit without capabilities games.
 8. **udev and groups**: the user in the groups needed for the SDR, the sound card and the
    camera; udev rules for stable SDR access.
 9. **Verification step**: a final read-only pass that reports what is present (SDR via
@@ -69,7 +69,7 @@ truth and the Pi is a target.
 
 - Own Python tool, **no Ansible** (one dependency-free file beats a framework for nine
   steps on one host).
-- **System quadlets for containers, user session for the arbiter and audio.** The box is
+- **System quadlets for containers, user session for borgd and audio.** The box is
   protected and not internet-facing; device passthrough matters more than rootless purity.
 - Hostname `borg-pi`, never a hardcoded IP.
 

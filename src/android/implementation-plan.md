@@ -24,7 +24,7 @@ before the next starts.
   LIVE dot, PTT with `record` + upload to `/api/talkdown`, effect chips); **WebRTC
   wiring only once go2rtc runs on the Pi** (URLs are in the contract already).
 - **Station lists (U10)** are app constants for now; they move to the Pi's config
-  (retained topic) once the arbiter owns them.
+  (retained topic) once borgd owns them.
 - **D8 — The Pi owns the facts** (added 2026-07-19): world and device values belong to the
   borg-pi5 and reach the app over MQTT; the app is largely a display and keeps fallbacks,
   not authorities. Only UI preferences stay local. Constants to migrate once the Pi side
@@ -71,7 +71,7 @@ before the next starts.
 
 ## Known unknowns
 
-- **No broker/arbiter yet** → demo mode; once Pi M1 stands, test against the real
+- **No broker/borgd yet** → demo mode; once Pi M1 stands, test against the real
   Mosquitto (demo stays an option).
 - **Bird-log schema** (BirdNET-Go native) → demo data now, model adjusted at Pi M4.
 - **Device testing:** build + widget tests always; device screenshots via the android
