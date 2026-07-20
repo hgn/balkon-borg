@@ -1,0 +1,29 @@
+[project]
+name = "borg-pi"
+version = "0.1.0"
+description = "borg-pi5 orchestration: provisioning tool and arbiter"
+requires-python = ">=3.12"
+
+# The arbiter's runtime dependencies (installed into a venv on the Pi, see setup.md).
+# provision.py deliberately depends on none of them: it must run on a bare control
+# machine, so it stays standard library only.
+dependencies = [
+    "aiomqtt",
+    "aiohttp",
+    "pydantic",
+    "PyYAML",
+]
+
+[project.optional-dependencies]
+dev = ["mypy", "pytest"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+# The tests import provision.py by path (it is a script, not a package member).
+mypy_path = "."
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

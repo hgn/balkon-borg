@@ -1,0 +1,5 @@
+# RTL-SDR V4 (and the older V3) readable without root: the arbiter runs as a user unit
+# and must not need sudo to tune. plugdev is the group the provisioning step adds the
+# user to.
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0bda", ATTRS{idProduct}=="2838", MODE="0660", GROUP="plugdev", SYMLINK+="rtl_sdr"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0bda", ATTRS{idProduct}=="2832", MODE="0660", GROUP="plugdev", SYMLINK+="rtl_sdr"

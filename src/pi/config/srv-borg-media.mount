@@ -1,0 +1,17 @@
+# NOAA and SSTV images (U14) live here as a rolling FIFO of about fifty. The phone
+# keeps the permanent copy, so this is scratch: tmpfs spares the SD card a few hundred
+# writes a day for data nobody needs after a reboot.
+#
+# The unit name has to match the mount point, hence the dashes.
+
+[Unit]
+Description=Volatile media directory (NOAA/SSTV frames)
+
+[Mount]
+What=tmpfs
+Where=/srv/borg/media
+Type=tmpfs
+Options=size=512M,mode=0755,uid=1000,gid=1000
+
+[Install]
+WantedBy=multi-user.target
