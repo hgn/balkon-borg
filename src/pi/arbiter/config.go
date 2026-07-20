@@ -20,6 +20,7 @@ type Config struct {
 	Location     Location     `yaml:"location"`
 	Adsb         Adsb         `yaml:"adsb"`
 	Environment  Environment  `yaml:"environment"`
+	Audio        Audio        `yaml:"audio"`
 	Health       HealthConfig `yaml:"health"`
 	Capabilities Capabilities `yaml:"capabilities"`
 }
@@ -63,6 +64,16 @@ type Environment struct {
 	HistoryHours       int     `yaml:"history_hours"`
 	CondensationOnPct  float64 `yaml:"condensation_on_pct"`
 	CondensationOffPct float64 `yaml:"condensation_off_pct"`
+}
+
+// Audio holds where Piper and its voice model live. Both are installed by
+// provisioning; an absent model means the unit is quiet, not broken.
+type Audio struct {
+	Piper string `yaml:"piper"`
+	Voice string `yaml:"voice"`
+	// Antenna lengths in centimetres per band, announced on a band change
+	// (build-notes.md: the antenna is a manual compromise).
+	AntennaCM map[string]int `yaml:"antenna_cm"`
 }
 
 type HealthConfig struct {
@@ -137,6 +148,12 @@ func (c *Config) applyDefaults() {
 	}
 	// Paths default to the layout provisioning creates, so a minimal config is a
 	// working config and only deviations have to be written down.
+	if c.Audio.Piper == "" {
+		c.Audio.Piper = "/srv/borg/piper/piper"
+	}
+	if c.Audio.Voice == "" {
+		c.Audio.Voice = "/srv/borg/piper/voice.onnx"
+	}
 	if c.Paths.Root == "" {
 		c.Paths.Root = "/srv/borg"
 	}

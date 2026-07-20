@@ -213,14 +213,25 @@ Pi OS Lite ships no sound server, so PipeWire and WirePlumber are installed and 
 as user services by a provisioning step. The USB card is selected **by name**, never by
 card index, because an index changes when something is replugged.
 
-**Piper** does text-to-speech locally, from a voice model on disk. No cloud: a device
-that announces "Borg online" must not depend on someone's API being up, and the
-announcements are short and fixed enough that local synthesis is plainly good enough.
+**Piper** does text-to-speech locally, from a voice model on disk (German,
+`de_DE-thorsten-medium`). No cloud: a device that announces "Borg online" must not
+depend on someone's API being up, and the announcements are short and fixed enough that
+local synthesis is plainly good enough. Neither Piper nor the voice is packaged by the
+distribution, so provisioning downloads both; the URLs are constants in `provision.py`
+and are the kind of thing that rots, so the step names the URL when a download fails.
 
-The **priority mixer** is a table, not scattered conditionals: radio listening is the
-long-running consumer, announcements and alarms interrupt and hand back, talk-down takes
-the speaker for the length of a message. When a fourth consumer appears it should be a
-row in that table.
+Playback is two small processes rather than a temporary file: `piper` writes a wav to
+stdout, `pw-play` reads it from stdin.
+
+The **priority mixer** is a table, not scattered conditionals: radio 10, announcement
+50, talk-down 60, alarm 100. Higher wins, equal priority lets the incumbent finish
+(swapping one announcement for another mid-sentence is just noise), and only the radio
+is *resumable*: it comes back on its own after an interruption, while an announcement
+that got cut off by an alarm is stale by the time the alarm is done. Switching COMMS off
+while something talks over it drops the radio from the resume list, so it does not
+reappear afterwards. When a fourth consumer shows up it should be a row in that table.
+
+The microphone has one rule of its own: BirdNET listens unless the radio is playing.
 
 ## Time: NTP with a gate
 

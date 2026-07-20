@@ -295,3 +295,27 @@ def test_password_file_probe_compares_the_user_list() -> None:
     step = provision.step_mosquitto_passwd()
     assert step.probe(host_with([("cut -d:", Result(0, "app\narbiter\nesp\n"))])) is True
     assert step.probe(host_with([("cut -d:", Result(0, "arbiter\n"))])) is False
+
+
+# --- M2 steps -------------------------------------------------------------------
+
+
+def test_pipewire_probe_needs_all_three_units_active() -> None:
+    step = provision.step_pipewire()
+    assert step.probe(host_with([("is-active", Result(0, "active\nactive\nactive\n"))])) is True
+    # One unit down means no sound, so the step must not report itself as done.
+    assert step.probe(host_with([("is-active", Result(3, "active\ninactive\nactive\n"))])) is False
+
+
+def test_piper_probe_wants_a_binary_and_a_non_empty_voice() -> None:
+    step = provision.step_piper()
+    assert step.probe(host_with([("test -x", Result(0))])) is True
+    assert step.probe(host_with([("test -x", Result(1))])) is False
+
+
+def test_piper_download_names_the_url_it_failed_on() -> None:
+    # A 404 that lands as an HTML file would otherwise look like a working install
+    # until the first announcement is silent, so the failure has to be loud here.
+    host = host_with([("curl", Result(22, err="curl: (22) 404"))])
+    with pytest.raises(StepFailed, match="github.com"):
+        provision.step_piper().apply(host)

@@ -57,6 +57,22 @@ environment:
   condensation_on_pct: 85.0
   condensation_off_pct: 82.0
 
+audio:
+  # Piper and its voice model, installed by provisioning. A missing model means the
+  # unit is quiet, not broken: announcements go silent, everything else keeps running.
+  piper: /srv/borg/piper/piper
+  voice: /srv/borg/piper/voice.onnx
+  # How far to extend the whip per band, announced on a band change. The antenna is a
+  # manual, one-size compromise (docs/build-notes.md): the mode switch retunes the
+  # tuner, not the hardware, so the unit can only ask nicely.
+  antenna_cm:
+    fm: 75
+    dab: 40
+    airband: 60
+    shortwave: 200
+    adsb: 7
+    ism: 17
+
 health:
   # How often each capability is re-probed. Plugging the SDR in later must bring it
   # back without a restart.

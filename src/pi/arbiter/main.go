@@ -27,10 +27,12 @@ import (
 const defaultConfigPath = "/srv/borg/app/shared/borg.yaml"
 
 type Arbiter struct {
-	cfg    *Config
-	modes  *Modes
-	health *Registry
-	client mqtt.Client
+	cfg     *Config
+	modes   *Modes
+	health  *Registry
+	mixer   *Mixer
+	speaker *Speaker
+	client  mqtt.Client
 
 	mu      sync.Mutex
 	lastEnv time.Time // when the ESP last said anything, for the esp capability
@@ -52,6 +54,8 @@ func main() {
 	}
 
 	a := &Arbiter{cfg: cfg, modes: NewModes(time.Now), health: NewRegistry(time.Now)}
+	a.mixer = NewMixer(time.Now)
+	a.speaker = NewSpeaker(a.mixer, cfg.Audio.Piper, cfg.Audio.Voice)
 	a.registerCapabilities()
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -75,7 +79,7 @@ func (a *Arbiter) registerCapabilities() {
 	enabled := a.cfg.Capabilities.Enabled()
 	a.health.Register("clock", ClockProbe(execRunner), true)
 	a.health.Register("sdr", SDRProbe(execRunner), enabled["sdr"])
-	a.health.Register("speaker", SoundProbe(execRunner), enabled["speaker"])
+	a.health.Register("speaker", SpeakerProbe(execRunner, a.speaker), enabled["speaker"])
 	a.health.Register("mic", MicrophoneProbe(execRunner), enabled["microphone"])
 	a.health.Register("camera", CameraProbe(fileExists), enabled["camera"])
 	a.health.Register("esp", FreshnessProbe(a.lastEnvSeen, time.Now, 5*time.Minute,
@@ -301,6 +305,14 @@ func (a *Arbiter) run(ctx context.Context) {
 	a.health.ProbeAll()
 	a.publishHealth()
 	fmt.Fprintf(os.Stderr, "arbiter: up, probing every %s\n", interval)
+
+	// "Borg online" once the sound card has actually shown up: the user session and
+	// the USB card are not necessarily ready when this process is.
+	go func() {
+		if waitForSound(execRunner, 10, 3*time.Second) {
+			a.speaker.Announce(BootAnnouncement)
+		}
+	}()
 
 	for {
 		select {

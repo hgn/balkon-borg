@@ -45,6 +45,17 @@ PACKAGES = [
     "nfs-common",
 ]
 
+# Piper (local text-to-speech) and its German voice. Not packaged by the distribution,
+# so this is a release tarball plus a model file. Both URLs are here rather than in
+# borg.yaml because this script is what fetches them, and they are the kind of thing
+# that rots: if a download 404s, the step says so with the URL and the unit stays mute
+# rather than unprovisioned.
+PIPER_URL = ("https://github.com/rhasspy/piper/releases/download/2023.11.14-2/"
+             "piper_linux_aarch64.tar.gz")
+VOICE_BASE = ("https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/"
+              "thorsten/medium/de_DE-thorsten-medium")
+PIPER_DIR = "/srv/borg/piper"
+
 # Groups the arbiter's user needs for the hardware it touches.
 GROUPS = ["audio", "video", "plugdev", "dialout"]
 
@@ -367,6 +378,57 @@ def step_mosquitto_passwd() -> Step:
     return Step("mosquitto-passwd", "broker users, one shared password", probe, apply)
 
 
+def step_pipewire() -> Step:
+    """Starts the sound server in the user session.
+
+    Pi OS Lite ships no sound server at all, so this is not "enable a service" but the
+    entire audio stack: without it, `pw-play` has nothing to talk to and the unit is
+    silent for a reason no probe would explain.
+    """
+    units = "pipewire pipewire-pulse wireplumber"
+
+    def probe(host: Host) -> bool:
+        r = host.sh(f"systemctl --user is-active {units}")
+        return r.ok and r.out.split() == ["active"] * 3
+
+    def apply(host: Host) -> None:
+        _check(host.user_run(f"systemctl --user enable --now {units}"),
+               "starting PipeWire")
+
+    return Step("pipewire", "sound server in the user session", probe, apply)
+
+
+def step_piper() -> Step:
+    """Installs Piper and a German voice for local text-to-speech.
+
+    No cloud: a device that says "Borg online" must not depend on someone's API being
+    up, and the announcements are short and fixed enough that local synthesis is
+    plainly good enough. Downloads happen on the Pi, which needs internet during
+    provisioning but never afterwards.
+    """
+    binary = f"{PIPER_DIR}/piper"
+    voice = f"{PIPER_DIR}/voice.onnx"
+
+    def probe(host: Host) -> bool:
+        return host.probe(f"test -x {shlex.quote(binary)} && test -s {shlex.quote(voice)}")
+
+    def apply(host: Host) -> None:
+        _check(host.sudo(f"mkdir -p {PIPER_DIR} && chown {host.user}:{host.user} {PIPER_DIR}"),
+               f"creating {PIPER_DIR}")
+        # --fail turns an HTML error page into a non-zero exit, which is the difference
+        # between "no voice" and "a voice model that is actually a 404 page".
+        fetch = (f"curl -fsSL {shlex.quote(PIPER_URL)} -o /tmp/piper.tgz && "
+                 f"tar xzf /tmp/piper.tgz -C /tmp && "
+                 f"cp -a /tmp/piper/. {PIPER_DIR}/ && rm -rf /tmp/piper /tmp/piper.tgz")
+        _check(host.user_run(fetch), f"downloading Piper from {PIPER_URL}")
+        _check(host.user_run(
+            f"curl -fsSL {shlex.quote(VOICE_BASE + '.onnx')} -o {shlex.quote(voice)} && "
+            f"curl -fsSL {shlex.quote(VOICE_BASE + '.onnx.json')} -o {shlex.quote(voice)}.json"),
+            f"downloading the voice model from {VOICE_BASE}.onnx")
+
+    return Step("piper", "local text-to-speech (German voice)", probe, apply)
+
+
 def step_arbiter_unit() -> Step:
     """Installs and enables the arbiter's user unit (the binary arrives via `make deploy`)."""
     local = CONFIG / "borg-arbiter.service"
@@ -428,6 +490,11 @@ def build_steps() -> list[Step]:
                   QUADLETS / "mosquitto.container",
                   "/etc/containers/systemd/mosquitto.container",
                   after="systemctl daemon-reload && systemctl start mosquitto"),
+        # M2: the audio chain. Both steps are allowed to be missing at runtime — a
+        # unit with no sound card or no voice reports a degraded speaker and keeps
+        # doing everything else.
+        step_pipewire(),
+        step_piper(),
         step_arbiter_unit(),
     ]
 
