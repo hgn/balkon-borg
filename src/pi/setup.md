@@ -244,6 +244,33 @@ load-bearing (bird log, events, time-lapse), so:
 A gap in the bird log is a gap. A bird log full of 1970 is corruption that outlives the
 misconfiguration that caused it.
 
+## Ring buffers and retained snapshots
+
+Every feed keeps its last N entries in RAM and mirrors them to a **retained** topic, so
+a phone that connects for thirty seconds gets the history immediately instead of waiting
+for the next event. For a radiosonde that next event is twelve hours away.
+
+Two shapes, on purpose:
+
+- The **environment history** (`env/recent`) is oldest first, because the app draws a
+  chart left to right. It holds one sample per minute over the configured window, built
+  from the ESP's per-value topics: those arrive whenever the sensor feels like it, so
+  values are kept as "latest known" and committed on a fixed cadence.
+- The **SIGINT rings and the event ring** are newest first, because they are read as
+  lists. The event ring is capped at twenty and is the most consequence-carrying topic
+  in the system: the app diffs it to raise notifications, so an entry that never lands
+  is a notification nobody gets. It publishes immediately, without coalescing.
+
+**Coalescing:** a feed at 1 Hz mirrored to a retained topic would write a retained
+message every second forever. So snapshots publish at most every ten seconds while
+dirty, but the *first* change after a quiet period goes out immediately, so a single
+event still shows up at once.
+
+**Everything timestamped is gated on the clock.** Before the first NTP sync the Pi
+thinks it is 1970; a sample stamped that way is worse than a missing one, because a gap
+is obvious and a wrong timestamp is not. Samples and events are dropped, with a line in
+the journal, until `clock` reports ok.
+
 ## Health: probe, state, reason, since
 
 Every capability (SDR, mic, speaker, camera, clock, ESP data, each container) has a probe

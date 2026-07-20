@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -32,6 +33,9 @@ type Arbiter struct {
 	health  *Registry
 	mixer   *Mixer
 	speaker *Speaker
+	env     *EnvHistory
+	events  *Events
+	envPub  *Coalescer
 	client  mqtt.Client
 
 	mu      sync.Mutex
@@ -56,6 +60,12 @@ func main() {
 	a := &Arbiter{cfg: cfg, modes: NewModes(time.Now), health: NewRegistry(time.Now)}
 	a.mixer = NewMixer(time.Now)
 	a.speaker = NewSpeaker(a.mixer, cfg.Audio.Piper, cfg.Audio.Voice)
+	a.env = NewEnvHistory(cfg.Environment.HistoryHours,
+		time.Duration(cfg.Environment.SampleIntervalS)*time.Second, time.Now)
+	a.events = NewEvents(time.Now)
+	// A retained snapshot at most every 10s: the history only grows once a minute, so
+	// this is about not writing a retained message per ESP reading.
+	a.envPub = NewCoalescer(10*time.Second, time.Now)
 	a.registerCapabilities()
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -135,6 +145,11 @@ func (a *Arbiter) connect() error {
 		}
 		a.publishAllModes()
 		a.publishHealth()
+		// Retained snapshots go out on connect too: a broker that was restarted has
+		// forgotten them, and a client subscribing right now would otherwise see an
+		// empty history until the next reading.
+		a.publishEnvRecent()
+		a.publish(TopicEventRecent, a.events.Payload(), true)
 	}
 	opts.OnConnectionLost = func(_ mqtt.Client, err error) {
 		fmt.Fprintf(os.Stderr, "mqtt: connection lost: %v\n", err)
@@ -209,7 +224,12 @@ func (a *Arbiter) onMessage(_ mqtt.Client, msg mqtt.Message) {
 		a.handleModeCommand(topic, msg.Payload())
 	case topic == TopicCmdFocus:
 		a.handleFocus(msg.Payload())
-	case strings.HasPrefix(topic, "balkon/env/"), topic == "balkon/presence":
+	case strings.HasPrefix(topic, "balkon/env/"):
+		a.mu.Lock()
+		a.lastEnv = time.Now()
+		a.mu.Unlock()
+		a.handleEnv(topic, msg.Payload())
+	case topic == "balkon/presence":
 		a.mu.Lock()
 		a.lastEnv = time.Now()
 		a.mu.Unlock()
@@ -236,6 +256,53 @@ func (a *Arbiter) handleModeCommand(topic string, payload []byte) {
 	for _, m := range changed {
 		a.publishMode(m)
 	}
+}
+
+// envFields maps the ESP's per-value topics onto the history's fields. ESPHome
+// publishes a plain number, not JSON, which is why this path does not go through the
+// envelope decoder.
+var envFields = map[string]string{
+	"balkon/env/temperature": "t",
+	"balkon/env/humidity":    "h",
+	"balkon/env/pressure":    "p",
+}
+
+func (a *Arbiter) handleEnv(topic string, payload []byte) {
+	field, ok := envFields[topic]
+	if !ok {
+		return // env/recent is ours; anything else is not a reading
+	}
+	value, err := strconv.ParseFloat(strings.TrimSpace(string(payload)), 64)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s: not a number: %q\n", topic, payload)
+		return
+	}
+	a.env.Observe(field, value)
+	if a.env.Commit(a.clockOK()) {
+		a.envPub.Touch()
+	}
+}
+
+// clockOK gates every timestamped write. Before the first NTP sync the Pi thinks it is
+// 1970, and a history stamped that way is worse than a gap.
+func (a *Arbiter) clockOK() bool {
+	c, ok := a.health.Get("clock")
+	return ok && c.State == StateOK
+}
+
+func (a *Arbiter) publishEnvRecent() {
+	a.publish(TopicEnvRecent, a.env.Payload(), true)
+}
+
+// RecordEvent adds an event to the retained ring and publishes it. This ring is what
+// the app diffs to raise notifications, so an entry that never lands is a notification
+// the user never gets: it publishes immediately rather than waiting for a coalescer.
+func (a *Arbiter) RecordEvent(category EventCategory, text string) {
+	if !a.events.Add(category, text, a.clockOK()) {
+		fmt.Fprintf(os.Stderr, "event dropped (clock not synced): %s %s\n", category, text)
+		return
+	}
+	a.publish(TopicEventRecent, a.events.Payload(), true)
 }
 
 func (a *Arbiter) handleFocus(payload []byte) {
@@ -327,6 +394,14 @@ func (a *Arbiter) run(ctx context.Context) {
 			}
 			return
 		case <-ticker.C:
+			// The history is committed from the message path too, but a quiet ESP
+			// still needs the cadence to advance once a reading exists.
+			if a.env.Commit(a.clockOK()) {
+				a.envPub.Touch()
+			}
+			if a.envPub.Due() {
+				a.publishEnvRecent()
+			}
 			if changed := a.health.ProbeAll(); len(changed) > 0 {
 				for _, name := range changed {
 					if c, ok := a.health.Get(name); ok {
