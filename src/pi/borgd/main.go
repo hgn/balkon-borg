@@ -39,6 +39,7 @@ type Borgd struct {
 	tuner   *Tuner
 	lowPass *LowPass
 	storm   *StormDetector
+	sentry  *SentryLadder
 	panel   *Panel
 	client  mqtt.Client
 
@@ -84,6 +85,12 @@ func main() {
 	a.storm = NewStormDetector(cfg.Storm.DropHPaPerHour, cfg.Storm.WindowHours,
 		time.Duration(cfg.Storm.MaxGapS)*time.Second,
 		time.Duration(cfg.Storm.CooldownS)*time.Second, time.Now)
+	a.sentry = NewSentryLadder(time.Now,
+		time.Duration(cfg.Sentry.ExitDelayS)*time.Second,
+		time.Duration(cfg.Sentry.PersonWindowS)*time.Second,
+		time.Duration(cfg.Sentry.EntryGraceS)*time.Second,
+		time.Duration(cfg.Sentry.AlarmCooldownS)*time.Second,
+		time.Duration(cfg.Sentry.PulseEveryS)*time.Second)
 	a.ism = NewRing[IsmEntry](DefaultRingSize)
 	a.tpms = NewRing[TpmsEntry](DefaultRingSize)
 	// Same coalescing floor as the env history: this is about not writing a retained
@@ -100,6 +107,7 @@ func main() {
 
 	go a.serveHTTP(ctx)
 	go a.skyLoop(ctx)
+	go a.sentryLoop(ctx)
 
 	if err := a.connect(); err != nil {
 		// Not fatal by design: the status page still answers and says the broker is
@@ -274,6 +282,9 @@ func (a *Borgd) onMessage(_ mqtt.Client, msg mqtt.Message) {
 		a.mu.Lock()
 		a.lastEnv = time.Now()
 		a.mu.Unlock()
+		a.handlePresence(msg.Payload())
+	case topic == TopicCamEvents:
+		a.handleCamEvent(msg.Payload())
 	}
 }
 
@@ -285,6 +296,12 @@ func (a *Borgd) handleModeCommand(topic string, payload []byte) {
 	}
 	if err := json.Unmarshal(payload, &cmd); err != nil {
 		fmt.Fprintf(os.Stderr, "%s: bad payload: %v\n", topic, err)
+		return
+	}
+	// SENTRY does not go through Modes.Apply directly: arming is a sequence (U11),
+	// not a single write, so it is routed through the ladder instead.
+	if mode == Sentry {
+		a.handleSentryCommand(cmd.Submode)
 		return
 	}
 	changed, err := a.modes.Apply(mode, cmd.Submode, cmd.Chan)
@@ -466,6 +483,127 @@ func (a *Borgd) applyLumen() {
 	a.publishWLED(cmd)
 }
 
+// --- SENTRY (U11) -----------------------------------------------------------------
+
+// handleSentryCommand is the one entry point for arming and disarming, reached from
+// both balkon/cmd/mode/sentry and the panel's button 2. Only "armed" and "off" are
+// commandable from outside; the ladder's own states (arming, grace, alarm) are
+// reached only by sentry.go itself, from Tick, PresenceSeen, SceneClear and
+// PersonDetected.
+func (a *Borgd) handleSentryCommand(submode string) {
+	switch submode {
+	case SentryArmed:
+		a.applySentryEffect(a.sentry.Arm())
+	case Off:
+		a.applySentryEffect(a.sentry.Disarm())
+	default:
+		fmt.Fprintf(os.Stderr,
+			"balkon/cmd/mode/sentry: %q is not commandable (only armed/off are)\n", submode)
+	}
+}
+
+// handlePresence is the ESP's radar (balkon/presence, not retained). SENTRY is the
+// only consumer of it today; envFields/lastEnv freshness tracking happens in
+// onMessage before this is called.
+func (a *Borgd) handlePresence(payload []byte) {
+	var msg struct {
+		Present bool `json:"present"`
+	}
+	if err := json.Unmarshal(payload, &msg); err != nil {
+		fmt.Fprintf(os.Stderr, "balkon/presence: bad payload: %v\n", err)
+		return
+	}
+	if msg.Present {
+		a.applySentryEffect(a.sentry.PresenceSeen())
+	} else {
+		a.applySentryEffect(a.sentry.SceneClear())
+	}
+}
+
+// handleCamEvent turns a Frigate detection into a SENTRY person confirmation.
+//
+// Frigate is not running yet (no Pi, no camera), so this is written against
+// Frigate's documented MQTT event schema rather than anything observed:
+// {"type":"new"|"update"|"end","before":{...},"after":{...}}, where "after.label"
+// names the detected COCO class ("person", "cat", "dog", ...). Any "person" on "new"
+// or "update" counts as a confirmation; "end" is ignored, since SENTRY only cares
+// that a person was seen, not that they left (the radar's balkon/presence already
+// reports that through SceneClear). If Frigate's real payload turns out to differ,
+// this is the one place to fix.
+func (a *Borgd) handleCamEvent(payload []byte) {
+	var msg struct {
+		Type  string `json:"type"`
+		After struct {
+			Label string `json:"label"`
+		} `json:"after"`
+	}
+	if err := json.Unmarshal(payload, &msg); err != nil {
+		fmt.Fprintf(os.Stderr, "%s: bad payload: %v\n", TopicCamEvents, err)
+		return
+	}
+	if msg.Type == "end" || msg.After.Label != "person" {
+		return
+	}
+	a.applySentryEffect(a.sentry.PersonDetected())
+}
+
+// applySentryEffect carries out whatever sentry.go's pure state machine returned:
+// the mode topic, the camera pin, the light, the speaker and the event ring. This is
+// the SENTRY equivalent of handleInput's PanelEffect switch, kept in one place so the
+// four event sources (arm/disarm, presence, person, tick) do not each reimplement it.
+func (a *Borgd) applySentryEffect(eff SentryEffect) {
+	if eff.Submode != "" && a.modes.SetSentrySubmode(eff.Submode) {
+		a.publishMode(Sentry)
+	}
+	if eff.Pin != nil && a.modes.Pin(Sentry, *eff.Pin) {
+		a.publishMode(Sentry)
+	}
+	if eff.Flash {
+		a.publishWLED(WLEDFlash(SentryFlashSeconds, true))
+	}
+	if eff.Pulse {
+		// The armed reminder is a brief dim blink, not the alarm's police light: it
+		// runs every couple of minutes for as long as the unit is watching, so it has
+		// to stay noticeable from the balcony door without becoming wallpaper. WLED
+		// reverts on its own afterwards, whatever LUMEN was doing underneath.
+		a.publishWLED(WLEDArmedPulse())
+	}
+	if eff.Beep {
+		go func() {
+			if err := a.speaker.Say(SourceAlarm, SentryBeepText); err != nil {
+				fmt.Fprintf(os.Stderr, "sentry: %v\n", err)
+			}
+		}()
+	}
+	if eff.Record {
+		// The actual clip is Frigate's own job (U7: event-triggered, pre/post roll,
+		// off-site to the nas-Pi) and fires from its own detection, not from here.
+		// This is the hook for whatever borgd needs to do once Frigate is wired up
+		// (e.g. tagging the clip as a SENTRY alarm); today it is a log line.
+		fmt.Fprintln(os.Stderr, "sentry: alarm recording requested (Frigate not wired up yet)")
+	}
+	if eff.EventText != "" {
+		a.RecordEvent(CategorySecurity, eff.EventText)
+	}
+}
+
+// sentryLoop drives sentry.go's clock. A short, regular cadence rather than the
+// health-probe interval: the person-confirmation window and the entry grace are both
+// tens of seconds, and a coarser tick would blur exactly the timing this state
+// machine exists to get right.
+func (a *Borgd) sentryLoop(ctx context.Context) {
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			a.applySentryEffect(a.sentry.Tick())
+		}
+	}
+}
+
 // handleInput turns a panel event into its effect and carries it out. The panel is a
 // dumb device by design (decision 2026-07-20): it reports what happened, this decides
 // what it means.
@@ -493,6 +631,12 @@ func (a *Borgd) handleInput(topic string, payload []byte) {
 		}
 	case effect.SetSubmode != nil:
 		c := effect.SetSubmode
+		if c.Mode == Sentry {
+			// Same rule as the MQTT command path: the panel's button 2 must not be
+			// able to cycle SENTRY straight into an internal ladder state.
+			a.handleSentryCommand(c.Submode)
+			return
+		}
 		changed, err := a.modes.Apply(c.Mode, c.Submode, c.Chan)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "panel: %v\n", err)

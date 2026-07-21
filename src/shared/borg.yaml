@@ -87,6 +87,26 @@ storm:
   # that the weather changed; the detector refuses to read a gap as a drop.
   max_gap_s: 900
 
+sentry:
+  # U11 escalation ladder. Once armed, the ladder goes live only once the radar has
+  # reported a clear scene, or after this fallback, whichever comes first — long
+  # enough to water the plants and walk out.
+  exit_delay_s: 60
+  # How long a radar presence sighting waits for Frigate to confirm a person before
+  # falling back to plain watching. Generous relative to Frigate's ~2 FPS radar-gated
+  # idle rate (U7), so the camera has time to wake up and run a few frames.
+  person_window_s: 15
+  # Once a person is confirmed, how long disarming still stops the effector, the
+  # recording and the push before they fire (U11 "Entry handling").
+  entry_grace_s: 30
+  # After the effector fires, the ladder returns to armed once the scene has cleared
+  # once, or after this fallback: a lingering person must not re-trigger it on a loop.
+  alarm_cooldown_s: 60
+  # While armed, the light gives a short dim red breath this often. An armed system
+  # nobody remembers arming is one that gets switched off in anger the first time it
+  # goes off at the wrong moment.
+  pulse_every_s: 120
+
 audio:
   # Piper and its voice model, installed by provisioning. A missing model means the
   # unit is quiet, not broken: announcements go silent, everything else keeps running.

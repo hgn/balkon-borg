@@ -85,4 +85,23 @@ func WLEDFlash(seconds int, red bool) WLEDCommand {
 	return cmd
 }
 
+// WLEDArmedPulse is the SENTRY reminder while armed (U11, user call 2026-07-18): a
+// short, dim red breath rather than the alarm's police light. Loud enough to catch the
+// eye from the balcony door, quiet enough to live with for an evening.
+//
+// Like the flash it carries its own timer, so a lost message cannot leave the balcony
+// glowing red: WLED reverts to whatever LUMEN was doing by itself.
+func WLEDArmedPulse() WLEDCommand {
+	return WLEDCommand{
+		"on":  true,
+		"bri": 40,
+		"seg": []map[string]any{{
+			"fx":  2, // breathe
+			"sx":  60,
+			"col": [][]int{{120, 0, 0}, {0, 0, 0}},
+		}},
+		"nl": map[string]any{"on": true, "dur": 1, "mode": 0},
+	}
+}
+
 func (c WLEDCommand) Encode() ([]byte, error) { return json.Marshal(c) }

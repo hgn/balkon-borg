@@ -22,6 +22,7 @@ type Config struct {
 	Ism          Ism          `yaml:"ism"`
 	Environment  Environment  `yaml:"environment"`
 	Storm        Storm        `yaml:"storm"`
+	Sentry       SentryConfig `yaml:"sentry"`
 	Audio        Audio        `yaml:"audio"`
 	Health       HealthConfig `yaml:"health"`
 	Capabilities Capabilities `yaml:"capabilities"`
@@ -100,6 +101,30 @@ type Storm struct {
 	WindowHours    float64 `yaml:"window_hours"`
 	CooldownS      int     `yaml:"cooldown_s"`
 	MaxGapS        int     `yaml:"max_gap_s"`
+}
+
+// SentryConfig holds the U11 escalation ladder's timings (sentry.go). All four are
+// seconds in the file for consistency with the rest of borg.yaml; sentry.go wants
+// time.Duration, converted once at startup in main.go.
+type SentryConfig struct {
+	// ExitDelayS: once armed, the ladder goes live only after the radar has reported
+	// a clear scene once, or after this fallback — whichever comes first. Long
+	// enough to water the plants and walk out.
+	ExitDelayS int `yaml:"exit_delay_s"`
+	// PersonWindowS: how long a radar presence sighting waits for Frigate to confirm
+	// a person before the ladder falls back to plain watching. Generous relative to
+	// Frigate's ~2 FPS radar-gated idle rate (U7), so the camera has time to wake up
+	// and run a few frames.
+	PersonWindowS int `yaml:"person_window_s"`
+	// EntryGraceS: once a person is confirmed, how long disarming still stops
+	// everything else from firing (U11 "Entry handling") before the effector runs.
+	EntryGraceS int `yaml:"entry_grace_s"`
+	// AlarmCooldownS: after the effector fires, the ladder returns to armed once the
+	// scene has cleared once, or after this fallback — the same shape as the exit
+	// delay, so a lingering person does not re-trigger the alarm on a loop and the
+	// ladder is never stuck waiting for a clear scene that never comes.
+	AlarmCooldownS int `yaml:"alarm_cooldown_s"`
+	PulseEveryS    int `yaml:"pulse_every_s"`
 }
 
 // Audio holds where Piper and its voice model live. Both are installed by
@@ -215,6 +240,21 @@ func (c *Config) applyDefaults() {
 	if c.Storm.MaxGapS == 0 {
 		c.Storm.MaxGapS = 15 * 60
 	}
+	if c.Sentry.ExitDelayS == 0 {
+		c.Sentry.ExitDelayS = 60
+	}
+	if c.Sentry.PersonWindowS == 0 {
+		c.Sentry.PersonWindowS = 15
+	}
+	if c.Sentry.EntryGraceS == 0 {
+		c.Sentry.EntryGraceS = 30
+	}
+	if c.Sentry.AlarmCooldownS == 0 {
+		c.Sentry.AlarmCooldownS = 60
+	}
+	if c.Sentry.PulseEveryS == 0 {
+		c.Sentry.PulseEveryS = 120
+	}
 	// Paths default to the layout provisioning creates, so a minimal config is a
 	// working config and only deviations have to be written down.
 	if c.Audio.Piper == "" {
@@ -271,6 +311,18 @@ func (c *Config) validate() error {
 	}
 	if c.Storm.WindowHours <= 0 {
 		return fmt.Errorf("storm.window_hours %v must be positive", c.Storm.WindowHours)
+	}
+	if c.Sentry.ExitDelayS <= 0 {
+		return fmt.Errorf("sentry.exit_delay_s %v must be positive", c.Sentry.ExitDelayS)
+	}
+	if c.Sentry.PersonWindowS <= 0 {
+		return fmt.Errorf("sentry.person_window_s %v must be positive", c.Sentry.PersonWindowS)
+	}
+	if c.Sentry.EntryGraceS <= 0 {
+		return fmt.Errorf("sentry.entry_grace_s %v must be positive", c.Sentry.EntryGraceS)
+	}
+	if c.Sentry.AlarmCooldownS <= 0 {
+		return fmt.Errorf("sentry.alarm_cooldown_s %v must be positive", c.Sentry.AlarmCooldownS)
 	}
 	return nil
 }

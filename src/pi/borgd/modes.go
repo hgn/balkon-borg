@@ -126,6 +126,24 @@ func (m *Modes) Apply(mode Mode, submode string, chan_ string) ([]Mode, error) {
 	return changed, nil
 }
 
+// SetSentrySubmode writes the SENTRY submode directly, bypassing Apply's
+// knownSubmode gate. The ladder's internal states (arming, grace, alarm; sentry.go)
+// are real values of balkon/mode/sentry per the contract, but are never something a
+// client may request directly — sentry.go enforces that at the command layer — so
+// they deliberately do not belong in the client-facing Submodes[Sentry] list that the
+// panel cycles through and Apply validates commands against. This is that state
+// machine's one write path into the shared mode table.
+func (m *Modes) SetSentrySubmode(submode string) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	current := m.states[Sentry]
+	if current.Submode == submode {
+		return false
+	}
+	m.states[Sentry] = ModeState{Submode: submode, Pinned: current.Pinned, Since: Timestamp(m.now())}
+	return true
+}
+
 // Pin marks a mode as holding a resource: SENTRY armed pins the camera to Frigate, so
 // nothing else can schedule it away while the unit is watching.
 func (m *Modes) Pin(mode Mode, pinned bool) bool {

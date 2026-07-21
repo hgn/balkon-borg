@@ -230,3 +230,17 @@ func TestTheFlashCarriesItsOwnTimeout(t *testing.T) {
 		t.Fatalf("the command must encode: %v", err)
 	}
 }
+
+// The armed reminder must stay distinguishable from the alarm: same device, very
+// different message.
+func TestTheArmedPulseIsDimmerThanTheAlarmFlash(t *testing.T) {
+	pulse, alarm := WLEDArmedPulse(), WLEDFlash(5, true)
+	if pulse["bri"].(int) >= alarm["bri"].(int) {
+		t.Errorf("the reminder should be dimmer than the alarm: %v vs %v",
+			pulse["bri"], alarm["bri"])
+	}
+	nl, ok := pulse["nl"].(map[string]any)
+	if !ok || nl["on"] != true {
+		t.Error("the reminder needs its own timer, or a lost message leaves it glowing")
+	}
+}

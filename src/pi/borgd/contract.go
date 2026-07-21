@@ -42,15 +42,17 @@ const (
 	TopicIsmRecent     = "balkon/ism/recent"
 	TopicTpmsRecent    = "balkon/tpms/recent"
 	TopicKnob          = "balkon/state/knob"
+	TopicCamEvents     = "balkon/cam/events"
 )
 
-// Subscriptions is everything borgd listens to: commands from clients and raw
-// input from the ESP.
+// Subscriptions is everything borgd listens to: commands from clients, raw input from
+// the ESP, and Frigate's detection events (SENTRY, U11).
 var Subscriptions = []string{
 	"balkon/cmd/#",
 	"balkon/input/#",
 	"balkon/env/+",
 	"balkon/presence",
+	TopicCamEvents,
 }
 
 // QoS 1 for state, commands and events (the contract's convention). Live telemetry
